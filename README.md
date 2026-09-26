@@ -73,6 +73,19 @@ The stack is built for a small shared server:
 
 To expose it, add `Caddyfile.snippet` to Caddy as a new site block. No other routes are touched.
 
+## Deploy to a shared server
+
+`deploy/deploy.sh` deploys from your machine over SSH into `/opt/postyar` only:
+- it checks the port is free
+- it rsyncs the code
+- it creates the server `.env` once with random secrets
+- it runs `docker compose -p postyar up -d --build`
+- it verifies the app and that other sites on the server still answer
+
+```bash
+HOST=infivita PORT=8200 ./deploy/deploy.sh
+```
+
 ## API overview
 
 All endpoints except `/health`, `/catalog` and `/auth/*` need `Authorization: Bearer <token>` from login.
