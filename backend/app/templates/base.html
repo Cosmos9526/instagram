@@ -28,7 +28,7 @@
            font-size: 30px; opacity: .85; }
   .page { position: absolute; bottom: 44px; inset-inline-end: 64px; font-size: 30px; opacity: .6; }
   .img { background-size: cover; background-position: center;
-         background-image: {% if image %}url('{{ image }}'){% else %}linear-gradient(135deg, var(--primary), var(--secondary)){% endif %}; }
+         background-image: {% if image %}url('{{ image }}'){% else %}radial-gradient(circle at 18% 22%, rgba(255,255,255,.22) 0 14%, transparent 15%), radial-gradient(circle at 84% 70%, rgba(255,255,255,.14) 0 22%, transparent 23%), radial-gradient(circle at 60% 8%, rgba(0,0,0,.10) 0 10%, transparent 11%), linear-gradient(135deg, var(--primary), var(--secondary)){% endif %}; }
   {% block style %}{% endblock %}
 </style>
 </head>

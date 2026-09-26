@@ -141,8 +141,8 @@ def update_me(body: MeIn, user: User = Depends(current_user), db: Session = Depe
 # ---------- projects (brands) ----------
 
 class BrandIn(BaseModel):
-    name: str
-    industry: str
+    name: str = Field(min_length=1, pattern=r"\S")
+    industry: str = Field(min_length=1, pattern=r"\S")
     language: str = Field("fa", pattern="^(fa|en)$")
     description: str = ""
     website: str = ""

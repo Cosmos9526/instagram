@@ -10,7 +10,7 @@ COPY mobile/ ./
 RUN flutter build web --release --wasm --no-web-resources-cdn
 
 # 2) API + worker + scheduler.
-# Debian 12: Playwright 1.49 supports it (Debian 13 "trixie" is not supported yet).
+# Debian 12 (bookworm): supported by Playwright; Chromium 140 renders Persian ZWNJ correctly.
 FROM python:3.12-slim-bookworm
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app

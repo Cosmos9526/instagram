@@ -37,7 +37,7 @@ def latest_research(db: Session, brand_id: str) -> Research | None:
 
 def pick_template(db: Session, brand_id: str, post_type: str) -> str:
     """Least-recently-used template for this post type, so daily posts don't all look the same."""
-    options = templates_for(post_type) or [SINGLE_TEMPLATE[post_type]]
+    options = templates_for(post_type, auto_only=True) or [SINGLE_TEMPLATE[post_type]]
     used = db.scalars(
         select(Post).where(Post.brand_id == brand_id, Post.post_type == post_type, Post.mode == "single")
         .order_by(Post.created_at.desc()).limit(len(options) * 2)
@@ -134,8 +134,13 @@ def run_post(db: Session, post: Post) -> None:
         code = opts.get("template") if opts.get("template") in TEMPLATES else pick_template(db, brand.id, post.post_type)
         data = ask(
             prompts.single_post_prompt(brand, post.post_type, post.topic_hint, recent, code, research),
-            lambda: {"slots": offline.single_slots(brand, post.post_type, code, post.topic_hint, report)},
+            lambda: {"slots": offline.single_slots(brand, post.post_type, code, post.topic_hint, report),
+                     "image_prompt": offline.image_prompt(brand)},
         )
+        if data.get("source") == "offline" and not opts.get("template") and code != SINGLE_TEMPLATE[post.post_type]:
+            # without a model, stick to the core template of the type (the others need specific facts)
+            code = SINGLE_TEMPLATE[post.post_type]
+            data["slots"] = offline.single_slots(brand, post.post_type, code, post.topic_hint, report)
         data["template"] = code
         data["slots"] = _fit(code, data.get("slots", {}), data, sys)
 

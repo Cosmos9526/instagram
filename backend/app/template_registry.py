@@ -20,26 +20,26 @@ TEMPLATES: dict[str, dict] = {
                  "name_fa": "عدد بزرگ", "desc_fa": "یک آمار یا عدد چشم‌گیر با توضیح", "types": ["educational", "news"]},
     "news_flash": {"slots": {"kicker": 16, "headline": 70, "body": 160}, "image": True,
                    "name_fa": "خبر فوری", "desc_fa": "عکس بالا و خبر پایین", "types": ["news"]},
-    "event_announce": {"slots": {"kicker": 16, "headline": 60, "date_text": 30, "place": 40, "cta": 24}, "image": True,
-                       "name_fa": "اعلام رویداد", "desc_fa": "کارگاه، افتتاحیه یا جشنواره با تاریخ و مکان", "types": ["news", "promo"]},
-    "promo_hero": {"slots": {"headline": 55, "body": 110, "cta": 24}, "image": True,
+    "event_announce": {"slots": {"kicker": 16, "headline": 60, "date_text": 30, "place": 40, "cta": 32}, "image": True,
+                       "auto": False, "name_fa": "اعلام رویداد", "desc_fa": "کارگاه، افتتاحیه یا جشنواره با تاریخ و مکان", "types": ["news", "promo"]},
+    "promo_hero": {"slots": {"headline": 55, "body": 110, "cta": 32}, "image": True,
                    "name_fa": "معرفی محصول تمام‌صفحه", "desc_fa": "عکس بزرگ محصول با متن روی آن", "types": ["promo"]},
     "before_after": {"slots": {"headline": 50, "before": 90, "after": 90}, "image": False,
                      "name_fa": "قبل و بعد", "desc_fa": "مقایسه‌ی وضعیت قبل و بعد از محصول", "types": ["promo", "educational"]},
     "testimonial": {"slots": {"quote": 180, "author": 30, "role": 40}, "image": False,
-                    "name_fa": "نظر مشتری", "desc_fa": "نقل‌قول یک مشتری با امتیاز", "types": ["promo", "sales"]},
+                    "auto": False, "name_fa": "نظر مشتری", "desc_fa": "نقل‌قول یک مشتری با امتیاز", "types": ["promo", "sales"]},
     "quote_card": {"slots": {"quote": 150, "author": 30}, "image": False,
                    "name_fa": "جمله‌ی الهام‌بخش", "desc_fa": "یک جمله‌ی کوتاه و ماندگار", "types": ["promo", "educational"]},
     "question_poll": {"slots": {"question": 80, "option_a": 30, "option_b": 30}, "image": False,
                       "name_fa": "سؤال و نظرسنجی", "desc_fa": "یک سؤال دوگزینه‌ای برای کامنت گرفتن", "types": ["promo", "educational"]},
-    "sales_offer": {"slots": {"badge": 12, "headline": 55, "body": 110, "cta": 24}, "image": False,
+    "sales_offer": {"slots": {"badge": 12, "headline": 55, "body": 110, "cta": 32}, "image": False,
                     "name_fa": "پیشنهاد فروش", "desc_fa": "تخفیف یا پیشنهاد ویژه با دکمه‌ی خرید", "types": ["sales"]},
     # --- carousel family ---
     "car_cover": {"slots": {"headline": 60}, "image": True, "carousel": True,
                   "name_fa": "کاور کاروسل", "desc_fa": "اسلاید اول با قلاب", "types": []},
     "car_body": {"slots": {"headline": 50, "body": 230}, "image": False, "carousel": True,
                  "name_fa": "اسلاید داخلی کاروسل", "desc_fa": "یک ایده در هر اسلاید", "types": []},
-    "car_cta": {"slots": {"headline": 70, "cta": 26}, "image": False, "carousel": True,
+    "car_cta": {"slots": {"headline": 70, "cta": 32}, "image": False, "carousel": True,
                 "name_fa": "اسلاید پایانی کاروسل", "desc_fa": "دعوت به اقدام", "types": []},
 }
 
@@ -52,8 +52,9 @@ SINGLE_TEMPLATE = {
 }
 
 
-def templates_for(post_type: str) -> list[str]:
-    return [code for code, spec in TEMPLATES.items() if post_type in spec["types"]]
+def templates_for(post_type: str, auto_only: bool = False) -> list[str]:
+    """Templates for a post type. auto_only skips ones that need real facts (event date, customer quote)."""
+    return [c for c, s in TEMPLATES.items() if post_type in s["types"] and (s.get("auto", True) or not auto_only)]
 
 
 ZWNJ = "‌"
