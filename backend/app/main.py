@@ -158,7 +158,8 @@ class BrandIn(BaseModel):
 
 
 def brand_out(b: Brand) -> dict:
-    return {"id": b.id, **BrandIn.model_validate(b, from_attributes=True).model_dump()}
+    # Plain read, no validation: projects saved before a rule was added must still load.
+    return {"id": b.id, **{k: getattr(b, k) for k in BrandIn.model_fields}}
 
 
 @app.post("/brands")
