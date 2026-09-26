@@ -3,6 +3,7 @@
 #
 #   ./deploy/deploy.sh                 # defaults: HOST=infivita PORT=8200
 #   HOST=myserver PORT=5100 ./deploy/deploy.sh
+#   LLM_API_KEY=... ./deploy/deploy.sh # also sets/replaces the text-model key in the server .env
 #
 # Safety rules this script follows:
 # - touches only /opt/postyar on the server and its own compose project "postyar"
@@ -65,6 +66,12 @@ fi
 grep -q '^POSTYAR_BIND=' .env || echo 'POSTYAR_BIND=0.0.0.0' >> .env
 grep -q '^POSTYAR_PORT=' .env || echo "POSTYAR_PORT=${PORT}" >> .env
 REMOTE
+
+if [ -n "${LLM_API_KEY:-}" ]; then
+  # Sent over stdin so the key never appears in a command line or in the repo.
+  printf '%s\n' "$LLM_API_KEY" | ssh "$HOST" "cd '$DIR' && read -r K && \
+    { grep -v '^LLM_API_KEY=' .env; echo \"LLM_API_KEY=\$K\"; } > .env.tmp && mv .env.tmp .env && chmod 600 .env && echo 'LLM_API_KEY set'"
+fi
 
 echo "==> 4/5 Build and start (compose project: $NAME)"
 ssh "$HOST" "cd '$DIR' && docker compose -p '$NAME' up -d --build"
