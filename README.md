@@ -18,7 +18,7 @@
 ```bash
 cp .env.example .env   # fill ADMIN_TOKEN, LLM_API_KEY, ...
 docker compose up -d --build
-curl localhost:8710/health
+curl localhost:8710/health     # the app itself is at http://localhost:8710/
 ```
 Put `Caddyfile.snippet` into Caddy as a new site block.
 
@@ -44,4 +44,4 @@ python -m pytest -q          # uses LLM_PROVIDER=fake, SQLite, real Chromium ren
 ```
 
 ## Next
-Mobile app: `mobile/` (Flutter, Android/iOS, Persian RTL). Design docs: `docs/ARCHITECTURE.md`.
+App: `mobile/` — Flutter PWA for iPhone + Android (install from the browser), served by the backend at `/`. Design docs: `docs/ARCHITECTURE.md`.

@@ -170,3 +170,8 @@ def run_daily():
 
 def _404():
     raise HTTPException(404, "not found")
+
+
+# The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.
+if os.path.isdir(settings.web_dir):
+    app.mount("/", StaticFiles(directory=settings.web_dir, html=True), name="web")

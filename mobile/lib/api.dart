@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,7 +22,8 @@ class Api {
 
   static Future<Api> load() async => Api._(await SharedPreferences.getInstance());
 
-  String get baseUrl => _prefs.getString('base_url') ?? '';
+  /// As a PWA the app is served by the backend itself, so the default server is the page's origin.
+  String get baseUrl => _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
   String get token => _prefs.getString('token') ?? '';
   String? get brandId => _prefs.getString('brand_id');
   bool get isConfigured => baseUrl.isNotEmpty && token.isNotEmpty;

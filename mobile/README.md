@@ -1,15 +1,27 @@
-# Hashtpa mobile (Android + iOS only)
+# Hashtpa app — PWA (iPhone + Android) and native builds
 
-Persian RTL panel for the Hashtpa backend. Portrait phones only; no desktop/web targets.
+One Flutter codebase, mobile layout only (portrait, phone width even in a desktop browser), Persian RTL.
 
-Screens: server connect · daily posts (auto-refresh while building) · generate (type, single/carousel,
-video length 10–40s, topic) · post detail (slides, caption copy, share to Instagram, edit text, approve/
-reject/regenerate) · video prompt package (copy each clip prompt in order) · business profile + weekly plan.
+## PWA (main target)
+The backend Docker image builds the web app and serves it at the same address as the API
+(`https://your-domain/`). On the phone:
+- **iPhone (Safari):** Share button → **Add to Home Screen**
+- **Android (Chrome):** menu ⋮ → **Install app / Add to Home screen**
+
+Only the admin token is asked on first launch; the server address defaults to the page's own address.
+`--no-web-resources-cdn` bundles CanvasKit locally, so the app does not depend on Google's CDN.
 
 ```bash
-flutter pub get
-flutter run                 # on a connected phone/emulator
-flutter build apk --release # Android APK -> build/app/outputs/flutter-apk/app-release.apk
-flutter test && flutter analyze
+flutter build web --release --no-web-resources-cdn   # output: build/web
 ```
-First launch asks for the server URL (e.g. `https://hashtpa.example.com`) and `ADMIN_TOKEN`.
+
+## Native (optional)
+```bash
+flutter build apk --release    # Android
+flutter build ipa              # iOS (needs a Mac + Apple developer account)
+```
+
+## Dev
+```bash
+flutter pub get && flutter test && flutter analyze
+```

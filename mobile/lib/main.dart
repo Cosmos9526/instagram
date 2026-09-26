@@ -36,6 +36,13 @@ class HashtpaApp extends StatelessWidget {
         fontFamily: 'Vazirmatn',
         inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
       ),
+      // Phone layout everywhere: in a wide desktop browser the app stays phone-width and centred.
+      builder: (context, child) => ColoredBox(
+        color: const Color(0xFFE9EEEC),
+        child: Center(
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: child),
+        ),
+      ),
       home: api.isConfigured ? HomeScreen(api: api) : ServerScreen(api: api),
     );
   }

@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../api.dart';
@@ -75,14 +73,15 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _share(Post p) async {
     setState(() => _busy = true);
     try {
-      final dir = await getTemporaryDirectory();
-      final files = <XFile>[];
-      for (var i = 0; i < p.slides.length; i++) {
-        final res = await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i])));
-        final f = File('${dir.path}/hashtpa_${p.id}_$i.png');
-        await f.writeAsBytes(res.bodyBytes);
-        files.add(XFile(f.path, mimeType: 'image/png'));
-      }
+      // XFile.fromData works on Android, iOS and in the browser (Web Share API).
+      final files = <XFile>[
+        for (var i = 0; i < p.slides.length; i++)
+          XFile.fromData(
+            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i])))).bodyBytes,
+            name: 'hashtpa_${i + 1}.png',
+            mimeType: 'image/png',
+          ),
+      ];
       if (!mounted) return;
       await copyText(context, p.captionWithTags, label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن');
       await SharePlus.instance.share(ShareParams(files: files));

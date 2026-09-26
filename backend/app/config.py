@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://hashtpa:hashtpa@db:5432/hashtpa"
     media_dir: str = "/data/media"
+    web_dir: str = "/app/web"  # built Flutter PWA; served at / when present
     admin_token: str = "change-me"
 
     # Text model: any OpenAI-compatible chat endpoint (your gateway, or Gemini's
