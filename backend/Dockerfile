@@ -9,7 +9,8 @@ COPY mobile/ ./
 RUN flutter build web --release --no-web-resources-cdn
 
 # 2) API + worker + scheduler.
-FROM python:3.12-slim
+# Debian 12: Playwright 1.49 supports it (Debian 13 "trixie" is not supported yet).
+FROM python:3.12-slim-bookworm
 ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
 COPY backend/requirements.txt .
