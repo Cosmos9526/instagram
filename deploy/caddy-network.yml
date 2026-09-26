@@ -1,0 +1,11 @@
+# Optional overlay: also attach the API container to an existing reverse-proxy network so the proxy
+# can reach it as postyar-api-1:8000 without any public port or firewall change.
+# Enabled by deploy.sh when CADDY_NETWORK is set (it writes COMPOSE_FILE into the server .env).
+services:
+  api:
+    networks: [default, edge]
+
+networks:
+  edge:
+    external: true
+    name: ${CADDY_NETWORK:?set CADDY_NETWORK to the reverse proxy's docker network}

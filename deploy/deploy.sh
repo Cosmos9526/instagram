@@ -4,6 +4,10 @@
 #   ./deploy/deploy.sh                 # defaults: HOST=infivita PORT=8200
 #   HOST=myserver PORT=5100 ./deploy/deploy.sh
 #   LLM_API_KEY=... ./deploy/deploy.sh # also sets/replaces the text-model key in the server .env
+#   CADDY_NETWORK=<net> ./deploy/deploy.sh  # also attach the API to the reverse proxy's docker network
+#
+# The API listens on 127.0.0.1:PORT on the server (not public). Public access goes through the
+# existing reverse proxy (HTTPS on 443) once a site block for Postyar is added there.
 #
 # Safety rules this script follows:
 # - touches only /opt/postyar on the server and its own compose project "postyar"
@@ -63,7 +67,7 @@ if [ ! -f .env ]; then
   chmod 600 .env
   echo "created $DIR/.env  (add LLM_API_KEY there to enable generation)"
 fi
-grep -q '^POSTYAR_BIND=' .env || echo 'POSTYAR_BIND=0.0.0.0' >> .env
+grep -q '^POSTYAR_BIND=' .env || echo 'POSTYAR_BIND=127.0.0.1' >> .env
 grep -q '^POSTYAR_PORT=' .env || echo "POSTYAR_PORT=${PORT}" >> .env
 REMOTE
 
@@ -73,15 +77,28 @@ if [ -n "${LLM_API_KEY:-}" ]; then
     { grep -v '^LLM_API_KEY=' .env; echo \"LLM_API_KEY=\$K\"; } > .env.tmp && mv .env.tmp .env && chmod 600 .env && echo 'LLM_API_KEY set'"
 fi
 
+if [ -n "${CADDY_NETWORK:-}" ]; then
+  ssh "$HOST" bash -s -- "$DIR" "$CADDY_NETWORK" <<'REMOTE'
+set -euo pipefail
+DIR=$1; NET=$2
+docker network inspect "$NET" >/dev/null || { echo "ABORT: docker network $NET not found" >&2; exit 1; }
+cd "$DIR"
+grep -v -e '^CADDY_NETWORK=' -e '^COMPOSE_FILE=' .env > .env.tmp
+{ cat .env.tmp; echo "CADDY_NETWORK=$NET"; echo "COMPOSE_FILE=docker-compose.yml:deploy/caddy-network.yml"; } > .env
+rm .env.tmp; chmod 600 .env
+echo "API will join network $NET as postyar-api-1:8000"
+REMOTE
+fi
+
 echo "==> 4/5 Build and start (compose project: $NAME)"
 ssh "$HOST" "cd '$DIR' && docker compose -p '$NAME' up -d --build"
 
 echo "==> 5/5 Verify"
 sleep 8
 ssh "$HOST" "docker ps --filter 'label=com.docker.compose.project=$NAME' --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
-echo -n "app health: "; curl -s -m 15 "http://$IP:$PORT/health" || echo "(no answer yet)"; echo
-echo -n "app page:   "; curl -s -m 15 -o /dev/null -w "%{http_code}\n" "http://$IP:$PORT/"
+echo -n "app health (on server): "; ssh "$HOST" "curl -s -m 15 http://127.0.0.1:$PORT/health" || echo "(no answer yet)"; echo
+echo -n "app page   (on server): "; ssh "$HOST" "curl -s -m 15 -o /dev/null -w '%{http_code}' http://127.0.0.1:$PORT/"; echo
 echo -n "other projects (must be 200): "; curl -s -m 15 -o /dev/null -w "%{http_code}\n" "https://169-58-112-63.sslip.io/app/"
 echo
 echo "Folder: $DIR"
-echo "URL:    http://$IP:$PORT/"
+echo "Local:  http://127.0.0.1:$PORT/ on the server (public HTTPS needs a reverse-proxy site block)"
