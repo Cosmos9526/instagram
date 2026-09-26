@@ -43,14 +43,31 @@ def _fill(tpl, ctx):
     return tpl.format(**ctx)
 
 
+INDUSTRY_EN = {
+    "کافه و رستوران": "cozy cafe and restaurant", "فروشگاه آنلاین": "online shop products", "زیبایی و آرایشی": "beauty and cosmetics",
+    "مد و پوشاک": "fashion clothing", "آموزش و دوره": "education and learning", "سلامت و پزشکی": "health and wellness clinic",
+    "املاک": "modern real estate interior", "فناوری و نرم‌افزار": "technology and software", "هوش مصنوعی": "artificial intelligence technology",
+    "گردشگری": "travel and tourism", "ورزش و تناسب اندام": "fitness and sport", "خدمات مالی": "finance and business",
+    "هنر و صنایع دستی": "handmade art and crafts", "خودرو": "modern car", "خدمات حقوقی": "law office", "مواد غذایی": "fresh food",
+}
+
+
+def image_prompt(b: Brand) -> str:
+    subject = INDUSTRY_EN.get(b.industry, "modern small business")
+    return (f"{subject}, professional editorial photograph, soft natural light, shallow depth of field, "
+            "clean composition with empty space at the bottom, vibrant but natural colors")
+
+
 def context(b: Brand, topic_hint: str, research: dict) -> dict:
-    products = b.products or [{"name": b.name, "desc": b.description}]
+    name = (b.name or "").strip() or b.industry or "ما"
+    products = [p for p in (b.products or []) if (p.get("name") or "").strip()] or [
+        {"name": name, "desc": b.description}]
     p = random.choice(products)
     kws = (research or {}).get("keywords") or [b.industry]
     trends = (research or {}).get("trends") or []
     return {
-        "brand": b.name, "industry": b.industry, "product": p.get("name") or b.name,
-        "desc": p.get("desc") or b.description or b.industry, "cta": b.cta or "برای اطلاعات بیشتر دایرکت بدهید",
+        "brand": name, "industry": b.industry or name, "product": p["name"].strip(),
+        "desc": (p.get("desc") or b.description or f"کیفیت و خدمات {name} را از نزدیک تجربه کنید").strip(), "cta": b.cta or "برای اطلاعات بیشتر دایرکت بدهید",
         "keyword": kws[0], "topic": topic_hint or kws[0], "n": "۵",
         "trend": topic_hint or (trends[0]["title"] if trends else f"تازه‌های {b.industry}"),
     }
@@ -93,8 +110,8 @@ def carousel(b: Brand, n_body: int, topic_hint: str, research: dict) -> dict:
     return {
         "cover": {"headline": f"{ctx['topic']}: هر آنچه باید بدانید"},
         "body": body,
-        "cta": {"headline": f"برای {ctx['product']} با {b.name} در ارتباط باشید", "cta": ctx["cta"][:26]},
-        "image_prompt": "",
+        "cta": {"headline": f"برای {ctx['product']} با {ctx['brand']} در ارتباط باشید", "cta": ctx["cta"]},
+        "image_prompt": image_prompt(b),
     }
 
 

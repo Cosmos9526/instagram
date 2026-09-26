@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     llm_fallback_url: str = "https://text.pollinations.ai/openai"
     llm_fallback_model: str = "openai"
 
-    # Images: cloudflare (Workers AI, Flux schnell) | none (brand-colour gradient)
-    image_provider: str = "none"
+    # Images: pollinations (free, no key) | cloudflare (Workers AI, Flux schnell) | none (brand-colour background)
+    image_provider: str = "pollinations"
     cf_account_id: str = ""
     cf_api_token: str = ""
     cf_image_model: str = "@cf/black-forest-labs/flux-1-schnell"

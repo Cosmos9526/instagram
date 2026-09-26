@@ -68,3 +68,20 @@ def test_sensitive_news_is_not_a_trend():
         {"title": "رقبا ارزان کردند", "snippet": "", "url": "2"},
         {"title": "ابزار جدید هوش مصنوعی", "snippet": "", "url": "3"}]}
     assert [t["title"] for t in research.heuristic_report(b, "", data)["trends"]] == ["ابزار جدید هوش مصنوعی"]
+
+
+def test_offline_copy_never_starts_with_empty_names_and_skips_fact_templates():
+    from app import offline
+    from app.models import Brand
+    from app.pipeline import pick_template
+
+    b = Brand(name="فروشگاه هوش مصنوعی", industry="هوش مصنوعی", products=[{"name": "", "desc": ""}])
+    slots = offline.single_slots(b, "promo", "promo_hero", "", {})
+    assert slots["headline"].startswith("فروشگاه هوش مصنوعی")
+    assert "artificial intelligence" in offline.image_prompt(b)
+
+    class _DB:  # no previous posts
+        def scalars(self, *_a, **_k):
+            return []
+
+    assert pick_template(_DB(), "x", "promo") not in ("event_announce", "testimonial")
