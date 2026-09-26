@@ -1,3 +1,4 @@
+import mimetypes
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -21,6 +22,10 @@ from .video_styles import VIDEO_STYLES
 from .worker import enqueue, enqueue_research
 
 PREVIEW_DIR = Path(__file__).parent / "previews"
+
+# Slim images may lack /etc/mime.types; the WASM build needs these served with the right types.
+mimetypes.add_type("text/javascript", ".mjs")
+mimetypes.add_type("application/wasm", ".wasm")
 
 
 @asynccontextmanager

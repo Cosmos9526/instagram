@@ -155,7 +155,9 @@ class _PostScreenState extends State<PostScreen> {
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
+                cacheWidth: 1080,
                 fit: BoxFit.cover,
+                gaplessPlayback: true,
                 loadingBuilder: (_, child, progress) =>
                     progress == null ? child : const Center(child: CircularProgressIndicator()),
               ),
@@ -212,8 +214,9 @@ class _PostScreenState extends State<PostScreen> {
               onPressed: _busy
                   ? null
                   : () async {
-                      final content = await Navigator.of(context)
-                          .push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => EditScreen(post: p)));
+                      final content = await Navigator.of(
+                        context,
+                      ).push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => EditScreen(post: p)));
                       if (content != null) {
                         await _act(() => widget.api.editPost(p.id, content), 'در حال رندر دوباره…');
                       }
@@ -252,7 +255,6 @@ class _PostScreenState extends State<PostScreen> {
     ),
   );
 }
-
 
 class _OfflineNote extends StatelessWidget {
   @override

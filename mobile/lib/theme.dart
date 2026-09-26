@@ -1,5 +1,4 @@
-import 'dart:ui';
-
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 /// Postyar design tokens: turquoise (فیروزه‌ای) primary, saffron accent, ink text, soft teal-tinted neutrals.
@@ -41,6 +40,16 @@ ThemeData buildTheme(Brightness brightness) {
 
   return base.copyWith(
     scaffoldBackgroundColor: scheme.surface,
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: SoftPageTransitionsBuilder(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(), // native swipe-back on iPhone
+        TargetPlatform.macOS: SoftPageTransitionsBuilder(),
+        TargetPlatform.windows: SoftPageTransitionsBuilder(),
+        TargetPlatform.linux: SoftPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: SoftPageTransitionsBuilder(),
+      },
+    ),
     textTheme: t.copyWith(
       headlineMedium: t.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -.5),
       headlineSmall: t.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
@@ -128,7 +137,7 @@ ThemeData buildTheme(Brightness brightness) {
   );
 }
 
-/// Floating, frosted bottom navigation used inside a project.
+/// Floating bottom navigation used inside a project.
 class FloatingNav extends StatelessWidget {
   const FloatingNav({super.key, required this.items, required this.index, required this.onTap});
   final List<(IconData, IconData, String)> items;
@@ -141,31 +150,27 @@ class FloatingNav extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            height: 68,
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: (dark ? const Color(0xFF16252A) : Colors.white).withValues(alpha: .86),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: scheme.outlineVariant),
-            ),
-            child: Row(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  Expanded(
-                    child: _NavItem(
-                      icon: i == index ? items[i].$2 : items[i].$1,
-                      label: items[i].$3,
-                      selected: i == index,
-                      onTap: () => onTap(i),
-                    ),
+      child: RepaintBoundary(
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: dark ? const Color(0xFF16252A) : Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    icon: i == index ? items[i].$2 : items[i].$1,
+                    label: items[i].$3,
+                    selected: i == index,
+                    onTap: () => onTap(i),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
@@ -244,6 +249,75 @@ class HeroCard extends StatelessWidget {
           ),
         ),
         ?trailing,
+      ],
+    ),
+  );
+}
+
+/// Short fade + small slide (direction-aware for RTL). Cheap to render: no scaling, no blur, no shadows.
+class SoftPageTransitionsBuilder extends PageTransitionsBuilder {
+  const SoftPageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 220);
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween(begin: Offset(rtl ? -0.06 : 0.06, 0), end: Offset.zero).animate(curved),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// Keeps every tab alive (scroll position, loaded data) but only paints and animates the visible one,
+/// with a quick cross-fade when switching.
+class FadeIndexedStack extends StatefulWidget {
+  const FadeIndexedStack({super.key, required this.index, required this.children});
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<FadeIndexedStack> createState() => _FadeIndexedStackState();
+}
+
+class _FadeIndexedStackState extends State<FadeIndexedStack> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 180), value: 1);
+
+  @override
+  void didUpdateWidget(FadeIndexedStack old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) _c.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => FadeTransition(
+    opacity: CurvedAnimation(parent: _c, curve: Curves.easeOut),
+    child: IndexedStack(
+      index: widget.index,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          TickerMode(
+            enabled: i == widget.index,
+            child: RepaintBoundary(child: widget.children[i]),
+          ),
       ],
     ),
   );
