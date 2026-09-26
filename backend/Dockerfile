@@ -1,7 +1,7 @@
 # Build context: repository root (see docker-compose.yml).
 
-# 1) Flutter PWA. Pinned to the stable channel image; built once per deploy.
-FROM ghcr.io/cirruslabs/flutter:stable AS web
+# 1) Flutter PWA. Pinned Flutter version (Dart 3.12) so builds are reproducible.
+FROM ghcr.io/cirruslabs/flutter:3.44.0 AS web
 WORKDIR /src
 COPY mobile/pubspec.yaml mobile/pubspec.lock ./
 RUN flutter pub get
