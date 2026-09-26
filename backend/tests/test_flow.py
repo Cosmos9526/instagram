@@ -173,3 +173,17 @@ def test_daily_batch_uses_weekly_plan_and_refreshes_research(client):
     posts = client.get(f"/brands/{bid}/posts", params={"date": "2026-09-26"}, headers=h).json()
     assert sorted((p["post_type"], p["mode"]) for p in posts) == [("educational", "carousel"), ("news", "single")]
     assert len(client.get(f"/brands/{bid}/research", headers=h).json()) == 1
+
+
+def test_legacy_project_without_name_still_lists(client):
+    from app.db import SessionLocal
+    from app.models import Brand
+
+    h = _user(client)
+    uid = client.get("/auth/me", headers=h).json()["id"]
+    with SessionLocal() as db:
+        db.add(Brand(owner_id=uid, name="", industry="کافه و رستوران"))
+        db.commit()
+    r = client.get("/brands", headers=h)
+    assert r.status_code == 200 and r.json()[0]["name"] == ""
+    assert client.post("/brands", json=BRAND | {"name": "  "}, headers=h).status_code == 422
