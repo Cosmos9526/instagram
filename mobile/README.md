@@ -30,6 +30,7 @@ flutter pub get && flutter test && flutter analyze
 ```bash
 (cd ../backend && python ../tools/make_demo_slides.py ../mobile/build/demo_slides)
 flutter build web --release --no-web-resources-cdn --dart-define=DEMO=true
-cp -r build/demo_slides build/web/demo
+cp -r build/demo_slides build/web/demo && cp -r ../backend/app/previews build/web/previews
+# plus demo/catalog.json: the /catalog response with preview paths made relative
 ```
 Sample data lives in `lib/demo.dart`; nothing is sent anywhere.

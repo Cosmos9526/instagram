@@ -53,7 +53,9 @@ class PostsScreenState extends State<PostsScreen> {
         _error = null;
       });
       _poll?.cancel();
-      if (posts.any((p) => p.isBusy)) _poll = Timer(const Duration(seconds: 4), refresh);
+      if (posts.any((p) => p.isBusy)) {
+        _poll = Timer(const Duration(seconds: 4), refresh);
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -63,7 +65,11 @@ class PostsScreenState extends State<PostsScreen> {
   Widget build(BuildContext context) {
     final posts = _posts;
     if (posts == null) {
-      return Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator());
+      return Center(
+        child: _error != null
+            ? Text(_error!)
+            : const CircularProgressIndicator(),
+      );
     }
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final todays = posts.where((p) => p.forDate == today).toList();
@@ -79,12 +85,16 @@ class PostsScreenState extends State<PostsScreen> {
           if (todays.isEmpty)
             const Padding(
               padding: EdgeInsets.all(12),
-              child: Text('هنوز پستی برای امروز ساخته نشده. از تب «ساخت» یکی بساز، '
-                  'یا صبر کن تا برنامه‌ی روزانه اجرا شود.'),
+              child: Text(
+                'هنوز پستی برای امروز ساخته نشده. از تب «ساخت» یکی بساز، '
+                'یا صبر کن تا برنامه‌ی روزانه اجرا شود.',
+              ),
             ),
-          for (final p in todays) _PostTile(post: p, api: widget.api, onChanged: refresh),
+          for (final p in todays)
+            _PostTile(post: p, api: widget.api, onChanged: refresh),
           if (older.isNotEmpty) const SectionTitle('قبلی‌ها'),
-          for (final p in older) _PostTile(post: p, api: widget.api, onChanged: refresh),
+          for (final p in older)
+            _PostTile(post: p, api: widget.api, onChanged: refresh),
         ],
       ),
     );
@@ -92,7 +102,11 @@ class PostsScreenState extends State<PostsScreen> {
 }
 
 class _PostTile extends StatelessWidget {
-  const _PostTile({required this.post, required this.api, required this.onChanged});
+  const _PostTile({
+    required this.post,
+    required this.api,
+    required this.onChanged,
+  });
   final Post post;
   final Api api;
   final VoidCallback onChanged;
@@ -102,8 +116,13 @@ class _PostTile extends StatelessWidget {
     final thumb = post.slides.isNotEmpty
         ? ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(api.mediaUrl(post.slides.first), width: 56, height: 70, fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox(width: 56, height: 70)),
+            child: Image.network(
+              api.mediaUrl(post.slides.first),
+              width: 56,
+              height: 70,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox(width: 56, height: 70),
+            ),
           )
         : Container(
             width: 56,
@@ -112,11 +131,16 @@ class _PostTile extends StatelessWidget {
               color: Theme.of(context).colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(post.isVideo ? Icons.movie_creation_outlined : Icons.image_outlined),
+            child: Icon(
+              post.isVideo
+                  ? Icons.movie_creation_outlined
+                  : Icons.image_outlined,
+            ),
           );
     final kind = [
       postTypes[post.postType] ?? post.postType,
-      if (post.mode == 'carousel') 'کاروسل ${faDigits(post.slides.length)} اسلایدی',
+      if (post.mode == 'carousel')
+        'کاروسل ${faDigits(post.slides.length)} اسلایدی',
     ].join('، ');
 
     return Card(
@@ -127,25 +151,36 @@ class _PostTile extends StatelessWidget {
             ? null
             : () async {
                 await Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => PostScreen(api: api, postId: post.id)),
+                  MaterialPageRoute(
+                    builder: (_) => PostScreen(api: api, postId: post.id),
+                  ),
                 );
                 onChanged();
               },
         child: Padding(
           padding: const EdgeInsets.all(10),
-          child: Row(children: [
-            thumb,
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(kind, style: Theme.of(context).textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Text(post.isBusy ? '...' : post.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-              ]),
-            ),
-            const SizedBox(width: 8),
-            StatusChip(post.status),
-          ]),
+          child: Row(
+            children: [
+              thumb,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(kind, style: Theme.of(context).textTheme.labelMedium),
+                    const SizedBox(height: 4),
+                    Text(
+                      post.isBusy ? '...' : post.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              StatusChip(post.status),
+            ],
+          ),
         ),
       ),
     );

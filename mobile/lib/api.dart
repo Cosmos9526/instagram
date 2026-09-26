@@ -8,61 +8,128 @@ import 'demo.dart';
 import 'models.dart';
 
 class ApiException implements Exception {
-  ApiException(this.message);
+  ApiException(this.message, [this.status = 0]);
   final String message;
+  final int status;
   @override
   String toString() => message;
 }
 
-/// Thin client for the Hashtpa backend. Server URL, token and the active brand
-/// are stored on the device.
+/// Client for the Hashtpa backend. Server address and login token are stored on the device.
 class Api {
   Api._(this._prefs);
   final SharedPreferences _prefs;
   http.Client client = http.Client();
 
-  static Future<Api> load() async => Api._(await SharedPreferences.getInstance());
+  static Future<Api> load() async =>
+      Api._(await SharedPreferences.getInstance());
 
   /// As a PWA the app is served by the backend itself, so the default server is the page's origin.
-  String get baseUrl => _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
+  String get baseUrl =>
+      _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
   String get token => _prefs.getString('token') ?? '';
-  String? get brandId => _prefs.getString('brand_id');
-  bool get isConfigured => token.isNotEmpty && (baseUrl.isNotEmpty || isDemo);
+  bool get hasServer => baseUrl.isNotEmpty || isDemo;
+  bool get isLoggedIn => token.isNotEmpty;
 
-  Future<void> saveServer(String url, String token) async {
-    await _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));
-    await _prefs.setString('token', token.trim());
-  }
+  Future<void> saveServer(String url) =>
+      _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));
 
-  Future<void> setBrandId(String id) => _prefs.setString('brand_id', id);
+  Future<void> logout() => _prefs.remove('token');
 
   String mediaUrl(String path) => '$baseUrl$path';
 
   Map<String, String> get _headers => {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=utf-8',
-      };
+    if (token.isNotEmpty) 'Authorization': 'Bearer $token',
+    'Content-Type': 'application/json; charset=utf-8',
+  };
 
-  Future<dynamic> _send(String method, String path, {Object? body, Map<String, String>? query}) async {
+  static const _messages = {
+    401: 'دوباره وارد شوید',
+    403: 'ثبت‌نام بسته است',
+    404: 'پیدا نشد',
+    409: 'این کار الان ممکن نیست',
+  };
+
+  Future<dynamic> _send(
+    String method,
+    String path, {
+    Object? body,
+    Map<String, String>? query,
+  }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
     final req = http.Request(method, uri)..headers.addAll(_headers);
     if (body != null) req.body = jsonEncode(body);
     final http.Response res;
     try {
-      res = await http.Response.fromStream(await client.send(req).timeout(const Duration(seconds: 30)));
-    } catch (e) {
+      res = await http.Response.fromStream(
+        await client.send(req).timeout(const Duration(seconds: 30)),
+      );
+    } catch (_) {
       throw ApiException('ارتباط با سرور برقرار نشد');
     }
     final text = utf8.decode(res.bodyBytes);
-    if (res.statusCode == 401) throw ApiException('توکن نامعتبر است');
-    if (res.statusCode >= 400) throw ApiException('خطای سرور (${res.statusCode})');
+    if (res.statusCode >= 400) {
+      throw ApiException(
+        _messages[res.statusCode] ?? 'خطای سرور (${res.statusCode})',
+        res.statusCode,
+      );
+    }
     return text.isEmpty ? null : jsonDecode(text);
   }
 
-  Future<void> health() async => _send('GET', '/health');
+  // ---- account ----
 
-  Future<List<Brand>> brands() async =>
-      [for (final b in await _send('GET', '/brands') as List) Brand.fromJson(b)];
+  Future<AppUser> _auth(String path, Map<String, String> body) async {
+    final res = await _send('POST', path, body: body);
+    await _prefs.setString('token', res['token'] as String);
+    return AppUser.fromJson(res['user']);
+  }
+
+  Future<AppUser> login(String email, String password) async {
+    try {
+      return await _auth('/auth/login', {'email': email, 'password': password});
+    } on ApiException catch (e) {
+      throw e.status == 401
+          ? ApiException('ایمیل یا رمز عبور اشتباه است', 401)
+          : e;
+    }
+  }
+
+  Future<AppUser> register(String name, String email, String password) async {
+    try {
+      return await _auth('/auth/register', {
+        'name': name,
+        'email': email,
+        'password': password,
+      });
+    } on ApiException catch (e) {
+      if (e.status == 409) {
+        throw ApiException('این ایمیل قبلاً ثبت شده؛ وارد شوید', 409);
+      }
+      if (e.status == 422) {
+        throw ApiException('ایمیل معتبر و رمز حداقل ۸ حرفی لازم است', 422);
+      }
+      rethrow;
+    }
+  }
+
+  Future<AppUser> me() async =>
+      AppUser.fromJson(await _send('GET', '/auth/me'));
+
+  Future<AppUser> updateMe({String? name, String? password}) async =>
+      AppUser.fromJson(
+        await _send(
+          'PUT',
+          '/auth/me',
+          body: {'name': ?name, 'password': ?password},
+        ),
+      );
+
+  // ---- projects ----
+
+  Future<List<Brand>> brands() async => [
+    for (final b in await _send('GET', '/brands') as List) Brand.fromJson(b),
+  ];
 
   Future<String> saveBrand(Brand b) async {
     final res = b.id == null
@@ -71,19 +138,49 @@ class Api {
     return res['id'] as String;
   }
 
-  Future<List<Post>> posts(String brandId, {String? date}) async => [
-        for (final p in await _send('GET', '/brands/$brandId/posts',
-            query: date == null ? null : {'date': date}) as List)
-          Post.fromJson(p)
-      ];
+  Future<void> deleteBrand(String id) async => _send('DELETE', '/brands/$id');
 
-  Future<Post> post(String id) async => Post.fromJson(await _send('GET', '/posts/$id'));
+  // ---- catalog ----
+
+  Catalog? _catalog;
+  Future<Catalog> catalog() async =>
+      _catalog ??= Catalog.fromJson(await _send('GET', '/catalog'));
+
+  // ---- research ----
+
+  Future<List<Research>> research(String brandId) async => [
+    for (final r in await _send('GET', '/brands/$brandId/research') as List)
+      Research.fromJson(r),
+  ];
+
+  Future<Research> startResearch(String brandId, String focus) async =>
+      Research.fromJson(
+        await _send(
+          'POST',
+          '/brands/$brandId/research',
+          body: {'focus': focus},
+        ),
+      );
+
+  // ---- posts ----
+
+  Future<List<Post>> posts(String brandId) async => [
+    for (final p in await _send('GET', '/brands/$brandId/posts') as List)
+      Post.fromJson(p),
+  ];
+
+  Future<Post> post(String id) async =>
+      Post.fromJson(await _send('GET', '/posts/$id'));
 
   Future<Post> generate(String brandId, GenerateRequest r) async =>
-      Post.fromJson(await _send('POST', '/brands/$brandId/generate', body: r.toJson()));
+      Post.fromJson(
+        await _send('POST', '/brands/$brandId/generate', body: r.toJson()),
+      );
 
   Future<Post> editPost(String id, Map<String, dynamic> content) async =>
-      Post.fromJson(await _send('PUT', '/posts/$id', body: {'content': content}));
+      Post.fromJson(
+        await _send('PUT', '/posts/$id', body: {'content': content}),
+      );
 
   /// action: approve | reject | regenerate
   Future<Post> review(String id, String action) async =>

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../api.dart';
+import '../main.dart';
 import '../widgets/common.dart';
-import 'home_screen.dart';
 
-/// First run: server address + admin token.
+/// Native apps only: the address of the Hashtpa server. (The PWA uses its own address.)
 class ServerScreen extends StatefulWidget {
   const ServerScreen({super.key, required this.api});
   final Api api;
@@ -14,18 +14,19 @@ class ServerScreen extends StatefulWidget {
 }
 
 class _ServerScreenState extends State<ServerScreen> {
-  late final _url = TextEditingController(text: widget.api.baseUrl.isEmpty ? 'https://' : widget.api.baseUrl);
-  late final _token = TextEditingController(text: widget.api.token);
+  late final _url = TextEditingController(
+    text: widget.api.baseUrl.isEmpty ? 'https://' : widget.api.baseUrl,
+  );
   bool _busy = false;
 
-  Future<void> _connect() async {
+  Future<void> _save() async {
     setState(() => _busy = true);
+    await widget.api.saveServer(_url.text);
     try {
-      await widget.api.saveServer(_url.text, _token.text);
-      await widget.api.brands(); // verifies both URL and token
+      await widget.api.catalog();
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => HomeScreen(api: widget.api)),
+        MaterialPageRoute(builder: (_) => startScreen(widget.api)),
         (_) => false,
       );
     } on ApiException catch (e) {
@@ -37,28 +38,27 @@ class _ServerScreenState extends State<ServerScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('اتصال به سرور')),
-        body: ListView(padding: const EdgeInsets.all(16), children: [
-          const Text('آدرس سرور هشتپا و توکن مدیریت (ADMIN_TOKEN) را وارد کنید.'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _url,
-            textDirection: TextDirection.ltr,
-            keyboardType: TextInputType.url,
-            decoration: const InputDecoration(labelText: 'آدرس سرور', hintText: 'https://hashtpa.example.com'),
+    appBar: AppBar(title: const Text('آدرس سرور')),
+    body: ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text('آدرس سرور هشتپا را وارد کنید.'),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _url,
+          textDirection: TextDirection.ltr,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            labelText: 'آدرس سرور',
+            hintText: 'https://hashtpa.example.com',
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _token,
-            textDirection: TextDirection.ltr,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'توکن'),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: _busy ? null : _connect,
-            child: _busy ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator()) : const Text('اتصال'),
-          ),
-        ]),
-      );
+        ),
+        const SizedBox(height: 24),
+        FilledButton(
+          onPressed: _busy ? null : _save,
+          child: const Text('ادامه'),
+        ),
+      ],
+    ),
+  );
 }

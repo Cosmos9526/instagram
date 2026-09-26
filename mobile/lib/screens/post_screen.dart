@@ -77,13 +77,18 @@ class _PostScreenState extends State<PostScreen> {
       final files = <XFile>[
         for (var i = 0; i < p.slides.length; i++)
           XFile.fromData(
-            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i])))).bodyBytes,
+            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i]))))
+                .bodyBytes,
             name: 'hashtpa_${i + 1}.png',
             mimeType: 'image/png',
           ),
       ];
       if (!mounted) return;
-      await copyText(context, p.captionWithTags, label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن');
+      await copyText(
+        context,
+        p.captionWithTags,
+        label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن',
+      );
       await SharePlus.instance.share(ShareParams(files: files));
     } catch (_) {
       if (mounted) showSnack(context, 'اشتراک‌گذاری ناموفق بود');
@@ -98,138 +103,187 @@ class _PostScreenState extends State<PostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(p == null ? '' : postTypes[p.postType] ?? ''),
-        actions: [if (p != null) Padding(padding: const EdgeInsets.all(12), child: StatusChip(p.status))],
+        actions: [
+          if (p != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: StatusChip(p.status),
+            ),
+        ],
       ),
       body: p == null
           ? const Center(child: CircularProgressIndicator())
           : p.isBusy
-              ? const Center(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('در حال ساخت…'),
-                  ]),
-                )
-              : p.status == 'failed'
-                  ? _failed(p)
-                  : p.isVideo
-                      ? VideoPromptView(post: p)
-                      : _slides(p),
+          ? const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('در حال ساخت…'),
+                ],
+              ),
+            )
+          : p.status == 'failed'
+          ? _failed(p)
+          : p.isVideo
+          ? VideoPromptView(post: p)
+          : _slides(p),
       bottomNavigationBar: p == null || p.isBusy ? null : _actions(p),
     );
   }
 
   Widget _failed(Post p) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.error_outline, size: 48),
-            const SizedBox(height: 12),
-            const Text('ساخت این پست ناموفق بود.'),
-            const SizedBox(height: 8),
-            Text(p.error, maxLines: 6, overflow: TextOverflow.ellipsis, textDirection: TextDirection.ltr,
-                style: Theme.of(context).textTheme.bodySmall),
-          ]),
-        ),
-      );
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 48),
+          const SizedBox(height: 12),
+          const Text('ساخت این پست ناموفق بود.'),
+          const SizedBox(height: 8),
+          Text(
+            p.error,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
+            textDirection: TextDirection.ltr,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _slides(Post p) {
     final width = MediaQuery.sizeOf(context).width - 32;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      SizedBox(
-        height: width * 1350 / 1080,
-        child: PageView.builder(
-          itemCount: p.slides.length,
-          onPageChanged: (i) => setState(() => _page = i),
-          itemBuilder: (_, i) => ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
-              fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) =>
-                  progress == null ? child : const Center(child: CircularProgressIndicator()),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        SizedBox(
+          height: width * 1350 / 1080,
+          child: PageView.builder(
+            itemCount: p.slides.length,
+            onPageChanged: (i) => setState(() => _page = i),
+            itemBuilder: (_, i) => ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
+                fit: BoxFit.cover,
+                loadingBuilder: (_, child, progress) => progress == null
+                    ? child
+                    : const Center(child: CircularProgressIndicator()),
+              ),
             ),
           ),
         ),
-      ),
-      if (p.slides.length > 1)
-        Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            for (var i = 0; i < p.slides.length; i++)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: i == _page ? 18 : 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: i == _page ? 1 : .3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-          ]),
-        ),
-      SectionTitle('کپشن',
+        if (p.slides.length > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < p.slides.length; i++)
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: i == _page ? 18 : 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary
+                          .withValues(alpha: i == _page ? 1 : .3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        SectionTitle(
+          'کپشن',
           trailing: IconButton(
             tooltip: 'کپی کپشن و هشتگ‌ها',
             icon: const Icon(Icons.copy),
             onPressed: () => copyText(context, p.captionWithTags),
-          )),
-      SelectableText(p.caption),
-      const SizedBox(height: 12),
-      Wrap(spacing: 6, runSpacing: 6, children: [
-        for (final h in p.hashtags) Chip(label: Text('#$h'), visualDensity: VisualDensity.compact),
-      ]),
-    ]);
+          ),
+        ),
+        SelectableText(p.caption),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final h in p.hashtags)
+              Chip(label: Text('#$h'), visualDensity: VisualDensity.compact),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _actions(Post p) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-          child: Row(children: [
-            if (!p.isVideo && p.status != 'failed') ...[
-              IconButton.filledTonal(
-                tooltip: 'ویرایش متن',
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final content = await Navigator.of(context).push<Map<String, dynamic>>(
-                          MaterialPageRoute(builder: (_) => EditScreen(post: p)),
-                        );
-                        if (content != null) {
-                          await _act(() => widget.api.editPost(p.id, content), 'در حال رندر دوباره…');
-                        }
-                      },
-                icon: const Icon(Icons.edit_outlined),
-              ),
-              IconButton.filledTonal(
-                tooltip: 'اشتراک در اینستاگرام',
-                onPressed: _busy ? null : () => _share(p),
-                icon: const Icon(Icons.share_outlined),
-              ),
-            ],
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        children: [
+          if (!p.isVideo && p.status != 'failed') ...[
             IconButton.filledTonal(
-              tooltip: 'ساخت دوباره',
-              onPressed: _busy ? null : () => _act(() => widget.api.review(p.id, 'regenerate'), 'دوباره ساخته می‌شود'),
-              icon: const Icon(Icons.refresh),
+              tooltip: 'ویرایش متن',
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      final content = await Navigator.of(context)
+                          .push<Map<String, dynamic>>(
+                            MaterialPageRoute(
+                              builder: (_) => EditScreen(post: p),
+                            ),
+                          );
+                      if (content != null) {
+                        await _act(
+                          () => widget.api.editPost(p.id, content),
+                          'در حال رندر دوباره…',
+                        );
+                      }
+                    },
+              icon: const Icon(Icons.edit_outlined),
             ),
-            const Spacer(),
-            if (p.status != 'failed') ...[
-              TextButton(
-                onPressed: _busy || p.status == 'rejected'
-                    ? null
-                    : () => _act(() => widget.api.review(p.id, 'reject'), 'رد شد'),
-                child: const Text('رد'),
-              ),
-              const SizedBox(width: 4),
-              FilledButton(
-                onPressed: _busy || p.status == 'approved'
-                    ? null
-                    : () => _act(() => widget.api.review(p.id, 'approve'), 'تأیید شد'),
-                child: const Text('تأیید'),
-              ),
-            ],
-          ]),
-        ),
-      );
+            IconButton.filledTonal(
+              tooltip: 'اشتراک در اینستاگرام',
+              onPressed: _busy ? null : () => _share(p),
+              icon: const Icon(Icons.share_outlined),
+            ),
+          ],
+          IconButton.filledTonal(
+            tooltip: 'ساخت دوباره',
+            onPressed: _busy
+                ? null
+                : () => _act(
+                    () => widget.api.review(p.id, 'regenerate'),
+                    'دوباره ساخته می‌شود',
+                  ),
+            icon: const Icon(Icons.refresh),
+          ),
+          const Spacer(),
+          if (p.status != 'failed') ...[
+            TextButton(
+              onPressed: _busy || p.status == 'rejected'
+                  ? null
+                  : () =>
+                        _act(() => widget.api.review(p.id, 'reject'), 'رد شد'),
+              child: const Text('رد'),
+            ),
+            const SizedBox(width: 4),
+            FilledButton(
+              onPressed: _busy || p.status == 'approved'
+                  ? null
+                  : () => _act(
+                      () => widget.api.review(p.id, 'approve'),
+                      'تأیید شد',
+                    ),
+              child: const Text('تأیید'),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
 }

@@ -7,16 +7,18 @@ import 'package:hashtpa/widgets/common.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('brand json round-trip keeps weekly plan and products', () {
+  test('brand json round-trip keeps weekly plan, products and links', () {
     final b = Brand(
       name: 'کافه',
       industry: 'قهوه',
+      website: 'https://x.ir',
       products: [Product(name: 'اسپرسو', desc: 'تازه')],
       weeklyPlan: {'5': ['educational:carousel']},
     );
     final back = Brand.fromJson({'id': 'x', ...b.toJson()});
     expect(back.weeklyPlan['5'], ['educational:carousel']);
     expect(back.products.single.name, 'اسپرسو');
+    expect(back.website, 'https://x.ir');
   });
 
   test('post caption joins hashtags', () {
@@ -29,19 +31,35 @@ void main() {
     expect(p.captionWithTags, 'سلام\n\n#کافه_نمونه');
   });
 
-  test('video request forces video mode', () {
-    expect(GenerateRequest(postType: 'video_prompt', mode: 'carousel').toJson()['mode'], 'video');
+  test('generate request only sends the options that apply', () {
+    final video = GenerateRequest(postType: 'video_prompt', mode: 'carousel', template: 'faq', videoStyle: 'pov').toJson();
+    expect(video['mode'], 'video');
+    expect(video.containsKey('template'), isFalse);
+    expect(video['video_style'], 'pov');
+    final single = GenerateRequest(postType: 'educational', template: 'faq', videoStyle: 'pov').toJson();
+    expect(single['template'], 'faq');
+    expect(single.containsKey('video_style'), isFalse);
+  });
+
+  test('research report accessors', () {
+    final r = Research.fromJson({
+      'id': 'r', 'status': 'ready',
+      'report': {'keywords': ['a'], 'trends': [{'title': 't'}], 'ran': {'web': 'web'}},
+    });
+    expect(r.keywords, ['a']);
+    expect(r.trends.single['title'], 't');
+    expect(r.isBusy, isFalse);
   });
 
   test('faDigits', () => expect(faDigits('2/5'), '۲/۵'));
 
-  testWidgets('unconfigured app opens the server screen in RTL', (tester) async {
-    SharedPreferences.setMockInitialValues({});
+  testWidgets('logged-out app opens the login screen in RTL', (tester) async {
+    SharedPreferences.setMockInitialValues({'base_url': 'https://s'});
     final api = await Api.load();
     await tester.pumpWidget(HashtpaApp(api: api));
     await tester.pumpAndSettle();
-    expect(find.text('اتصال به سرور'), findsOneWidget);
-    final dir = Directionality.of(tester.element(find.text('اتصال به سرور')));
-    expect(dir, TextDirection.rtl);
+    expect(find.text('ورود'), findsWidgets);
+    expect(find.text('ثبت‌نام'), findsOneWidget);
+    expect(Directionality.of(tester.element(find.text('هشتپا'))), TextDirection.rtl);
   });
 }

@@ -12,7 +12,8 @@ class EditScreen extends StatefulWidget {
 }
 
 class _Field {
-  _Field(this.label, String value, this.write, {this.lines = 1}) : controller = TextEditingController(text: value);
+  _Field(this.label, String value, this.write, {this.lines = 1})
+    : controller = TextEditingController(text: value);
   final String label;
   final TextEditingController controller;
   final void Function(Map<String, dynamic> content, String value) write;
@@ -32,20 +33,28 @@ class _EditScreenState extends State<EditScreen> {
   late final List<_Field> _fields = _buildFields();
 
   static Map<String, dynamic> _deepCopy(Map m) => {
-        for (final e in m.entries)
-          '${e.key}': switch (e.value) {
-            Map v => _deepCopy(v),
-            List v => [for (final x in v) x is Map ? _deepCopy(x) : x],
-            var v => v,
-          }
-      };
+    for (final e in m.entries)
+      '${e.key}': switch (e.value) {
+        Map v => _deepCopy(v),
+        List v => [for (final x in v) x is Map ? _deepCopy(x) : x],
+        var v => v,
+      },
+  };
 
-  List<_Field> _slotFields(String prefix, Map slots, void Function(String k, String v) set) => [
-        for (final key in _slotLabels.keys)
-          if (slots[key] is String)
-            _Field('$prefix${_slotLabels[key]}', slots[key] as String, (_, v) => set(key, v),
-                lines: key == 'body' ? 4 : 2),
-      ];
+  List<_Field> _slotFields(
+    String prefix,
+    Map slots,
+    void Function(String k, String v) set,
+  ) => [
+    for (final key in _slotLabels.keys)
+      if (slots[key] is String)
+        _Field(
+          '$prefix${_slotLabels[key]}',
+          slots[key] as String,
+          (_, v) => set(key, v),
+          lines: key == 'body' ? 4 : 2,
+        ),
+  ];
 
   List<_Field> _buildFields() {
     final c = _content;
@@ -64,12 +73,28 @@ class _EditScreenState extends State<EditScreen> {
       final slots = c['slots'] as Map;
       fields.addAll(_slotFields('', slots, (k, v) => slots[k] = v));
       if (slots['items'] is List) {
-        fields.add(_Field('موارد لیست (هر خط یک مورد)', (slots['items'] as List).join('\n'),
-            (_, v) => slots['items'] = v.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
-            lines: 5));
+        fields.add(
+          _Field(
+            'موارد لیست (هر خط یک مورد)',
+            (slots['items'] as List).join('\n'),
+            (_, v) => slots['items'] = v
+                .split('\n')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
+            lines: 5,
+          ),
+        );
       }
     }
-    fields.add(_Field('کپشن', '${c['caption'] ?? ''}', (m, v) => m['caption'] = v, lines: 6));
+    fields.add(
+      _Field(
+        'کپشن',
+        '${c['caption'] ?? ''}',
+        (m, v) => m['caption'] = v,
+        lines: 6,
+      ),
+    );
     return fields;
   }
 
@@ -82,20 +107,20 @@ class _EditScreenState extends State<EditScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('ویرایش متن'),
-          actions: [TextButton(onPressed: _save, child: const Text('ذخیره'))],
-        ),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: _fields.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 14),
-          itemBuilder: (_, i) => TextField(
-            controller: _fields[i].controller,
-            minLines: 1,
-            maxLines: _fields[i].lines,
-            decoration: InputDecoration(labelText: _fields[i].label),
-          ),
-        ),
-      );
+    appBar: AppBar(
+      title: const Text('ویرایش متن'),
+      actions: [TextButton(onPressed: _save, child: const Text('ذخیره'))],
+    ),
+    body: ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _fields.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
+      itemBuilder: (_, i) => TextField(
+        controller: _fields[i].controller,
+        minLines: 1,
+        maxLines: _fields[i].lines,
+        decoration: InputDecoration(labelText: _fields[i].label),
+      ),
+    ),
+  );
 }
