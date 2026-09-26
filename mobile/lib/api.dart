@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'demo.dart';
 import 'models.dart';
 
 class ApiException implements Exception {
@@ -26,7 +27,7 @@ class Api {
   String get baseUrl => _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
   String get token => _prefs.getString('token') ?? '';
   String? get brandId => _prefs.getString('brand_id');
-  bool get isConfigured => baseUrl.isNotEmpty && token.isNotEmpty;
+  bool get isConfigured => token.isNotEmpty && (baseUrl.isNotEmpty || isDemo);
 
   Future<void> saveServer(String url, String token) async {
     await _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'demo.dart';
 import 'screens/home_screen.dart';
 import 'screens/server_screen.dart';
 
@@ -10,7 +12,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Mobile only, portrait only.
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  if (isDemo) {
+    // In-memory settings: the demo never touches browser storage.
+    // ignore: invalid_use_of_visible_for_testing_member
+    SharedPreferences.setMockInitialValues({'flutter.base_url': '', 'flutter.token': 'demo', 'flutter.brand_id': 'demo'});
+  }
   final api = await Api.load();
+  if (isDemo) api.client = demoClient();
   runApp(HashtpaApp(api: api));
 }
 

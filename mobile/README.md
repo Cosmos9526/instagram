@@ -25,3 +25,11 @@ flutter build ipa              # iOS (needs a Mac + Apple developer account)
 ```bash
 flutter pub get && flutter test && flutter analyze
 ```
+
+## Demo build (no server)
+```bash
+(cd ../backend && python ../tools/make_demo_slides.py ../mobile/build/demo_slides)
+flutter build web --release --no-web-resources-cdn --dart-define=DEMO=true
+cp -r build/demo_slides build/web/demo
+```
+Sample data lives in `lib/demo.dart`; nothing is sent anywhere.
