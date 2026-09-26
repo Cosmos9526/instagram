@@ -79,7 +79,7 @@ class _PostScreenState extends State<PostScreen> {
           XFile.fromData(
             (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i]))))
                 .bodyBytes,
-            name: 'hashtpa_${i + 1}.png',
+            name: 'postyar_${i + 1}.png',
             mimeType: 'image/png',
           ),
       ];

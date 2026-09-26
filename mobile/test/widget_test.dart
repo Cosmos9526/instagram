@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hashtpa/api.dart';
-import 'package:hashtpa/main.dart';
-import 'package:hashtpa/models.dart';
-import 'package:hashtpa/widgets/common.dart';
+import 'package:postyar/api.dart';
+import 'package:postyar/main.dart';
+import 'package:postyar/models.dart';
+import 'package:postyar/widgets/common.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -56,10 +56,10 @@ void main() {
   testWidgets('logged-out app opens the login screen in RTL', (tester) async {
     SharedPreferences.setMockInitialValues({'base_url': 'https://s'});
     final api = await Api.load();
-    await tester.pumpWidget(HashtpaApp(api: api));
+    await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
     expect(find.text('ورود'), findsWidgets);
     expect(find.text('ثبت‌نام'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.text('هشتپا'))), TextDirection.rtl);
+    expect(Directionality.of(tester.element(find.text('Postyar'))), TextDirection.rtl);
   });
 }

@@ -4,7 +4,7 @@
 def fake_response(system: str, user: str) -> dict:
     common = {
         "caption": "این یک کپشن آزمایشی است.\nبرای مشاوره دایرکت بدید.",
-        "hashtags": ["تست", "هشتپا"],
+        "hashtags": ["تست", "Postyar"],
         "alt_text": "تصویر آزمایشی",
         "image_prompt": "a cozy coffee shop counter, warm morning light",
     }

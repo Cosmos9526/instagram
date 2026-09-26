@@ -1,4 +1,4 @@
-package com.hashtpa.hashtpa
+package com.postyar.postyar
 
 import io.flutter.embedding.android.FlutterActivity
 

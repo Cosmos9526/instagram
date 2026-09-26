@@ -1,6 +1,6 @@
 # Isolated stack for a shared host: hard memory/CPU limits, ~1.6GB RAM total.
 # memswap_limit == mem_limit so an overrun kills only our container, never the host's other services.
-name: hashtpa
+name: postyar
 
 x-app: &app
   build:
@@ -8,7 +8,7 @@ x-app: &app
     dockerfile: backend/Dockerfile
   env_file: .env
   environment:
-    DATABASE_URL: postgresql+psycopg://hashtpa:${POSTGRES_PASSWORD:-hashtpa}@db:5432/hashtpa
+    DATABASE_URL: postgresql+psycopg://postyar:${POSTGRES_PASSWORD:-postyar}@db:5432/postyar
     MEDIA_DIR: /data/media
   volumes:
     - media:/data/media
@@ -21,12 +21,12 @@ services:
     image: postgres:16-alpine
     command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=30"]
     environment:
-      POSTGRES_USER: hashtpa
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hashtpa}
-      POSTGRES_DB: hashtpa
+      POSTGRES_USER: postyar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postyar}
+      POSTGRES_DB: postyar
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "hashtpa"]
+      test: ["CMD", "pg_isready", "-U", "postyar"]
       interval: 5s
     mem_limit: 256m
     memswap_limit: 256m

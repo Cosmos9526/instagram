@@ -4,7 +4,7 @@ import '../api.dart';
 import '../main.dart';
 import '../widgets/common.dart';
 
-/// Native apps only: the address of the Hashtpa server. (The PWA uses its own address.)
+/// Native apps only: the address of the Postyar server. (The PWA uses its own address.)
 class ServerScreen extends StatefulWidget {
   const ServerScreen({super.key, required this.api});
   final Api api;
@@ -42,7 +42,7 @@ class _ServerScreenState extends State<ServerScreen> {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('آدرس سرور هشتپا را وارد کنید.'),
+        const Text('آدرس سرور Postyar را وارد کنید.'),
         const SizedBox(height: 16),
         TextField(
           controller: _url,
@@ -50,7 +50,7 @@ class _ServerScreenState extends State<ServerScreen> {
           keyboardType: TextInputType.url,
           decoration: const InputDecoration(
             labelText: 'آدرس سرور',
-            hintText: 'https://hashtpa.example.com',
+            hintText: 'https://postyar.example.com',
           ),
         ),
         const SizedBox(height: 24),

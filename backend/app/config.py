@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+psycopg://hashtpa:hashtpa@db:5432/hashtpa"
+    database_url: str = "postgresql+psycopg://postyar:postyar@db:5432/postyar"
     media_dir: str = "/data/media"
     web_dir: str = "/app/web"  # built Flutter PWA; served at / when present
     admin_token: str = "change-me"  # only for /admin/* endpoints

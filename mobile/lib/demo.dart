@@ -340,7 +340,7 @@ http.Client demoClient() => MockClient((req) async {
   if (seg.first == 'auth') {
     final user = {
       'id': 'u1',
-      'email': (body is Map ? body['email'] : null) ?? 'demo@hashtpa.app',
+      'email': (body is Map ? body['email'] : null) ?? 'demo@postyar.app',
       'name': 'میلاد',
     };
     out = seg[1] == 'me' ? user : {'token': 'demo', 'user': user};

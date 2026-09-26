@@ -20,18 +20,18 @@ Future<void> main() async {
   }
   final api = await Api.load();
   if (isDemo) api.client = demoClient();
-  runApp(HashtpaApp(api: api));
+  runApp(PostyarApp(api: api));
 }
 
-class HashtpaApp extends StatelessWidget {
-  const HashtpaApp({super.key, required this.api});
+class PostyarApp extends StatelessWidget {
+  const PostyarApp({super.key, required this.api});
   final Api api;
 
   @override
   Widget build(BuildContext context) {
     const seed = Color(0xFF0E7C66);
     return MaterialApp(
-      title: 'هشتپا',
+      title: 'Postyar',
       debugShowCheckedModeBanner: false,
       locale: const Locale('fa'),
       supportedLocales: const [Locale('fa'), Locale('en')],

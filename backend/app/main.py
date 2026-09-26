@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI):
 
 
 os.makedirs(settings.media_dir, exist_ok=True)
-app = FastAPI(title="Hashtpa", lifespan=lifespan)
+app = FastAPI(title="Postyar", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")
 if PREVIEW_DIR.is_dir():

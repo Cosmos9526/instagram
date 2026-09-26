@@ -15,7 +15,7 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Client for the Hashtpa backend. Server address and login token are stored on the device.
+/// Client for the Postyar backend. Server address and login token are stored on the device.
 class Api {
   Api._(this._prefs);
   final SharedPreferences _prefs;

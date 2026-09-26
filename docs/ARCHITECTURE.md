@@ -1,4 +1,4 @@
-# Hashtpa — v1 Architecture & Product Design
+# Postyar — v1 Architecture & Product Design
 
 Instagram/Telegram content-automation studio. Two v1 features:
 **A. Trend-to-Content Engine** (single slide + carousel) and
@@ -19,7 +19,7 @@ Decisions at a glance:
 | Image gen | external API (e.g. Imagen / GPT-Image / Flux via fal.ai) behind an adapter | swappable |
 | Video gen | external image-to-video API (Veo 3 / Kling 2.x / Runway Gen-4 via fal.ai) behind an adapter; must support **first-frame image conditioning** | last-frame seeding is non-negotiable |
 | Frontend | Flutter (mobile + web build), `flutter_localizations`, `intl`, `Directionality` driven by brand/UI locale | requirement |
-| Edge | existing Caddy; **add one site block only** (`api.hashtpa.<domain>`) | never touch other routes |
+| Edge | existing Caddy; **add one site block only** (`api.postyar.<domain>`) | never touch other routes |
 
 ---
 
@@ -30,7 +30,7 @@ Decisions at a glance:
                          │  Brand Kit · Single-Slide Studio · Carousel Studio · Video Studio · Approvals · Credits  │
                          └───────────────────────────────────────┬──────────────────────────────────────────────────┘
                                                                  │ HTTPS (existing Caddy, new site block only)
-┌────────────────────────────────────────── docker-compose "hashtpa" (hard limits: 2.5GB RAM / 3 CPU total) ──────────────┐
+┌────────────────────────────────────────── docker-compose "postyar" (hard limits: 2.5GB RAM / 3 CPU total) ──────────────┐
 │                                                                                                                          │
 │  ┌──────────────┐  enqueue(job) + credit HOLD in 1 tx   ┌─────────────────────────── PostgreSQL ──────────────────────┐ │
 │  │ api (FastAPI)│──────────────────────────────────────▶│ brands · templates · trends · scenarios · generation_jobs    │ │
@@ -95,8 +95,8 @@ All services on an internal network; only `api` joins the network Caddy uses.
 
 Caddy — append only this block (separate file via `import`):
 ```
-api.hashtpa.example.com {
-    reverse_proxy hashtpa-api:8000
+api.postyar.example.com {
+    reverse_proxy postyar-api:8000
     request_body max_size 50MB
 }
 ```
@@ -287,7 +287,7 @@ Add ε-greedy 10% exploration so a new template can get data.
 
 ```
 SYSTEM:
-You are the brand-safety and relevance editor for Hashtpa, an Instagram content studio.
+You are the brand-safety and relevance editor for Postyar, an Instagram content studio.
 Your job is to decide which current trends this specific brand can credibly use. You are
 strict: a missed trend costs nothing, a bad-fit or off-brand post damages the brand.
 
@@ -451,7 +451,7 @@ A long video is **N clips (2–4, 5–8 s each) generated sequentially**, where:
 ```
 draft
  └─(user submits idea)──▶ planning ──LLM B1──▶ plan_ready
-      (Flutter shows: "Hashtpa can generate a longer version (≈24s, 3 clips) — want that?"
+      (Flutter shows: "Postyar can generate a longer version (≈24s, 3 clips) — want that?"
        with cost for 1 clip vs N clips. User picks.)
  └─▶ keyframe ──image API──▶ keyframe_review (user approves / regenerates keyframe — image price)
  └─▶ HOLD video credits (N × clip + regen reserve + stitch)

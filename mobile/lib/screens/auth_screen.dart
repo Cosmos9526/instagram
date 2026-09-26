@@ -66,7 +66,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '#',
+                    'P',
                     style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.w900,
@@ -77,7 +77,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'هشتپا',
+                'Postyar',
                 style: theme.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
