@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../models.dart';
+import '../widgets/choice_field.dart';
 import '../widgets/common.dart';
 
 /// Plan entries a user can put on a weekday.
@@ -46,6 +47,7 @@ class _BrandScreenState extends State<BrandScreen> {
   late Map<String, TextEditingController> _c;
   late List<(TextEditingController, TextEditingController)> _products;
   bool _busy = false;
+  List<String> _industry = [], _audience = [], _tone = [], _cta = [], _forbidden = [];
 
   @override
   void initState() {
@@ -74,16 +76,16 @@ class _BrandScreenState extends State<BrandScreen> {
     TextEditingController t(String v) => TextEditingController(text: v);
     _c = {
       'name': t(_b.name),
-      'industry': t(_b.industry),
       'description': t(_b.description),
       'website': t(_b.website),
       'instagram': t(_b.instagram),
-      'audience': t(_b.audience),
-      'tone': t(_b.tone),
-      'cta': t(_b.cta),
-      'forbidden': t(_b.forbiddenTopics.join('، ')),
       'hashtags': t(_b.hashtags.join(' ')),
     };
+    _industry = _b.industry.isEmpty ? [] : [_b.industry];
+    _audience = splitList(_b.audience);
+    _tone = splitList(_b.tone);
+    _cta = _b.cta.isEmpty ? [] : [_b.cta];
+    _forbidden = [..._b.forbiddenTopics];
     _products = [for (final p in _b.products) (t(p.name), t(p.desc))];
     if (_products.isEmpty) _products.add((t(''), t('')));
   }
@@ -93,16 +95,20 @@ class _BrandScreenState extends State<BrandScreen> {
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
+    if (_industry.isEmpty) {
+      showSnack(context, 'حوزه‌ی کاری را انتخاب کنید');
+      return;
+    }
     _b
       ..name = _c['name']!.text.trim()
-      ..industry = _c['industry']!.text.trim()
+      ..industry = _industry.first
       ..description = _c['description']!.text.trim()
       ..website = _c['website']!.text.trim()
       ..instagram = _c['instagram']!.text.trim().replaceFirst('@', '')
-      ..audience = _c['audience']!.text.trim()
-      ..tone = _c['tone']!.text.trim()
-      ..cta = _c['cta']!.text.trim()
-      ..forbiddenTopics = _split(_c['forbidden']!.text, RegExp('[،,\n]'))
+      ..audience = _audience.join('، ')
+      ..tone = _tone.join('، ')
+      ..cta = _cta.isEmpty ? '' : _cta.first
+      ..forbiddenTopics = _forbidden
       ..hashtags = _split(_c['hashtags']!.text, RegExp(r'[\s،,]+'))
       ..products = [
         for (final (n, d) in _products)
@@ -145,7 +151,13 @@ class _BrandScreenState extends State<BrandScreen> {
         children: [
           const SectionTitle('مشخصات'),
           _field('name', 'نام کسب‌وکار', required: true),
-          _field('industry', 'حوزه‌ی کاری', hint: 'مثلاً کافه و قهوه‌ی تخصصی', required: true),
+          ChoiceField(
+            label: 'حوزه‌ی کاری',
+            options: industryOptions,
+            values: _industry,
+            multi: false,
+            onChanged: (v) => setState(() => _industry = v),
+          ),
           _field('description', 'درباره‌ی کسب‌وکار', hint: 'چه کار می‌کنید و چه چیزی شما را متمایز می‌کند', lines: 4),
           _field('website', 'وب‌سایت (برای تحقیق بازار)', hint: 'https://…', ltr: true),
           _field('instagram', 'آیدی اینستاگرام', hint: 'mybrand', ltr: true),
@@ -197,10 +209,34 @@ class _BrandScreenState extends State<BrandScreen> {
               ),
             ),
           const SectionTitle('مخاطب و لحن'),
-          _field('audience', 'مخاطب', hint: 'مثلاً ۲۲ تا ۳۵ ساله‌های تهران، دانشجو و کارمند', lines: 2),
-          _field('tone', 'لحن', hint: 'مثلاً صمیمی، مؤدب، کمی شوخ', lines: 2),
-          _field('cta', 'دعوت به اقدام', hint: 'مثلاً «برای سفارش دایرکت بدید»'),
-          _field('forbidden', 'موضوعات ممنوع', hint: 'با ویرگول جدا کنید: سیاست، رقبا، …', lines: 2),
+          ChoiceField(
+            label: 'مخاطب',
+            help: 'هر چند مورد که به مشتری‌هایت می‌خورد',
+            options: audienceOptions,
+            values: _audience,
+            onChanged: (v) => setState(() => _audience = v),
+          ),
+          ChoiceField(
+            label: 'لحن',
+            options: toneOptions,
+            values: _tone,
+            onChanged: (v) => setState(() => _tone = v),
+          ),
+          ChoiceField(
+            label: 'دعوت به اقدام',
+            help: 'جمله‌ی آخر هر پست',
+            options: ctaOptions,
+            values: _cta,
+            multi: false,
+            onChanged: (v) => setState(() => _cta = v),
+          ),
+          ChoiceField(
+            label: 'موضوعات ممنوع',
+            help: 'درباره‌ی این‌ها هیچ‌وقت پست ساخته نمی‌شود',
+            options: forbiddenOptions,
+            values: _forbidden,
+            onChanged: (v) => setState(() => _forbidden = v),
+          ),
           _field('hashtags', 'هشتگ‌های ثابت', hint: 'کافه_نمونه قهوه_تخصصی'),
           const SectionTitle('رنگ‌های برند'),
           Wrap(

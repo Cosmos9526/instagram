@@ -24,22 +24,34 @@ def extract_json(text: str) -> dict:
     return json.loads(text[start : end + 1])
 
 
+def _post(url: str, headers: dict, body: dict) -> dict:
+    resp = httpx.post(url, headers=headers, json=body, timeout=120)
+    if resp.status_code >= 400:
+        raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:300]}")
+    return extract_json(resp.json()["choices"][0]["message"]["content"])
+
+
 def chat_json(system: str, user: str, temperature: float = 0.8) -> dict:
+    """Primary model first; on any failure (quota, 402, outage) the free fallback model; else LLMError."""
     if settings.llm_provider == "fake":
         from .fake_llm import fake_response
 
         return fake_response(system, user)
-    resp = httpx.post(
-        settings.llm_base_url.rstrip("/") + "/chat/completions",
-        headers={"Authorization": f"Bearer {settings.llm_api_key}"},
-        json={
-            "model": settings.llm_model,
-            "temperature": temperature,
-            "response_format": {"type": "json_object"},
-            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        },
-        timeout=120,
-    )
-    if resp.status_code >= 400:
-        raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:300]}")
-    return extract_json(resp.json()["choices"][0]["message"]["content"])
+    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    errors = []
+    if settings.llm_api_key:
+        try:
+            return _post(
+                settings.llm_base_url.rstrip("/") + "/chat/completions",
+                {"Authorization": f"Bearer {settings.llm_api_key}"},
+                {"model": settings.llm_model, "temperature": temperature,
+                 "response_format": {"type": "json_object"}, "messages": messages},
+            )
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"primary: {e}")
+    if settings.llm_fallback_url:
+        try:
+            return _post(settings.llm_fallback_url, {}, {"model": settings.llm_fallback_model, "messages": messages})
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"fallback: {e}")
+    raise LLMError(" | ".join(errors) or "no text model configured")

@@ -9,3 +9,5 @@ regex
 apscheduler==3.10.*
 playwright==1.49.*
 pytest==8.*
+ddgs
+yt-dlp
