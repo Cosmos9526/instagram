@@ -9,11 +9,7 @@ void showSnack(BuildContext context, String text) {
     ..showSnackBar(SnackBar(content: Text(text)));
 }
 
-Future<void> copyText(
-  BuildContext context,
-  String text, {
-  String label = 'کپی شد',
-}) async {
+Future<void> copyText(BuildContext context, String text, {String label = 'کپی شد'}) async {
   await Clipboard.setData(ClipboardData(text: text));
   if (context.mounted) showSnack(context, label);
 }
@@ -34,31 +30,20 @@ class StatusChip extends StatelessWidget {
     final (bg, fg) = switch (status) {
       'ready' => (scheme.tertiaryContainer, scheme.onTertiaryContainer),
       'approved' => (scheme.primaryContainer, scheme.onPrimaryContainer),
-      'failed' ||
-      'rejected' => (scheme.errorContainer, scheme.onErrorContainer),
+      'failed' || 'rejected' => (scheme.errorContainer, scheme.onErrorContainer),
       _ => (scheme.surfaceContainerHighest, scheme.onSurfaceVariant),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (status == 'queued' || status == 'running') ...[
-            SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-            ),
+            SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: fg)),
             const SizedBox(width: 6),
           ],
-          Text(
-            statusLabels[status] ?? status,
-            style: TextStyle(color: fg, fontSize: 12),
-          ),
+          Text(statusLabels[status] ?? status, style: TextStyle(color: fg, fontSize: 12)),
         ],
       ),
     );
@@ -75,9 +60,7 @@ class SectionTitle extends StatelessWidget {
     padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
     child: Row(
       children: [
-        Expanded(
-          child: Text(text, style: Theme.of(context).textTheme.titleMedium),
-        ),
+        Expanded(child: Text(text, style: Theme.of(context).textTheme.titleMedium)),
         ?trailing,
       ],
     ),

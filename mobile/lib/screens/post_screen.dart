@@ -77,18 +77,13 @@ class _PostScreenState extends State<PostScreen> {
       final files = <XFile>[
         for (var i = 0; i < p.slides.length; i++)
           XFile.fromData(
-            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i]))))
-                .bodyBytes,
+            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i])))).bodyBytes,
             name: 'postyar_${i + 1}.png',
             mimeType: 'image/png',
           ),
       ];
       if (!mounted) return;
-      await copyText(
-        context,
-        p.captionWithTags,
-        label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن',
-      );
+      await copyText(context, p.captionWithTags, label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن');
       await SharePlus.instance.share(ShareParams(files: files));
     } catch (_) {
       if (mounted) showSnack(context, 'اشتراک‌گذاری ناموفق بود');
@@ -103,13 +98,7 @@ class _PostScreenState extends State<PostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(p == null ? '' : postTypes[p.postType] ?? ''),
-        actions: [
-          if (p != null)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: StatusChip(p.status),
-            ),
-        ],
+        actions: [if (p != null) Padding(padding: const EdgeInsets.all(12), child: StatusChip(p.status))],
       ),
       body: p == null
           ? const Center(child: CircularProgressIndicator())
@@ -117,11 +106,7 @@ class _PostScreenState extends State<PostScreen> {
           ? const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('در حال ساخت…'),
-                ],
+                children: [CircularProgressIndicator(), SizedBox(height: 16), Text('در حال ساخت…')],
               ),
             )
           : p.status == 'failed'
@@ -170,9 +155,8 @@ class _PostScreenState extends State<PostScreen> {
               child: Image.network(
                 '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
                 fit: BoxFit.cover,
-                loadingBuilder: (_, child, progress) => progress == null
-                    ? child
-                    : const Center(child: CircularProgressIndicator()),
+                loadingBuilder: (_, child, progress) =>
+                    progress == null ? child : const Center(child: CircularProgressIndicator()),
               ),
             ),
           ),
@@ -190,8 +174,7 @@ class _PostScreenState extends State<PostScreen> {
                     width: i == _page ? 18 : 7,
                     height: 7,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary
-                          .withValues(alpha: i == _page ? 1 : .3),
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: i == _page ? 1 : .3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -211,10 +194,7 @@ class _PostScreenState extends State<PostScreen> {
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: [
-            for (final h in p.hashtags)
-              Chip(label: Text('#$h'), visualDensity: VisualDensity.compact),
-          ],
+          children: [for (final h in p.hashtags) Chip(label: Text('#$h'), visualDensity: VisualDensity.compact)],
         ),
       ],
     );
@@ -232,16 +212,9 @@ class _PostScreenState extends State<PostScreen> {
                   ? null
                   : () async {
                       final content = await Navigator.of(context)
-                          .push<Map<String, dynamic>>(
-                            MaterialPageRoute(
-                              builder: (_) => EditScreen(post: p),
-                            ),
-                          );
+                          .push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => EditScreen(post: p)));
                       if (content != null) {
-                        await _act(
-                          () => widget.api.editPost(p.id, content),
-                          'در حال رندر دوباره…',
-                        );
+                        await _act(() => widget.api.editPost(p.id, content), 'در حال رندر دوباره…');
                       }
                     },
               icon: const Icon(Icons.edit_outlined),
@@ -254,12 +227,7 @@ class _PostScreenState extends State<PostScreen> {
           ],
           IconButton.filledTonal(
             tooltip: 'ساخت دوباره',
-            onPressed: _busy
-                ? null
-                : () => _act(
-                    () => widget.api.review(p.id, 'regenerate'),
-                    'دوباره ساخته می‌شود',
-                  ),
+            onPressed: _busy ? null : () => _act(() => widget.api.review(p.id, 'regenerate'), 'دوباره ساخته می‌شود'),
             icon: const Icon(Icons.refresh),
           ),
           const Spacer(),
@@ -267,18 +235,14 @@ class _PostScreenState extends State<PostScreen> {
             TextButton(
               onPressed: _busy || p.status == 'rejected'
                   ? null
-                  : () =>
-                        _act(() => widget.api.review(p.id, 'reject'), 'رد شد'),
+                  : () => _act(() => widget.api.review(p.id, 'reject'), 'رد شد'),
               child: const Text('رد'),
             ),
             const SizedBox(width: 4),
             FilledButton(
               onPressed: _busy || p.status == 'approved'
                   ? null
-                  : () => _act(
-                      () => widget.api.review(p.id, 'approve'),
-                      'تأیید شد',
-                    ),
+                  : () => _act(() => widget.api.review(p.id, 'approve'), 'تأیید شد'),
               child: const Text('تأیید'),
             ),
           ],

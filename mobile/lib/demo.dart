@@ -20,20 +20,12 @@ final Map<String, dynamic> _brand = {
   'language': 'fa',
   'description': 'کافه‌ی کوچک با دانه‌ی تازه‌رُست و دم‌آوری دستی',
   'products': [
-    {
-      'name': 'دانه‌ی اسپشیالتی ۲۵۰ گرمی',
-      'desc': 'رُست هفتگی، اتیوپی و کلمبیا',
-    },
+    {'name': 'دانه‌ی اسپشیالتی ۲۵۰ گرمی', 'desc': 'رُست هفتگی، اتیوپی و کلمبیا'},
     {'name': 'کارگاه دم‌آوری', 'desc': 'آموزش V60 و موکاپات، هر پنجشنبه'},
   ],
   'audience': '۲۲ تا ۳۵ ساله‌های تهران، دانشجو و کارمند',
   'tone': 'صمیمی، مؤدب، کمی شوخ',
-  'colors': {
-    'primary': '#6B3E26',
-    'secondary': '#F2C14E',
-    'bg': '#FFF8F0',
-    'text': '#2B1B12',
-  },
+  'colors': {'primary': '#6B3E26', 'secondary': '#F2C14E', 'bg': '#FFF8F0', 'text': '#2B1B12'},
   'forbidden_topics': ['سیاست', 'رقبا'],
   'cta': 'برای سفارش دایرکت بدید',
   'hashtags': ['کافه_نمونه', 'قهوه_تخصصی'],
@@ -82,8 +74,7 @@ Map<String, dynamic> _sample(String type, String mode) {
         'idea': 'مشتری صبح زود وارد کافه می‌شود، اولین فنجانش را می‌گیرد و روزش را با آرامش شروع می‌کند.',
         'target_seconds': 24,
         'bible_text': bible,
-        'keyframe_prompt':
-            '$bible Opening frame: she stands outside the glass door, hand on the handle.',
+        'keyframe_prompt': '$bible Opening frame: she stands outside the glass door, hand on the handle.',
         'clips': [
           for (var i = 0; i < clips.length; i++)
             {
@@ -112,9 +103,7 @@ Map<String, dynamic> _sample(String type, String mode) {
     'educational' when mode == 'carousel' => (
       [for (var i = 0; i < 5; i++) 'demo/edu_$i.png'],
       {
-        'cover': {
-          'headline': '۳ اشتباه رایج که طعم قهوه‌ی صبحت را خراب می‌کند',
-        },
+        'cover': {'headline': '۳ اشتباه رایج که طعم قهوه‌ی صبحت را خراب می‌کند'},
         'body': [],
         'cta': {},
       },
@@ -144,11 +133,7 @@ Map<String, dynamic> _sample(String type, String mode) {
       ['demo/sales_0.png'],
       {
         'template': 'sales_offer',
-        'slots': {
-          'headline': 'تخفیف دانه‌ی اسپشیالتی تا پایان هفته',
-          'badge': '۲۰٪',
-          'cta': 'سفارش در دایرکت',
-        },
+        'slots': {'headline': 'تخفیف دانه‌ی اسپشیالتی تا پایان هفته', 'badge': '۲۰٪', 'cta': 'سفارش در دایرکت'},
       },
     ),
   };
@@ -190,12 +175,7 @@ final _brands = <Map<String, dynamic>>[
     'id': 'demo2',
     'name': 'گالری گل رز (دمو)',
     'industry': 'گل‌فروشی',
-    'colors': {
-      'primary': '#B23A5B',
-      'secondary': '#F7C8D0',
-      'bg': '#FFF7F8',
-      'text': '#3A1020',
-    },
+    'colors': {'primary': '#B23A5B', 'secondary': '#F7C8D0', 'bg': '#FFF7F8', 'text': '#3A1020'},
     'products': [
       {'name': 'باکس گل', 'desc': 'ارسال همان روز'},
     ],
@@ -209,8 +189,7 @@ final _brands = <Map<String, dynamic>>[
 
 Research? _research;
 
-String _yt(String q) =>
-    'https://www.youtube.com/results?search_query=${Uri.encodeComponent(q)}';
+String _yt(String q) => 'https://www.youtube.com/results?search_query=${Uri.encodeComponent(q)}';
 
 Map<String, dynamic> _researchJson(String status) => {
   'id': 'r1',
@@ -225,9 +204,7 @@ Map<String, dynamic> _researchJson(String status) => {
               'بازار قهوه‌ی تخصصی در شهرهای بزرگ رو به رشد است و مخاطب جوان بیشتر از قبل به دم‌آوری '
               'خانگی علاقه نشان می‌دهد. رقبا بیشتر لاته‌آرت پست می‌کنند؛ فرصت اصلی شما محتوای آموزشی '
               'کوتاه و قابل ذخیره درباره‌ی دم‌آوری در خانه است.',
-          'business_facts': [
-            'نمونه: در نقشه‌ها با امتیاز ۴٫۷ از ۳۲۰ نظر ثبت شده است',
-          ],
+          'business_facts': ['نمونه: در نقشه‌ها با امتیاز ۴٫۷ از ۳۲۰ نظر ثبت شده است'],
           'competitors': [
             {
               'name': 'کافه‌ی رقیب الف',
@@ -240,11 +217,7 @@ Map<String, dynamic> _researchJson(String status) => {
               'gap_we_can_fill': 'داستان پشت هر دانه',
             },
           ],
-          'audience_interests': [
-            'کلدبرو تابستانی',
-            'انتخاب آسیاب خانگی',
-            'قهوه‌ی کم‌کافئین',
-          ],
+          'audience_interests': ['کلدبرو تابستانی', 'انتخاب آسیاب خانگی', 'قهوه‌ی کم‌کافئین'],
           'trends': [
             {
               'title': 'کلدبرو خانگی',
@@ -259,33 +232,11 @@ Map<String, dynamic> _researchJson(String status) => {
               'post_type': 'sales',
             },
           ],
-          'keywords': [
-            'قهوه تخصصی',
-            'کلدبرو',
-            'دم آوری قهوه',
-            'دانه قهوه تازه',
-            'آسیاب قهوه',
-            'V60',
-          ],
-          'hashtags': [
-            'قهوه',
-            'قهوه_تخصصی',
-            'کلدبرو',
-            'باریستا',
-            'کافه_گردی',
-            'specialtycoffee',
-          ],
+          'keywords': ['قهوه تخصصی', 'کلدبرو', 'دم آوری قهوه', 'دانه قهوه تازه', 'آسیاب قهوه', 'V60'],
+          'hashtags': ['قهوه', 'قهوه_تخصصی', 'کلدبرو', 'باریستا', 'کافه_گردی', 'specialtycoffee'],
           'content_ideas': [
-            {
-              'title': '۵ اشتباه در دم کردن قهوه در خانه',
-              'post_type': 'educational',
-              'format': 'carousel',
-            },
-            {
-              'title': 'یک روز در رُستری ما',
-              'post_type': 'promo',
-              'format': 'video',
-            },
+            {'title': '۵ اشتباه در دم کردن قهوه در خانه', 'post_type': 'educational', 'format': 'carousel'},
+            {'title': 'یک روز در رُستری ما', 'post_type': 'promo', 'format': 'video'},
           ],
           'top_videos': [
             {
@@ -338,26 +289,15 @@ http.Client demoClient() => MockClient((req) async {
   final body = req.body.isEmpty ? null : jsonDecode(req.body);
   Object? out;
   if (seg.first == 'auth') {
-    final user = {
-      'id': 'u1',
-      'email': (body is Map ? body['email'] : null) ?? 'demo@postyar.app',
-      'name': 'میلاد',
-    };
+    final user = {'id': 'u1', 'email': (body is Map ? body['email'] : null) ?? 'demo@postyar.app', 'name': 'میلاد'};
     out = seg[1] == 'me' ? user : {'token': 'demo', 'user': user};
   } else if (path == '/catalog') {
     // The catalog is published next to the demo (demo/catalog.json).
     final res = await http.get(Uri.base.resolve('demo/catalog.json'));
-    return http.Response.bytes(
-      res.bodyBytes,
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+    return http.Response.bytes(res.bodyBytes, 200, headers: {'content-type': 'application/json'});
   } else if (path == '/brands') {
     if (req.method == 'POST') {
-      _brands.add({
-        ...Map<String, dynamic>.from(body as Map),
-        'id': 'b${_next++}',
-      });
+      _brands.add({...Map<String, dynamic>.from(body as Map), 'id': 'b${_next++}'});
       out = {'id': _brands.last['id']};
     } else {
       out = _brands;
@@ -370,15 +310,10 @@ http.Client demoClient() => MockClient((req) async {
   } else if (seg.length == 3 && seg[2] == 'research') {
     if (req.method == 'POST') {
       _research = Research.fromJson(_researchJson('running'));
-      Timer(
-        const Duration(seconds: 5),
-        () => _research = Research.fromJson(_researchJson('ready')),
-      );
+      Timer(const Duration(seconds: 5), () => _research = Research.fromJson(_researchJson('ready')));
       out = _researchJson('running');
     } else {
-      final r = seg[1] == 'demo'
-          ? (_research ?? Research.fromJson(_researchJson('ready')))
-          : _research;
+      final r = seg[1] == 'demo' ? (_research ?? Research.fromJson(_researchJson('ready'))) : _research;
       out = r == null ? [] : [_researchJson(r.status)];
     }
   } else if (path.endsWith('/posts')) {
@@ -411,9 +346,5 @@ http.Client demoClient() => MockClient((req) async {
     }
     out = post;
   }
-  return http.Response.bytes(
-    utf8.encode(jsonEncode(out)),
-    200,
-    headers: {'content-type': 'application/json'},
-  );
+  return http.Response.bytes(utf8.encode(jsonEncode(out)), 200, headers: {'content-type': 'application/json'});
 });

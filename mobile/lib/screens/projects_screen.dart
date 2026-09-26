@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../api.dart';
 import '../models.dart';
 import '../widgets/common.dart';
+import '../theme.dart';
 import 'auth_screen.dart';
 import 'brand_screen.dart';
 import 'profile_screen.dart';
@@ -55,16 +56,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Future<void> _logout() async {
     await widget.api.logout();
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)),
-      (_) => false,
-    );
+    Navigator.of(context)
+        .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)), (_) => false);
   }
 
   Future<void> _newProject() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => BrandScreen(api: widget.api)),
-    );
+    final id = await Navigator.of(context)
+        .push<String>(MaterialPageRoute(builder: (_) => BrandScreen(api: widget.api)));
     if (id == null) return;
     await _load();
     final b = _brands?.where((b) => b.id == id).firstOrNull;
@@ -86,20 +84,13 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _user == null
-              ? 'پروژه‌ها'
-              : 'سلام ${_user!.name.isEmpty ? '' : _user!.name}',
-        ),
+        title: Text(_user == null ? 'Postyar' : 'سلام ${_user!.name}'.trim()),
         actions: [
           IconButton(
             tooltip: 'قالب‌ها',
             icon: const Icon(Icons.dashboard_customize_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => TemplatesScreen(api: widget.api),
-              ),
-            ),
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api))),
           ),
           IconButton(
             tooltip: 'حساب کاربری',
@@ -107,8 +98,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             onPressed: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) =>
-                      ProfileScreen(api: widget.api, onLogout: _logout),
+                  builder: (_) => ProfileScreen(api: widget.api, onLogout: _logout),
                 ),
               );
               _load();
@@ -131,10 +121,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(_error!),
-                        TextButton(
-                          onPressed: _load,
-                          child: const Text('تلاش دوباره'),
-                        ),
+                        TextButton(onPressed: _load, child: const Text('تلاش دوباره')),
                       ],
                     ),
             )
@@ -145,16 +132,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.rocket_launch_outlined,
-                      size: 64,
-                      color: theme.colorScheme.primary,
-                    ),
+                    Icon(Icons.rocket_launch_outlined, size: 64, color: theme.colorScheme.primary),
                     const SizedBox(height: 16),
-                    Text(
-                      'اولین پروژه‌ات را بساز',
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text('اولین پروژه‌ات را بساز', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 8),
                     const Text(
                       'هر پروژه یک کسب‌وکار یا برند است: مشخصات، محصولات، مخاطب و برنامه‌ی انتشار خودش را دارد.',
@@ -173,8 +153,19 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 96),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
                 children: [
+                  HeroCard(
+                    title: 'پروژه‌های تو',
+                    subtitle:
+                        '${faDigits(brands.length)} کسب‌وکار، '
+                        '${faDigits(brands.fold<int>(0, (n, b) => n + b.weeklyPlan.values.fold<int>(0, (m, l) => m + l.length)))} پست خودکار در هفته',
+                    trailing: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset('assets/brand/logo_mark.png', width: 56, height: 56),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   for (final b in brands)
                     Card(
                       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -183,12 +174,31 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         onTap: () => _open(b),
                         child: Row(
                           children: [
-                            Container(
-                              width: 10,
-                              height: 92,
-                              color: _hex(
-                                b.colors['primary'],
-                                theme.colorScheme.primary,
+                            Padding(
+                              padding: const EdgeInsetsDirectional.only(start: 14),
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topRight,
+                                    end: Alignment.bottomLeft,
+                                    colors: [
+                                      _hex(b.colors['primary'], theme.colorScheme.primary),
+                                      _hex(b.colors['secondary'], theme.colorScheme.secondary),
+                                    ],
+                                  ),
+                                ),
+                                child: Text(
+                                  b.name.isEmpty ? '؟' : b.name.characters.first,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
                               ),
                             ),
                             Expanded(
@@ -197,15 +207,9 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      b.name,
-                                      style: theme.textTheme.titleMedium,
-                                    ),
+                                    Text(b.name, style: theme.textTheme.titleMedium),
                                     const SizedBox(height: 4),
-                                    Text(
-                                      b.industry,
-                                      style: theme.textTheme.bodySmall,
-                                    ),
+                                    Text(b.industry, style: theme.textTheme.bodySmall),
                                     const SizedBox(height: 6),
                                     Text(
                                       '${faDigits(b.weeklyPlan.values.fold<int>(0, (n, l) => n + l.length))} پست در هفته',

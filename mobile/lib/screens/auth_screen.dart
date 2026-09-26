@@ -34,10 +34,8 @@ class _AuthScreenState extends State<AuthScreen> {
         await widget.api.login(email, _password.text);
       }
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)),
-        (_) => false,
-      );
+      Navigator.of(context)
+          .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)), (_) => false);
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {
@@ -57,33 +55,15 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'P',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      color: theme.colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
+                child: Image.asset('assets/brand/wordmark.png', height: 64),
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Postyar',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
+              const SizedBox(height: 28),
+              Text('محتوای اینستاگرام، هر روز آماده', style: theme.textTheme.headlineSmall),
               const SizedBox(height: 6),
-              const Text('هر روز پست آماده برای اینستاگرام کسب‌وکارت'),
+              Text(
+                'پروفایل کسب‌وکارت را یک بار بساز؛ پست، کاروسل و پرامپت ویدیو هر روز آماده است.',
+                style: theme.textTheme.bodySmall,
+              ),
               const SizedBox(height: 32),
               SegmentedButton<bool>(
                 segments: const [
@@ -98,10 +78,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 TextFormField(
                   controller: _name,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'نام شما',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
+                  decoration: const InputDecoration(labelText: 'نام شما', prefixIcon: Icon(Icons.person_outline)),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -111,59 +88,39 @@ class _AuthScreenState extends State<AuthScreen> {
                 keyboardType: TextInputType.emailAddress,
                 autofillHints: const [AutofillHints.email],
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'ایمیل',
-                  prefixIcon: Icon(Icons.alternate_email),
-                ),
-                validator: (v) =>
-                    (v ?? '').contains('@') ? null : 'ایمیل معتبر وارد کنید',
+                decoration: const InputDecoration(labelText: 'ایمیل', prefixIcon: Icon(Icons.alternate_email)),
+                validator: (v) => (v ?? '').contains('@') ? null : 'ایمیل معتبر وارد کنید',
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _password,
                 textDirection: TextDirection.ltr,
                 obscureText: _hide,
-                autofillHints: [
-                  _signup ? AutofillHints.newPassword : AutofillHints.password,
-                ],
+                autofillHints: [_signup ? AutofillHints.newPassword : AutofillHints.password],
                 onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
                   labelText: 'رمز عبور',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(
-                      _hide
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
+                    icon: Icon(_hide ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                     onPressed: () => setState(() => _hide = !_hide),
                   ),
                 ),
-                validator: (v) => _signup && (v ?? '').length < 8
-                    ? 'حداقل ۸ حرف'
-                    : ((v ?? '').isEmpty ? 'الزامی است' : null),
+                validator: (v) =>
+                    _signup && (v ?? '').length < 8 ? 'حداقل ۸ حرف' : ((v ?? '').isEmpty ? 'الزامی است' : null),
               ),
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: _busy ? null : _submit,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                ),
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                 child: _busy
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
                     : Text(_signup ? 'ساخت حساب' : 'ورود'),
               ),
               if (!kIsWeb)
                 TextButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ServerScreen(api: widget.api),
-                    ),
-                  ),
+                  onPressed: () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServerScreen(api: widget.api))),
                   child: const Text('تغییر آدرس سرور'),
                 ),
             ],

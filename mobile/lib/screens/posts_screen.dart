@@ -65,11 +65,7 @@ class PostsScreenState extends State<PostsScreen> {
   Widget build(BuildContext context) {
     final posts = _posts;
     if (posts == null) {
-      return Center(
-        child: _error != null
-            ? Text(_error!)
-            : const CircularProgressIndicator(),
-      );
+      return Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator());
     }
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final todays = posts.where((p) => p.forDate == today).toList();
@@ -90,11 +86,9 @@ class PostsScreenState extends State<PostsScreen> {
                 'یا صبر کن تا برنامه‌ی روزانه اجرا شود.',
               ),
             ),
-          for (final p in todays)
-            _PostTile(post: p, api: widget.api, onChanged: refresh),
+          for (final p in todays) _PostTile(post: p, api: widget.api, onChanged: refresh),
           if (older.isNotEmpty) const SectionTitle('قبلی‌ها'),
-          for (final p in older)
-            _PostTile(post: p, api: widget.api, onChanged: refresh),
+          for (final p in older) _PostTile(post: p, api: widget.api, onChanged: refresh),
         ],
       ),
     );
@@ -102,11 +96,7 @@ class PostsScreenState extends State<PostsScreen> {
 }
 
 class _PostTile extends StatelessWidget {
-  const _PostTile({
-    required this.post,
-    required this.api,
-    required this.onChanged,
-  });
+  const _PostTile({required this.post, required this.api, required this.onChanged});
   final Post post;
   final Api api;
   final VoidCallback onChanged;
@@ -131,16 +121,11 @@ class _PostTile extends StatelessWidget {
               color: Theme.of(context).colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              post.isVideo
-                  ? Icons.movie_creation_outlined
-                  : Icons.image_outlined,
-            ),
+            child: Icon(post.isVideo ? Icons.movie_creation_outlined : Icons.image_outlined),
           );
     final kind = [
       postTypes[post.postType] ?? post.postType,
-      if (post.mode == 'carousel')
-        'کاروسل ${faDigits(post.slides.length)} اسلایدی',
+      if (post.mode == 'carousel') 'کاروسل ${faDigits(post.slides.length)} اسلایدی',
     ].join('، ');
 
     return Card(
@@ -169,11 +154,7 @@ class _PostTile extends StatelessWidget {
                   children: [
                     Text(kind, style: Theme.of(context).textTheme.labelMedium),
                     const SizedBox(height: 4),
-                    Text(
-                      post.isBusy ? '...' : post.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(post.isBusy ? '...' : post.title, maxLines: 2, overflow: TextOverflow.ellipsis),
                   ],
                 ),
               ),

@@ -27,18 +27,13 @@ const weekDays = <(String, String)>[
   ('4', 'جمعه'),
 ];
 
-List<String> _strings(dynamic v) => [
-  for (final e in (v as List? ?? const [])) '$e',
-];
+List<String> _strings(dynamic v) => [for (final e in (v as List? ?? const [])) '$e'];
 
 class AppUser {
   AppUser({required this.id, required this.email, required this.name});
   final String id, email, name;
-  factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
-    id: '${j['id']}',
-    email: '${j['email']}',
-    name: '${j['name'] ?? ''}',
-  );
+  factory AppUser.fromJson(Map<String, dynamic> j) =>
+      AppUser(id: '${j['id']}', email: '${j['email']}', name: '${j['name'] ?? ''}');
 }
 
 class TemplateInfo {
@@ -68,19 +63,13 @@ class VideoStyle {
 
 class Catalog {
   Catalog.fromJson(Map<String, dynamic> j)
-    : templates = [
-        for (final t in j['templates'] as List) TemplateInfo.fromJson(t),
-      ],
-      videoStyles = [
-        for (final s in j['video_styles'] as List) VideoStyle.fromJson(s),
-      ];
+    : templates = [for (final t in j['templates'] as List) TemplateInfo.fromJson(t)],
+      videoStyles = [for (final s in j['video_styles'] as List) VideoStyle.fromJson(s)];
   final List<TemplateInfo> templates;
   final List<VideoStyle> videoStyles;
 
-  List<TemplateInfo> forType(String postType) =>
-      templates.where((t) => t.postTypes.contains(postType)).toList();
-  VideoStyle? style(String id) =>
-      videoStyles.where((s) => s.id == id).firstOrNull;
+  List<TemplateInfo> forType(String postType) => templates.where((t) => t.postTypes.contains(postType)).toList();
+  VideoStyle? style(String id) => videoStyles.where((s) => s.id == id).firstOrNull;
 }
 
 class Research {
@@ -102,8 +91,7 @@ class Research {
   List<String> get facts => _strings(report['business_facts']);
   List<String> get interests => _strings(report['audience_interests']);
   List<Map<String, dynamic>> _maps(String k) => [
-    for (final e in (report[k] as List? ?? const []))
-      Map<String, dynamic>.from(e as Map),
+    for (final e in (report[k] as List? ?? const [])) Map<String, dynamic>.from(e as Map),
   ];
   List<Map<String, dynamic>> get trends => _maps('trends');
   List<Map<String, dynamic>> get competitors => _maps('competitors');
@@ -111,25 +99,17 @@ class Research {
   List<Map<String, dynamic>> get topVideos => _maps('top_videos');
   List<Map<String, dynamic>> get videoStyles => _maps('video_styles');
   List<Map<String, dynamic>> get sources => _maps('sources');
-  Map<String, dynamic> get ran =>
-      Map<String, dynamic>.from(report['ran'] as Map? ?? {});
+  Map<String, dynamic> get ran => Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }
 
 class Product {
   Product({this.name = '', this.desc = '', this.price = ''});
   String name, desc, price;
 
-  factory Product.fromJson(Map<String, dynamic> j) => Product(
-    name: '${j['name'] ?? ''}',
-    desc: '${j['desc'] ?? ''}',
-    price: '${j['price'] ?? ''}',
-  );
+  factory Product.fromJson(Map<String, dynamic> j) =>
+      Product(name: '${j['name'] ?? ''}', desc: '${j['desc'] ?? ''}', price: '${j['price'] ?? ''}');
 
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'desc': desc,
-    if (price.isNotEmpty) 'price': price,
-  };
+  Map<String, dynamic> toJson() => {'name': name, 'desc': desc, if (price.isNotEmpty) 'price': price};
 }
 
 class Brand {
@@ -150,28 +130,13 @@ class Brand {
     List<String>? hashtags,
     Map<String, List<String>>? weeklyPlan,
   }) : products = products ?? [],
-       colors =
-           colors ??
-           {
-             'primary': '#0E7C66',
-             'secondary': '#F4B400',
-             'bg': '#FFFFFF',
-             'text': '#111111',
-           },
+       colors = colors ?? {'primary': '#0E7C66', 'secondary': '#F4B400', 'bg': '#FFFFFF', 'text': '#111111'},
        forbiddenTopics = forbiddenTopics ?? [],
        hashtags = hashtags ?? [],
        weeklyPlan = weeklyPlan ?? {};
 
   String? id;
-  String name,
-      industry,
-      language,
-      description,
-      website,
-      instagram,
-      audience,
-      tone,
-      cta;
+  String name, industry, language, description, website, instagram, audience, tone, cta;
   List<Product> products;
   Map<String, String> colors;
   List<String> forbiddenTopics, hashtags;
@@ -187,22 +152,14 @@ class Brand {
     description: '${j['description'] ?? ''}',
     website: '${j['website'] ?? ''}',
     instagram: '${j['instagram'] ?? ''}',
-    products: [
-      for (final p in (j['products'] as List? ?? const [])) Product.fromJson(p),
-    ],
+    products: [for (final p in (j['products'] as List? ?? const [])) Product.fromJson(p)],
     audience: '${j['audience'] ?? ''}',
     tone: '${j['tone'] ?? ''}',
-    colors: {
-      for (final e in (j['colors'] as Map? ?? {}).entries)
-        '${e.key}': '${e.value}',
-    },
+    colors: {for (final e in (j['colors'] as Map? ?? {}).entries) '${e.key}': '${e.value}'},
     forbiddenTopics: _strings(j['forbidden_topics']),
     cta: '${j['cta'] ?? ''}',
     hashtags: _strings(j['hashtags']),
-    weeklyPlan: {
-      for (final e in (j['weekly_plan'] as Map? ?? {}).entries)
-        '${e.key}': _strings(e.value),
-    },
+    weeklyPlan: {for (final e in (j['weekly_plan'] as Map? ?? {}).entries) '${e.key}': _strings(e.value)},
   );
 
   Map<String, dynamic> toJson() => {
@@ -251,11 +208,8 @@ class Post {
 
   String get caption => '${content['caption'] ?? ''}';
   List<String> get hashtags => _strings(content['hashtags']);
-  String get captionWithTags => [
-    caption,
-    if (hashtags.isNotEmpty)
-      hashtags.map((h) => '#${h.replaceAll(' ', '_')}').join(' '),
-  ].join('\n\n');
+  String get captionWithTags =>
+      [caption, if (hashtags.isNotEmpty) hashtags.map((h) => '#${h.replaceAll(' ', '_')}').join(' ')].join('\n\n');
 
   factory Post.fromJson(Map<String, dynamic> j) => Post(
     id: j['id'] as String,
@@ -287,10 +241,8 @@ class GenerateRequest {
     'post_type': postType,
     'mode': postType == 'video_prompt' ? 'video' : mode,
     'topic_hint': topicHint,
-    if (template.isNotEmpty && postType != 'video_prompt' && mode == 'single')
-      'template': template,
-    if (videoStyle.isNotEmpty && postType == 'video_prompt')
-      'video_style': videoStyle,
+    if (template.isNotEmpty && postType != 'video_prompt' && mode == 'single') 'template': template,
+    if (videoStyle.isNotEmpty && postType == 'video_prompt') 'video_style': videoStyle,
     'n_body': nBody,
     'target_seconds': targetSeconds,
   };

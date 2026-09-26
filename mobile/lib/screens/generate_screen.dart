@@ -6,12 +6,7 @@ import '../widgets/common.dart';
 import 'templates_screen.dart';
 
 class GenerateScreen extends StatefulWidget {
-  const GenerateScreen({
-    super.key,
-    required this.api,
-    required this.brand,
-    required this.onCreated,
-  });
+  const GenerateScreen({super.key, required this.api, required this.brand, required this.onCreated});
   final Api api;
   final Brand brand;
   final VoidCallback onCreated;
@@ -32,19 +27,11 @@ class GenerateScreenState extends State<GenerateScreen> {
   @override
   void initState() {
     super.initState();
-    widget.api
-        .catalog()
-        .then((c) => mounted ? setState(() => _catalog = c) : null)
-        .catchError((_) => null);
+    widget.api.catalog().then((c) => mounted ? setState(() => _catalog = c) : null).catchError((_) => null);
   }
 
   /// Called from the research tab: "make a post from this trend/idea".
-  void prefill({
-    required String postType,
-    String topic = '',
-    String mode = 'single',
-    String videoStyle = '',
-  }) {
+  void prefill({required String postType, String topic = '', String mode = 'single', String videoStyle = ''}) {
     setState(() {
       _req
         ..postType = postType
@@ -58,19 +45,15 @@ class GenerateScreenState extends State<GenerateScreen> {
   Future<void> _pickTemplate() async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) =>
-            TemplatesScreen(api: widget.api, pickPostType: _req.postType),
+        builder: (_) => TemplatesScreen(api: widget.api, pickPostType: _req.postType),
       ),
     );
     if (code != null) setState(() => _req.template = code);
   }
 
   Future<void> _pickStyle() async {
-    final id = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true),
-      ),
-    );
+    final id = await Navigator.of(context)
+        .push<String>(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true)));
     if (id != null) setState(() => _req.videoStyle = id);
   }
 
@@ -122,8 +105,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   Widget build(BuildContext context) {
     final topicHint = switch (_req.postType) {
       'news' => 'خبر یا ترندی که می‌خواهی پوشش بدهی (اختیاری)',
-      'video_prompt' =>
-        'ایده‌ی ویدیو، مثلاً «مشتری صبح زود وارد کافه می‌شود…» (اختیاری)',
+      'video_prompt' => 'ایده‌ی ویدیو، مثلاً «مشتری صبح زود وارد کافه می‌شود…» (اختیاری)',
       'sales' => 'پیشنهاد یا تخفیف واقعی‌ات (اختیاری)',
       _ => 'موضوع یا ترند (اختیاری)',
     };
@@ -152,16 +134,8 @@ class GenerateScreenState extends State<GenerateScreen> {
           const SectionTitle('قالب'),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(
-                value: 'single',
-                label: Text('تک‌اسلاید'),
-                icon: Icon(Icons.crop_portrait),
-              ),
-              ButtonSegment(
-                value: 'carousel',
-                label: Text('کاروسل'),
-                icon: Icon(Icons.view_carousel_outlined),
-              ),
+              ButtonSegment(value: 'single', label: Text('تک‌اسلاید'), icon: Icon(Icons.crop_portrait)),
+              ButtonSegment(value: 'carousel', label: Text('کاروسل'), icon: Icon(Icons.view_carousel_outlined)),
             ],
             selected: {_req.mode},
             onSelectionChanged: (s) => setState(() => _req.mode = s.first),
@@ -173,23 +147,14 @@ class GenerateScreenState extends State<GenerateScreen> {
               title: 'قالب',
               value: _req.template.isEmpty
                   ? 'خودکار (هر بار متفاوت)'
-                  : _catalog?.templates
-                            .where((t) => t.code == _req.template)
-                            .firstOrNull
-                            ?.name ??
-                        _req.template,
-              preview: _catalog?.templates
-                  .where((t) => t.code == _req.template)
-                  .firstOrNull
-                  ?.preview,
+                  : _catalog?.templates.where((t) => t.code == _req.template).firstOrNull?.name ?? _req.template,
+              preview: _catalog?.templates.where((t) => t.code == _req.template).firstOrNull?.preview,
               onTap: _pickTemplate,
             ),
           ],
           if (_req.mode == 'carousel') ...[
             const SizedBox(height: 16),
-            Text(
-              'تعداد اسلاید: ${faDigits(_req.nBody + 2)} (کاور + ${faDigits(_req.nBody)} اسلاید + دعوت به اقدام)',
-            ),
+            Text('تعداد اسلاید: ${faDigits(_req.nBody + 2)} (کاور + ${faDigits(_req.nBody)} اسلاید + دعوت به اقدام)'),
             Slider(
               value: _req.nBody.toDouble(),
               min: 2,
@@ -233,11 +198,7 @@ class GenerateScreenState extends State<GenerateScreen> {
         FilledButton.icon(
           onPressed: _busy ? null : _submit,
           icon: _busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.auto_awesome),
           label: Text(_isVideo ? 'ساخت پرامپت ویدیو' : 'ساخت پست'),
         ),

@@ -11,10 +11,7 @@ class VideoPromptView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = post.content;
-    final clips = [
-      for (final e in (c['clips'] as List? ?? const []))
-        Map<String, dynamic>.from(e as Map),
-    ];
+    final clips = [for (final e in (c['clips'] as List? ?? const [])) Map<String, dynamic>.from(e as Map)];
     final theme = Theme.of(context);
 
     return ListView(
@@ -42,20 +39,14 @@ class VideoPromptView extends StatelessWidget {
             ),
           ),
         ),
-        _PromptCard(
-          title: 'پرامپت فریم اول (تصویر)',
-          prompt: '${c['keyframe_prompt'] ?? ''}',
-        ),
+        _PromptCard(title: 'پرامپت فریم اول (تصویر)', prompt: '${c['keyframe_prompt'] ?? ''}'),
         for (final clip in clips)
           _PromptCard(
-            title:
-                'کلیپ ${faDigits(clip['n'] ?? '')} — ${faDigits(clip['seconds'] ?? 8)} ثانیه',
+            title: 'کلیپ ${faDigits(clip['n'] ?? '')} — ${faDigits(clip['seconds'] ?? 8)} ثانیه',
             prompt: '${clip['full_prompt'] ?? ''}',
             footer: [
-              if ('${clip['voiceover'] ?? ''}'.isNotEmpty)
-                'گوینده: ${clip['voiceover']}',
-              if ('${clip['caption_text'] ?? ''}'.isNotEmpty)
-                'زیرنویس: ${clip['caption_text']}',
+              if ('${clip['voiceover'] ?? ''}'.isNotEmpty) 'گوینده: ${clip['voiceover']}',
+              if ('${clip['caption_text'] ?? ''}'.isNotEmpty) 'زیرنویس: ${clip['caption_text']}',
             ],
           ),
         if ('${c['music_mood'] ?? ''}'.isNotEmpty)
@@ -63,17 +54,11 @@ class VideoPromptView extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.music_note_outlined),
             title: const Text('حال‌وهوای موسیقی'),
-            subtitle: Text(
-              '${c['music_mood']}',
-              textDirection: TextDirection.ltr,
-            ),
+            subtitle: Text('${c['music_mood']}', textDirection: TextDirection.ltr),
           ),
         SectionTitle(
           'کپشن',
-          trailing: IconButton(
-            icon: const Icon(Icons.copy),
-            onPressed: () => copyText(context, post.captionWithTags),
-          ),
+          trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => copyText(context, post.captionWithTags)),
         ),
         SelectableText(post.captionWithTags),
       ],
@@ -82,11 +67,7 @@ class VideoPromptView extends StatelessWidget {
 }
 
 class _PromptCard extends StatelessWidget {
-  const _PromptCard({
-    required this.title,
-    required this.prompt,
-    this.footer = const [],
-  });
+  const _PromptCard({required this.title, required this.prompt, this.footer = const []});
   final String title, prompt;
   final List<String> footer;
 
@@ -100,17 +81,11 @@ class _PromptCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
+              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
               IconButton(
                 tooltip: 'کپی پرامپت',
                 icon: const Icon(Icons.copy),
-                onPressed: () =>
-                    copyText(context, prompt, label: 'پرامپت کپی شد'),
+                onPressed: () => copyText(context, prompt, label: 'پرامپت کپی شد'),
               ),
             ],
           ),
@@ -124,8 +99,7 @@ class _PromptCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
-          for (final f in footer)
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text(f)),
+          for (final f in footer) Padding(padding: const EdgeInsets.only(top: 6), child: Text(f)),
         ],
       ),
     ),

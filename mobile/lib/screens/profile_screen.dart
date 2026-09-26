@@ -36,10 +36,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (pw.isNotEmpty && pw.length < 8) {
         throw ApiException('رمز جدید حداقل ۸ حرف');
       }
-      final u = await widget.api.updateMe(
-        name: _name.text.trim(),
-        password: pw.isEmpty ? null : pw,
-      );
+      final u = await widget.api.updateMe(name: _name.text.trim(), password: pw.isEmpty ? null : pw);
       _password.clear();
       if (!mounted) return;
       setState(() => _user = u);
@@ -62,11 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.alternate_email),
-                title: Text(
-                  _user!.email,
-                  textDirection: TextDirection.ltr,
-                  textAlign: TextAlign.right,
-                ),
+                title: Text(_user!.email, textDirection: TextDirection.ltr, textAlign: TextAlign.right),
                 subtitle: const Text('ایمیل'),
               ),
               const SizedBox(height: 12),
@@ -79,15 +72,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 controller: _password,
                 obscureText: true,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(
-                  labelText: 'رمز جدید (اختیاری)',
-                ),
+                decoration: const InputDecoration(labelText: 'رمز جدید (اختیاری)'),
               ),
               const SizedBox(height: 20),
-              FilledButton(
-                onPressed: _busy ? null : _save,
-                child: const Text('ذخیره'),
-              ),
+              FilledButton(onPressed: _busy ? null : _save, child: const Text('ذخیره')),
               const SizedBox(height: 32),
               OutlinedButton.icon(
                 onPressed: widget.onLogout,

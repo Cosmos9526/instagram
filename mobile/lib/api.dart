@@ -21,18 +21,15 @@ class Api {
   final SharedPreferences _prefs;
   http.Client client = http.Client();
 
-  static Future<Api> load() async =>
-      Api._(await SharedPreferences.getInstance());
+  static Future<Api> load() async => Api._(await SharedPreferences.getInstance());
 
   /// As a PWA the app is served by the backend itself, so the default server is the page's origin.
-  String get baseUrl =>
-      _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
+  String get baseUrl => _prefs.getString('base_url') ?? (kIsWeb ? Uri.base.origin : '');
   String get token => _prefs.getString('token') ?? '';
   bool get hasServer => baseUrl.isNotEmpty || isDemo;
   bool get isLoggedIn => token.isNotEmpty;
 
-  Future<void> saveServer(String url) =>
-      _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));
+  Future<void> saveServer(String url) => _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));
 
   Future<void> logout() => _prefs.remove('token');
 
@@ -50,29 +47,19 @@ class Api {
     409: 'این کار الان ممکن نیست',
   };
 
-  Future<dynamic> _send(
-    String method,
-    String path, {
-    Object? body,
-    Map<String, String>? query,
-  }) async {
+  Future<dynamic> _send(String method, String path, {Object? body, Map<String, String>? query}) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
     final req = http.Request(method, uri)..headers.addAll(_headers);
     if (body != null) req.body = jsonEncode(body);
     final http.Response res;
     try {
-      res = await http.Response.fromStream(
-        await client.send(req).timeout(const Duration(seconds: 30)),
-      );
+      res = await http.Response.fromStream(await client.send(req).timeout(const Duration(seconds: 30)));
     } catch (_) {
       throw ApiException('ارتباط با سرور برقرار نشد');
     }
     final text = utf8.decode(res.bodyBytes);
     if (res.statusCode >= 400) {
-      throw ApiException(
-        _messages[res.statusCode] ?? 'خطای سرور (${res.statusCode})',
-        res.statusCode,
-      );
+      throw ApiException(_messages[res.statusCode] ?? 'خطای سرور (${res.statusCode})', res.statusCode);
     }
     return text.isEmpty ? null : jsonDecode(text);
   }
@@ -89,19 +76,13 @@ class Api {
     try {
       return await _auth('/auth/login', {'email': email, 'password': password});
     } on ApiException catch (e) {
-      throw e.status == 401
-          ? ApiException('ایمیل یا رمز عبور اشتباه است', 401)
-          : e;
+      throw e.status == 401 ? ApiException('ایمیل یا رمز عبور اشتباه است', 401) : e;
     }
   }
 
   Future<AppUser> register(String name, String email, String password) async {
     try {
-      return await _auth('/auth/register', {
-        'name': name,
-        'email': email,
-        'password': password,
-      });
+      return await _auth('/auth/register', {'name': name, 'email': email, 'password': password});
     } on ApiException catch (e) {
       if (e.status == 409) {
         throw ApiException('این ایمیل قبلاً ثبت شده؛ وارد شوید', 409);
@@ -113,23 +94,14 @@ class Api {
     }
   }
 
-  Future<AppUser> me() async =>
-      AppUser.fromJson(await _send('GET', '/auth/me'));
+  Future<AppUser> me() async => AppUser.fromJson(await _send('GET', '/auth/me'));
 
   Future<AppUser> updateMe({String? name, String? password}) async =>
-      AppUser.fromJson(
-        await _send(
-          'PUT',
-          '/auth/me',
-          body: {'name': ?name, 'password': ?password},
-        ),
-      );
+      AppUser.fromJson(await _send('PUT', '/auth/me', body: {'name': ?name, 'password': ?password}));
 
   // ---- projects ----
 
-  Future<List<Brand>> brands() async => [
-    for (final b in await _send('GET', '/brands') as List) Brand.fromJson(b),
-  ];
+  Future<List<Brand>> brands() async => [for (final b in await _send('GET', '/brands') as List) Brand.fromJson(b)];
 
   Future<String> saveBrand(Brand b) async {
     final res = b.id == null
@@ -143,46 +115,31 @@ class Api {
   // ---- catalog ----
 
   Catalog? _catalog;
-  Future<Catalog> catalog() async =>
-      _catalog ??= Catalog.fromJson(await _send('GET', '/catalog'));
+  Future<Catalog> catalog() async => _catalog ??= Catalog.fromJson(await _send('GET', '/catalog'));
 
   // ---- research ----
 
   Future<List<Research>> research(String brandId) async => [
-    for (final r in await _send('GET', '/brands/$brandId/research') as List)
-      Research.fromJson(r),
+    for (final r in await _send('GET', '/brands/$brandId/research') as List) Research.fromJson(r),
   ];
 
   Future<Research> startResearch(String brandId, String focus) async =>
-      Research.fromJson(
-        await _send(
-          'POST',
-          '/brands/$brandId/research',
-          body: {'focus': focus},
-        ),
-      );
+      Research.fromJson(await _send('POST', '/brands/$brandId/research', body: {'focus': focus}));
 
   // ---- posts ----
 
   Future<List<Post>> posts(String brandId) async => [
-    for (final p in await _send('GET', '/brands/$brandId/posts') as List)
-      Post.fromJson(p),
+    for (final p in await _send('GET', '/brands/$brandId/posts') as List) Post.fromJson(p),
   ];
 
-  Future<Post> post(String id) async =>
-      Post.fromJson(await _send('GET', '/posts/$id'));
+  Future<Post> post(String id) async => Post.fromJson(await _send('GET', '/posts/$id'));
 
   Future<Post> generate(String brandId, GenerateRequest r) async =>
-      Post.fromJson(
-        await _send('POST', '/brands/$brandId/generate', body: r.toJson()),
-      );
+      Post.fromJson(await _send('POST', '/brands/$brandId/generate', body: r.toJson()));
 
   Future<Post> editPost(String id, Map<String, dynamic> content) async =>
-      Post.fromJson(
-        await _send('PUT', '/posts/$id', body: {'content': content}),
-      );
+      Post.fromJson(await _send('PUT', '/posts/$id', body: {'content': content}));
 
   /// action: approve | reject | regenerate
-  Future<Post> review(String id, String action) async =>
-      Post.fromJson(await _send('POST', '/posts/$id/$action'));
+  Future<Post> review(String id, String action) async => Post.fromJson(await _send('POST', '/posts/$id/$action'));
 }

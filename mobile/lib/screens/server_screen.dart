@@ -14,9 +14,7 @@ class ServerScreen extends StatefulWidget {
 }
 
 class _ServerScreenState extends State<ServerScreen> {
-  late final _url = TextEditingController(
-    text: widget.api.baseUrl.isEmpty ? 'https://' : widget.api.baseUrl,
-  );
+  late final _url = TextEditingController(text: widget.api.baseUrl.isEmpty ? 'https://' : widget.api.baseUrl);
   bool _busy = false;
 
   Future<void> _save() async {
@@ -25,10 +23,8 @@ class _ServerScreenState extends State<ServerScreen> {
     try {
       await widget.api.catalog();
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => startScreen(widget.api)),
-        (_) => false,
-      );
+      Navigator.of(context)
+          .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => startScreen(widget.api)), (_) => false);
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {
@@ -48,16 +44,10 @@ class _ServerScreenState extends State<ServerScreen> {
           controller: _url,
           textDirection: TextDirection.ltr,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
-            labelText: 'آدرس سرور',
-            hintText: 'https://postyar.example.com',
-          ),
+          decoration: const InputDecoration(labelText: 'آدرس سرور', hintText: 'https://postyar.example.com'),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: _busy ? null : _save,
-          child: const Text('ادامه'),
-        ),
+        FilledButton(onPressed: _busy ? null : _save, child: const Text('ادامه')),
       ],
     ),
   );

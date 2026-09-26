@@ -60,6 +60,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ورود'), findsWidgets);
     expect(find.text('ثبت‌نام'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.text('Postyar'))), TextDirection.rtl);
+    expect(Directionality.of(tester.element(find.text('ثبت‌نام'))), TextDirection.rtl);
   });
 }

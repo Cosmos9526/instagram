@@ -8,6 +8,7 @@ import 'demo.dart';
 import 'screens/auth_screen.dart';
 import 'screens/projects_screen.dart';
 import 'screens/server_screen.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,6 @@ class PostyarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const seed = Color(0xFF0E7C66);
     return MaterialApp(
       title: 'Postyar',
       debugShowCheckedModeBanner: false,
@@ -40,21 +40,14 @@ class PostyarApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        colorSchemeSeed: seed,
-        fontFamily: 'Vazirmatn',
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-      ),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
       // Phone layout everywhere: in a wide desktop browser the app stays phone-width and centred.
       builder: (context, child) => ColoredBox(
-        color: const Color(0xFFE9EEEC),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: child,
-          ),
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: child),
         ),
       ),
       home: startScreen(api),

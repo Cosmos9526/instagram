@@ -12,8 +12,7 @@ class EditScreen extends StatefulWidget {
 }
 
 class _Field {
-  _Field(this.label, String value, this.write, {this.lines = 1})
-    : controller = TextEditingController(text: value);
+  _Field(this.label, String value, this.write, {this.lines = 1}) : controller = TextEditingController(text: value);
   final String label;
   final TextEditingController controller;
   final void Function(Map<String, dynamic> content, String value) write;
@@ -41,19 +40,10 @@ class _EditScreenState extends State<EditScreen> {
       },
   };
 
-  List<_Field> _slotFields(
-    String prefix,
-    Map slots,
-    void Function(String k, String v) set,
-  ) => [
+  List<_Field> _slotFields(String prefix, Map slots, void Function(String k, String v) set) => [
     for (final key in _slotLabels.keys)
       if (slots[key] is String)
-        _Field(
-          '$prefix${_slotLabels[key]}',
-          slots[key] as String,
-          (_, v) => set(key, v),
-          lines: key == 'body' ? 4 : 2,
-        ),
+        _Field('$prefix${_slotLabels[key]}', slots[key] as String, (_, v) => set(key, v), lines: key == 'body' ? 4 : 2),
   ];
 
   List<_Field> _buildFields() {
@@ -77,24 +67,13 @@ class _EditScreenState extends State<EditScreen> {
           _Field(
             'موارد لیست (هر خط یک مورد)',
             (slots['items'] as List).join('\n'),
-            (_, v) => slots['items'] = v
-                .split('\n')
-                .map((s) => s.trim())
-                .where((s) => s.isNotEmpty)
-                .toList(),
+            (_, v) => slots['items'] = v.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
             lines: 5,
           ),
         );
       }
     }
-    fields.add(
-      _Field(
-        'کپشن',
-        '${c['caption'] ?? ''}',
-        (m, v) => m['caption'] = v,
-        lines: 6,
-      ),
-    );
+    fields.add(_Field('کپشن', '${c['caption'] ?? ''}', (m, v) => m['caption'] = v, lines: 6));
     return fields;
   }
 
