@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block style %}
+  body { background: var(--primary); color: #fff; }
+  .wrap { position: absolute; inset: 200px 72px 150px; display: flex; flex-direction: column;
+          align-items: center; justify-content: center; text-align: center; gap: 50px; }
+  #headline { font-size: 80px; max-height: 420px; }
+  .cta { background: var(--secondary); color: #111; font-weight: 800; font-size: 44px;
+         padding: 24px 60px; border-radius: 999px; }
+  .brand { color: #fff; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <span class="cta">{{ s.cta }}</span>
+</div>
+{% endblock %}

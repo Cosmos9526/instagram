@@ -1,0 +1,59 @@
+# Isolated stack for a shared host: hard memory/CPU limits, ~1.6GB RAM total.
+# memswap_limit == mem_limit so an overrun kills only our container, never the host's other services.
+name: hashtpa
+
+x-app: &app
+  build: ./backend
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql+psycopg://hashtpa:${POSTGRES_PASSWORD:-hashtpa}@db:5432/hashtpa
+    MEDIA_DIR: /data/media
+  volumes:
+    - media:/data/media
+  depends_on:
+    db: { condition: service_healthy }
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:16-alpine
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=30"]
+    environment:
+      POSTGRES_USER: hashtpa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hashtpa}
+      POSTGRES_DB: hashtpa
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "hashtpa"]
+      interval: 5s
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+    restart: unless-stopped
+
+  api:
+    <<: *app
+    ports: ["127.0.0.1:8710:8000"]   # Caddy proxies to this; not exposed publicly
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.5
+
+  worker:            # the only process that runs Chromium; one job at a time
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1.5
+    shm_size: 256m
+    oom_score_adj: 500
+
+  scheduler:
+    <<: *app
+    command: ["python", "-m", "app.scheduler"]
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+
+volumes:
+  pgdata:
+  media:

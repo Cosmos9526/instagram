@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'fa' else 'ltr' }}">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: Vazirmatn; font-weight: 400; src: url('{{ font_dir }}/Vazirmatn-Regular.woff2'); }
+  @font-face { font-family: Vazirmatn; font-weight: 700; src: url('{{ font_dir }}/Vazirmatn-Bold.woff2'); }
+  @font-face { font-family: Vazirmatn; font-weight: 800 900; src: url('{{ font_dir }}/Vazirmatn-Black.woff2'); }
+  :root {
+    --primary: {{ colors.primary or '#0E7C66' }};
+    --secondary: {{ colors.secondary or '#F4B400' }};
+    --bg: {{ colors.bg or '#FFFFFF' }};
+    --text: {{ colors.text or '#111111' }};
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; overflow: hidden; }
+  body {
+    font-family: Vazirmatn, 'Inter', sans-serif;
+    background: var(--bg); color: var(--text);
+    position: relative; line-height: 1.45;
+  }
+  .fit { overflow: hidden; }
+  .kicker { display: inline-block; font-weight: 700; font-size: 34px; padding: 10px 26px;
+            border-radius: 999px; background: var(--primary); color: #fff; }
+  .headline { font-weight: 900; font-size: 88px; line-height: 1.3; }
+  .body { font-size: 40px; font-weight: 400; line-height: 1.7; }
+  .brand { position: absolute; bottom: 44px; inset-inline-start: 64px; font-weight: 700;
+           font-size: 30px; opacity: .85; }
+  .page { position: absolute; bottom: 44px; inset-inline-end: 64px; font-size: 30px; opacity: .6; }
+  .img { background-size: cover; background-position: center;
+         background-image: {% if image %}url('{{ image }}'){% else %}linear-gradient(135deg, var(--primary), var(--secondary)){% endif %}; }
+  {% block style %}{% endblock %}
+</style>
+</head>
+<body>
+{% block content %}{% endblock %}
+<div class="brand">{{ brand_name }}</div>
+{% if page %}<div class="page">{{ page }}</div>{% endif %}
+</body>
+</html>
