@@ -1,4 +1,4 @@
-# Postyar app — PWA (iPhone + Android) and native builds
+# Postyar app: PWA (iPhone + Android) and native builds
 
 One Flutter codebase, mobile layout only (portrait, phone width even in a desktop browser), Persian RTL.
 
