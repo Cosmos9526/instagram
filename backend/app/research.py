@@ -176,24 +176,162 @@ Max 4 styles, strongest evidence first."""
     return chat_json("You analyse short-form video trends. Output only JSON.", prompt, 0.4).get("styles", [])
 
 
+FA_STOP = set("""و در به از که این آن با برای را تا یا هم نیز بر اما اگر چه چرا چطور چگونه کرد کند کنید کنیم شد شود
+است هست بود باشد می‌شود میشود های ها ای یک دو سه همه هر خود ما شما آنها ولی پس روی زیر بین بعد قبل بیشتر کمتر
+the a an and or of to in on for with how what why is are best top new vs from by at your you this that
+سال ماه روز امروز بهترین جدید دانلود آهنگ ساخته شده کامل رایگان قسمت ویدیو ویدئو فیلم آموزش خرید قیمت
+ago weeks days months year years views video watch free download full part official""".split())
+
+
+def _tokens(text: str) -> list[str]:
+    import regex
+
+    return [w for w in regex.findall(r"[\p{L}\u200c]{3,}", (text or "").lower()) if w not in FA_STOP]
+
+
+def _keywords(texts: list[str], n: int = 15) -> list[str]:
+    from collections import Counter
+
+    uni, bi = Counter(), Counter()
+    for t in texts:
+        toks = _tokens(t)
+        uni.update(set(toks))
+        bi.update({f"{a} {b}" for a, b in zip(toks, toks[1:])})
+    phrases, used = [], set()
+    for p, c in bi.most_common(n * 3):
+        a, b = p.split(" ")
+        if c >= 3 and a not in used and b not in used:  # skip overlapping, accidental word pairs
+            phrases.append(p)
+            used.update((a, b))
+    words = [w for w, _ in uni.most_common(n * 2) if w not in used]
+    return (phrases + words)[:n]
+
+
+SENSITIVE = ["سیاست", "سیاسی", "انتخابات", "جنگ", "حمله", "کشته", "اعتراض", "مذهب", "مذهبی", "پاپ", "دولت",
+             "تحریم", "زلزله", "پنتاگون", "نظامی", "ارتش", "military", "pentagon", "politic", "election", "war ", "attack", "killed", "pope", "religio"]
+
+
+def _safe(text: str, b: Brand) -> bool:
+    t = (text or "").lower()
+    return not any(w.lower() in t for w in SENSITIVE + list(b.forbidden_topics or []))
+
+
+def collect_free(b: Brand, focus: str) -> dict:
+    """Keyless open-source sources: DuckDuckGo web + news (ddgs) and YouTube (yt-dlp)."""
+    from .sources import news_search, web_search, youtube_search
+
+    topic = focus or (b.products[0]["name"] if b.products else b.industry)
+    queries = [q for q in (f"{b.name} {b.industry}", f"{topic} {b.industry}", f"ترند {b.industry}") if q.strip()]
+    web, seen = [], set()
+    for q in queries:
+        for r in web_search(q, 6):
+            if r["url"] not in seen:
+                seen.add(r["url"])
+                web.append(r)
+    news = news_search(f"{b.industry} {focus}".strip(), 8)
+    videos = []
+    for q in (f"آموزش {topic}", f"{b.industry}"):
+        videos += youtube_search(q, 6)
+    uniq = {v["url"]: v for v in videos}
+    videos = sorted(uniq.values(), key=lambda v: v["views"], reverse=True)
+    return {"web": web, "news": news, "videos": videos, "queries": queries}
+
+
+def _free_prompt(b: Brand, focus: str, data: dict) -> str:
+    lang = "Persian" if b.language == "fa" else "English"
+    web = [{k: r[k] for k in ("title", "snippet", "url")} for r in data["web"][:15]]
+    news = [{k: r[k] for k in ("title", "snippet", "date", "url")} for r in data["news"][:8]]
+    vids = [{k: v[k] for k in ("title", "views")} for v in data["videos"][:10]]
+    return f"""You are a market researcher. Using ONLY the search results below (collected today), write a market
+report for this brand. Do not invent facts that are not supported by the results.
+
+<brand>
+{brand_block(b)}
+</brand>
+<focus>{focus or 'the business as a whole'}</focus>
+<web_results>{json.dumps(web, ensure_ascii=False)}</web_results>
+<news_this_week>{json.dumps(news, ensure_ascii=False)}</news_this_week>
+<top_youtube_videos>{json.dumps(vids, ensure_ascii=False)}</top_youtube_videos>
+
+Return ONLY JSON, user-facing text in {lang}:
+{{"summary": "...", "business_facts": ["..."], "competitors": [{{"name": "...", "what_they_post": "...", "gap_we_can_fill": "..."}}],
+ "audience_interests": ["..."], "trends": [{{"title": "...", "why_now": "...", "angle_for_brand": "...", "post_type": "educational|news|promo|sales|video_prompt"}}],
+ "keywords": ["10-20"], "hashtags": ["15-30 without #"], "content_ideas": [{{"title": "...", "post_type": "...", "format": "single|carousel|video"}}]}}"""
+
+
+def heuristic_report(b: Brand, focus: str, data: dict) -> dict:
+    """Report built only from the search results, for when no text model is available."""
+    texts = [r["title"] + " " + r["snippet"] for r in data["web"] + data["news"] if _safe(r["title"], b)]
+    texts += [v["title"] for v in data["videos"]]
+    kws = _keywords(texts)
+    product = b.products[0]["name"] if b.products else b.industry
+    trends = [
+        {"title": n["title"], "why_now": f"خبر این هفته از {n.get('source') or 'اخبار'}",
+         "angle_for_brand": f"ربط دادن این خبر به {product}", "post_type": "news"}
+        for n in [n for n in data["news"] if _safe(n["title"] + " " + n["snippet"], b)][:5]
+    ]
+    ideas = [{"title": v["title"], "post_type": "educational", "format": "carousel"} for v in data["videos"][:3]]
+    ideas += [{"title": f"{k} از نگاه {b.name}", "post_type": "educational", "format": "single"} for k in kws[:3]]
+    summary = (
+        f"{len(data['web'])} نتیجه‌ی وب، {len(data['news'])} خبر این هفته و {len(data['videos'])} ویدیو بررسی شد. "
+        f"پرتکرارترین موضوع‌ها: {'، '.join(kws[:6]) or '—'}."
+    )
+    return {
+        "summary": summary,
+        "business_facts": [f"{r['title']} ({r['url']})" for r in data["web"] if b.name and b.name in r["title"]][:5],
+        "competitors": [],
+        "audience_interests": kws[:6],
+        "trends": trends,
+        "keywords": kws,
+        "hashtags": [k.replace(" ", "_") for k in kws],
+        "content_ideas": ideas,
+    }
+
+
 def run_research(b: Brand, focus: str) -> dict:
-    report, sources, mode = web_research(b, focus)
-    ran = {"web": mode}
+    ran: dict = {}
+    report = None
+    sources: list[dict] = []
     videos: list[dict] = []
+    if settings.research_provider == "gemini" and settings.llm_provider != "fake":
+        try:
+            report, sources, mode = web_research(b, focus)
+            ran["web"] = mode
+        except Exception as e:  # noqa: BLE001 — fall back to free sources
+            log.warning("gemini research failed, using free sources: %s", e)
+    if report is None and (settings.research_provider == "fake" or settings.llm_provider == "fake"):
+        report, sources, ran["web"] = web_research(b, focus)
+    if report is None:
+        data = collect_free(b, focus)
+        videos += data["videos"]
+        sources = [{"title": r["title"], "url": r["url"]} for r in data["web"] + data["news"]]
+        try:
+            report = chat_json("You are a careful market researcher. Output only JSON.", _free_prompt(b, focus, data), 0.4)
+            ran["web"] = "search"
+        except Exception as e:  # noqa: BLE001 — no model available: build from the raw results
+            log.warning("summary model failed, heuristic report: %s", e)
+            report = heuristic_report(b, focus, data)
+            ran["web"] = "search_only"
+        ran["youtube"] = "ok" if data["videos"] else "off"
     for name, fn, arg in (
-        ("youtube", youtube_top_videos, report.get("keywords", [])),
+        ("youtube_api", youtube_top_videos, report.get("keywords", [])),
         ("instagram", instagram_top_posts, report.get("hashtags", [])),
     ):
         try:
-            found = fn(arg, b.language) if name == "youtube" else fn(arg)
-            ran[name] = "ok" if found else "off"
+            found = fn(arg, b.language) if name == "youtube_api" else fn(arg)
+            if found:
+                ran[name] = "ok"
             videos += found
         except Exception as e:  # noqa: BLE001 — one source failing must not sink the report
             log.warning("%s source failed: %s", name, e)
             ran[name] = "error"
-    videos.sort(key=lambda v: v.get("views", 0), reverse=True)
-    report["top_videos"] = videos[:15]
-    report["video_styles"] = analyze_styles(b, videos)
+    uniq = {v["url"]: v for v in videos}
+    report["top_videos"] = sorted(uniq.values(), key=lambda v: v.get("views", 0), reverse=True)[:15]
+    try:
+        report["video_styles"] = analyze_styles(b, report["top_videos"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("style analysis failed: %s", e)
+        report["video_styles"] = []
     report["sources"] = sources
     report["ran"] = ran
     report["created"] = datetime.now(timezone.utc).isoformat()

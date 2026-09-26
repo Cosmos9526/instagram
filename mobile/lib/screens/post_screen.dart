@@ -145,6 +145,7 @@ class _PostScreenState extends State<PostScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (p.content['source'] == 'offline') _OfflineNote(),
         SizedBox(
           height: width * 1350 / 1080,
           child: PageView.builder(
@@ -250,4 +251,21 @@ class _PostScreenState extends State<PostScreen> {
       ),
     ),
   );
+}
+
+
+class _OfflineNote extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: scheme.secondaryContainer, borderRadius: BorderRadius.circular(16)),
+      child: const Text(
+        'این پست بدون مدل هوش مصنوعی و از روی قالب آماده ساخته شد (مدل در دسترس نبود). '
+        'متن را ویرایش کنید یا وقتی مدل فعال شد «ساخت دوباره» را بزنید.',
+      ),
+    );
+  }
 }

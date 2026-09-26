@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
     llm_api_key: str = ""
     llm_model: str = "gemini-flash-latest"
+    # Tried when the primary model fails (quota, 402, outage). OpenAI-compatible; empty = no fallback.
+    llm_fallback_url: str = "https://text.pollinations.ai/openai"
+    llm_fallback_model: str = "openai"
 
     # Images: cloudflare (Workers AI, Flux schnell) | none (brand-colour gradient)
     image_provider: str = "none"
@@ -27,7 +30,7 @@ class Settings(BaseSettings):
     chromium_path: str = ""  # optional explicit Chromium binary
 
     # Market research
-    research_provider: str = "gemini"  # gemini (Google Search grounding) | llm (no web access) | fake
+    research_provider: str = "free"  # free (ddgs + yt-dlp, no keys) | gemini (Google Search grounding, falls back to free) | fake
     gemini_research_model: str = "gemini-flash-latest"
     youtube_api_key: str = ""  # YouTube Data API v3: most-viewed recent videos per keyword
     apify_token: str = ""  # optional: Instagram hashtag top posts via Apify

@@ -5,10 +5,11 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from . import prompts
+from . import offline, prompts
 from .config import settings
 from .images import generate_image
-from .llm import chat_json
+from .llm import LLMError, chat_json
+from .video_styles import STYLE_BY_ID
 from .models import Brand, Post, Research
 from .research import research_brief
 from .render import render_html, renderer
@@ -51,7 +52,7 @@ def pick_template(db: Session, brand_id: str, post_type: str) -> str:
 def _fit(code: str, slots: dict, whole: dict, sys: str) -> dict:
     """One LLM repair round for over-long slots, then hard truncation."""
     errs = violations(code, slots)
-    if errs:
+    if errs and whole.get("source") != "offline":
         try:
             fixed = chat_json(sys, prompts.repair_prompt(slots, errs), temperature=0.3)
             slots = fixed.get("slots", fixed)
@@ -82,24 +83,43 @@ def run_post(db: Session, post: Post) -> None:
     recent = recent_headlines(db, brand.id)
     res = latest_research(db, brand.id)
     research = research_brief(res.report) if res else ""
+    report = res.report if res else {}
     opts = post.content or {}
+
+    def ask(user_prompt: str, fallback):
+        """Model first; if no model is reachable, the offline generator (the post is marked source=offline)."""
+        try:
+            return chat_json(sys, user_prompt)
+        except LLMError as e:
+            data = fallback()
+            data["source"] = "offline"
+            data["model_error"] = str(e)[:300]
+            return data
 
     if post.post_type == "video_prompt":
         target = int(opts.get("target_seconds", 24))
         style_id = opts.get("video_style", "")
-        data = chat_json(sys, prompts.video_prompt(brand, post.topic_hint, target, style_id, research))
+        data = ask(
+            prompts.video_prompt(brand, post.topic_hint, target, style_id, research),
+            lambda: offline.video(brand, target, STYLE_BY_ID.get(style_id), post.topic_hint, report),
+        )
         data["video_style"] = style_id
         clips = data.get("clips", [])
         for c in clips:
             c["full_prompt"] = prompts.assemble_clip_prompt(data["bible_text"], c, c["n"], len(clips))
         data["target_seconds"] = target
+        if data.get("source") == "offline":
+            data["caption"], data["hashtags"] = offline.caption(brand, report, post.topic_hint)
         _keep_inputs(opts, data)
         post.content, post.slides = data, []
         return
 
     if post.mode == "carousel":
         n_body = int(opts.get("n_body", 4))
-        data = chat_json(sys, prompts.carousel_prompt(brand, post.post_type, post.topic_hint, recent, n_body, research))
+        data = ask(
+            prompts.carousel_prompt(brand, post.post_type, post.topic_hint, recent, n_body, research),
+            lambda: offline.carousel(brand, n_body, post.topic_hint, report),
+        )
         image = _image(post, data.get("image_prompt", ""))
         cover = _fit("car_cover", data["cover"], data, sys)
         bodies = [_fit("car_body", b, data, sys) for b in data["body"]]
@@ -112,13 +132,18 @@ def run_post(db: Session, post: Post) -> None:
         data.update(cover=cover, body=bodies, cta=cta)
     else:
         code = opts.get("template") if opts.get("template") in TEMPLATES else pick_template(db, brand.id, post.post_type)
-        data = chat_json(sys, prompts.single_post_prompt(brand, post.post_type, post.topic_hint, recent, code, research))
+        data = ask(
+            prompts.single_post_prompt(brand, post.post_type, post.topic_hint, recent, code, research),
+            lambda: {"slots": offline.single_slots(brand, post.post_type, code, post.topic_hint, report)},
+        )
         data["template"] = code
         data["slots"] = _fit(code, data.get("slots", {}), data, sys)
 
         image = _image(post, data.get("image_prompt", "")) if TEMPLATES[code]["image"] else None
         slides = [_render(post, brand, code, data["slots"], 0, image)]
 
+    if data.get("source") == "offline" and not data.get("caption"):
+        data["caption"], data["hashtags"] = offline.caption(brand, report, post.topic_hint)
     data["hashtags"] = list(dict.fromkeys((data.get("hashtags") or []) + (brand.hashtags or [])))
     _keep_inputs(opts, data)
     post.content, post.slides = data, slides
