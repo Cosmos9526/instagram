@@ -35,7 +35,8 @@ services:
 
   api:
     <<: *app
-    ports: ["127.0.0.1:8710:8000"]   # Caddy proxies to this; not exposed publicly
+    # Local-only by default. On a server without a proxy set POSTYAR_BIND=0.0.0.0 and pick a free POSTYAR_PORT in .env.
+    ports: ["${POSTYAR_BIND:-127.0.0.1}:${POSTYAR_PORT:-8710}:8000"]
     mem_limit: 256m
     memswap_limit: 256m
     cpus: 0.5
