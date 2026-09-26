@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block style %}
+  body { background: var(--secondary); color: #111; }
+  .wrap { position: absolute; inset: 150px 72px 170px; display: flex; flex-direction: column; justify-content: center; gap: 60px; }
+  #question { font-size: 84px; font-weight: 900; line-height: 1.35; max-height: 460px; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .opt { background: #fff; border-radius: 36px; padding: 44px 24px; text-align: center; font-size: 46px; font-weight: 800; }
+  .opt b { display: block; font-size: 34px; color: var(--primary); margin-bottom: 10px; }
+  .hint { font-size: 34px; font-weight: 700; opacity: .75; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 id="question" class="fit">{{ s.question }}</h1>
+  <div class="opts">
+    <div class="opt"><b>{{ 'الف' if lang == 'fa' else 'A' }}</b>{{ s.option_a }}</div>
+    <div class="opt"><b>{{ 'ب' if lang == 'fa' else 'B' }}</b>{{ s.option_b }}</div>
+  </div>
+  <div class="hint">{{ 'جوابت رو کامنت کن 👇' if lang == 'fa' else 'Comment your answer 👇' }}</div>
+</div>
+{% endblock %}

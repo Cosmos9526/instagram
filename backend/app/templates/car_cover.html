@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block style %}
+  .hero { position: absolute; inset: 0 0 42% 0; }
+  .wrap { position: absolute; inset: 60% 72px 150px; display: flex; flex-direction: column; gap: 26px; }
+  #headline { font-size: 84px; max-height: 330px; }
+  .swipe { font-size: 32px; font-weight: 700; color: var(--primary); }
+{% endblock %}
+{% block content %}
+<div class="hero img"></div>
+<div class="wrap">
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <span class="swipe">{{ '← ورق بزنید' if lang == 'fa' else 'Swipe →' }}</span>
+</div>
+{% endblock %}

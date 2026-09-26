@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block style %}
+  .wrap { position: absolute; inset: 90px 72px 150px; display: flex; flex-direction: column; gap: 40px; }
+  #headline { font-size: 72px; max-height: 260px; }
+  ol { list-style: none; display: flex; flex-direction: column; gap: 0; max-height: 800px; }
+  li { position: relative; padding-inline-start: 110px; padding-block: 18px 34px; font-size: 42px; line-height: 1.55; }
+  li::before { content: ""; position: absolute; inset-inline-start: 38px; top: 80px; bottom: 0; width: 6px; background: color-mix(in srgb, var(--primary) 25%, transparent); }
+  li:last-child::before { display: none; }
+  li b { position: absolute; inset-inline-start: 0; top: 10px; width: 82px; height: 82px; border-radius: 50%;
+         background: var(--primary); color: #fff; display: grid; place-items: center; font-size: 40px; font-weight: 900; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <ol id="items" class="fit">{% for it in s['items'] %}<li><b>{{ digits(loop.index) }}</b>{{ it }}</li>{% endfor %}</ol>
+</div>
+{% endblock %}

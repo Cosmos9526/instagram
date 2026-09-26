@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block style %}
+  .hero { position: absolute; inset: 0 0 50% 0; }
+  .panel { position: absolute; inset: 46% 0 0 0; background: var(--bg); border-radius: 48px 48px 0 0;
+           padding: 64px 72px 140px; display: flex; flex-direction: column; gap: 30px; }
+  .kicker { background: #D7263D; align-self: flex-start; }
+  #headline { font-size: 72px; max-height: 290px; }
+  #body { font-size: 36px; max-height: 250px; }
+{% endblock %}
+{% block content %}
+<div class="hero img"></div>
+<div class="panel">
+  <span class="kicker">{{ s.kicker }}</span>
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <p id="body" class="body fit">{{ s.body }}</p>
+</div>
+{% endblock %}

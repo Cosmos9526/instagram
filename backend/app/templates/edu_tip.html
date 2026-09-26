@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block style %}
+  .wrap { position: absolute; inset: 90px 72px 140px; display: flex; flex-direction: column; gap: 44px; }
+  .bar { width: 140px; height: 12px; background: var(--secondary); border-radius: 6px; }
+  #headline { max-height: 360px; }
+  #body { max-height: 560px; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <span class="kicker" style="align-self:flex-start">{{ s.kicker }}</span>
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <div class="bar"></div>
+  <p id="body" class="body fit">{{ s.body }}</p>
+</div>
+{% endblock %}

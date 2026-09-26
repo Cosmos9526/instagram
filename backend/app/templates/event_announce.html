@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block style %}
+  .hero { position: absolute; inset: 0 0 45% 0; }
+  .ticket { position: absolute; inset: 44% 56px 150px; background: var(--bg); border-radius: 40px;
+            border: 4px dashed color-mix(in srgb, var(--primary) 50%, transparent); padding: 52px;
+            display: flex; flex-direction: column; gap: 24px; }
+  .kicker { align-self: flex-start; }
+  #headline { font-size: 68px; max-height: 190px; }
+  .meta { display: flex; flex-direction: column; gap: 12px; font-size: 38px; font-weight: 700; color: var(--primary); }
+  .cta { align-self: flex-start; background: var(--secondary); color: #111; font-weight: 800; font-size: 36px; padding: 16px 40px; border-radius: 16px; }
+{% endblock %}
+{% block content %}
+<div class="hero img"></div>
+<div class="ticket">
+  <span class="kicker">{{ s.kicker }}</span>
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <div class="meta"><span>🗓 {{ s.date_text }}</span><span>📍 {{ s.place }}</span></div>
+  {% if s.cta %}<span class="cta">{{ s.cta }}</span>{% endif %}
+</div>
+{% endblock %}

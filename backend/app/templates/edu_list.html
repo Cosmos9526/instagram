@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block style %}
+  .wrap { position: absolute; inset: 90px 72px 140px; display: flex; flex-direction: column; gap: 40px; }
+  #headline { max-height: 260px; font-size: 76px; }
+  ol { list-style: none; display: flex; flex-direction: column; gap: 26px; }
+  li { display: flex; gap: 24px; align-items: flex-start; font-size: 40px; line-height: 1.55; }
+  li b { flex: none; width: 70px; height: 70px; border-radius: 50%; background: var(--primary);
+         color: #fff; display: grid; place-items: center; font-size: 36px; }
+  #items { max-height: 760px; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <ol id="items" class="fit">
+  {% for it in s['items'] %}<li><b>{{ digits(loop.index) }}</b><span>{{ it }}</span></li>{% endfor %}
+  </ol>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block style %}
+  .half { position: absolute; inset-inline: 0; padding: 70px 72px; display: flex; flex-direction: column; gap: 24px; }
+  .myth { top: 0; height: 46%; background: #F1E4E4; color: #5B1A1A; }
+  .fact { top: 46%; bottom: 0; padding-bottom: 150px; }
+  .tag { align-self: flex-start; font-weight: 900; font-size: 36px; padding: 8px 28px; border-radius: 999px; color: #fff; }
+  .myth .tag { background: #C0392B; }
+  .fact .tag { background: var(--primary); }
+  #myth { font-size: 56px; font-weight: 700; line-height: 1.5; max-height: 380px; text-decoration: line-through 4px rgba(192,57,43,.6); }
+  #fact { font-size: 48px; line-height: 1.6; max-height: 470px; }
+{% endblock %}
+{% block content %}
+<div class="half myth"><span class="tag">{{ 'باور غلط' if lang == 'fa' else 'Myth' }}</span><p id="myth" class="fit">{{ s.myth }}</p></div>
+<div class="half fact"><span class="tag">{{ 'واقعیت' if lang == 'fa' else 'Fact' }}</span><p id="fact" class="fit">{{ s.fact }}</p></div>
+{% endblock %}

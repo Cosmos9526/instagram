@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block style %}
+  .top { position: absolute; inset: 80px 72px auto; }
+  #headline { font-size: 70px; max-height: 200px; }
+  .cols { position: absolute; inset: 330px 56px 160px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .col { border-radius: 36px; padding: 44px 36px; display: flex; flex-direction: column; gap: 22px; }
+  .before { background: #ECE8E4; color: #5a5048; }
+  .after { background: var(--primary); color: #fff; }
+  .col b { font-size: 40px; font-weight: 900; }
+  .col p { font-size: 40px; line-height: 1.6; max-height: 620px; }
+{% endblock %}
+{% block content %}
+<div class="top"><h1 id="headline" class="headline fit">{{ s.headline }}</h1></div>
+<div class="cols">
+  <div class="col before"><b>{{ 'قبل' if lang == 'fa' else 'Before' }}</b><p class="fit" style="max-height:620px">{{ s.before }}</p></div>
+  <div class="col after"><b>{{ 'بعد' if lang == 'fa' else 'After' }}</b><p class="fit" style="max-height:620px">{{ s.after }}</p></div>
+</div>
+{% endblock %}

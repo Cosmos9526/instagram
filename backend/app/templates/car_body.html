@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block style %}
+  .num { position: absolute; top: 70px; inset-inline-start: 72px; font-weight: 900; font-size: 190px;
+         line-height: 1; color: var(--primary); opacity: .18; }
+  .wrap { position: absolute; inset: 250px 72px 150px; display: flex; flex-direction: column; gap: 40px; }
+  #headline { font-size: 72px; max-height: 300px; }
+  #body { max-height: 560px; font-size: 46px; }
+{% endblock %}
+{% block content %}
+<div class="num">{{ digits(n) }}</div>
+<div class="wrap">
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <p id="body" class="body fit">{{ s.body }}</p>
+</div>
+{% endblock %}
