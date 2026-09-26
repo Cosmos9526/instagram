@@ -216,12 +216,7 @@ class _BrandScreenState extends State<BrandScreen> {
             values: _audience,
             onChanged: (v) => setState(() => _audience = v),
           ),
-          ChoiceField(
-            label: 'لحن',
-            options: toneOptions,
-            values: _tone,
-            onChanged: (v) => setState(() => _tone = v),
-          ),
+          ChoiceField(label: 'لحن', options: toneOptions, values: _tone, onChanged: (v) => setState(() => _tone = v)),
           ChoiceField(
             label: 'دعوت به اقدام',
             help: 'جمله‌ی آخر هر پست',

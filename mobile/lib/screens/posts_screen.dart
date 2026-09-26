@@ -110,6 +110,7 @@ class _PostTile extends StatelessWidget {
               api.mediaUrl(post.slides.first),
               width: 56,
               height: 70,
+              cacheWidth: 168, // decode at display size (3x), not 1080px
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => const SizedBox(width: 56, height: 70),
             ),

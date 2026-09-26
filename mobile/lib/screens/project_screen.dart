@@ -56,7 +56,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
     ];
     return Scaffold(
       appBar: AppBar(title: Text(_brand.name)),
-      body: IndexedStack(index: _tab, children: pages),
+      body: FadeIndexedStack(index: _tab, children: pages),
       bottomNavigationBar: FloatingNav(
         index: _tab,
         onTap: (i) {

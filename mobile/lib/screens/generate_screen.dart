@@ -52,8 +52,9 @@ class GenerateScreenState extends State<GenerateScreen> {
   }
 
   Future<void> _pickStyle() async {
-    final id = await Navigator.of(context)
-        .push<String>(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true)));
+    final id = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true)));
     if (id != null) setState(() => _req.videoStyle = id);
   }
 
@@ -74,6 +75,7 @@ class GenerateScreenState extends State<GenerateScreen> {
                 widget.api.mediaUrl(preview),
                 width: 36,
                 height: 45,
+                cacheWidth: 108,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => Icon(icon),
               ),

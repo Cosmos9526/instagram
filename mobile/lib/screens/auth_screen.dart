@@ -34,8 +34,9 @@ class _AuthScreenState extends State<AuthScreen> {
         await widget.api.login(email, _password.text);
       }
       if (!mounted) return;
-      Navigator.of(context)
-          .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)), (_) => false);
+      Navigator.of(
+        context,
+      ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)), (_) => false);
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {

@@ -56,13 +56,15 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Future<void> _logout() async {
     await widget.api.logout();
     if (!mounted) return;
-    Navigator.of(context)
-        .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)), (_) => false);
+    Navigator.of(
+      context,
+    ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)), (_) => false);
   }
 
   Future<void> _newProject() async {
-    final id = await Navigator.of(context)
-        .push<String>(MaterialPageRoute(builder: (_) => BrandScreen(api: widget.api)));
+    final id = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => BrandScreen(api: widget.api)));
     if (id == null) return;
     await _load();
     final b = _brands?.where((b) => b.id == id).firstOrNull;

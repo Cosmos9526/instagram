@@ -23,8 +23,9 @@ class _ServerScreenState extends State<ServerScreen> {
     try {
       await widget.api.catalog();
       if (!mounted) return;
-      Navigator.of(context)
-          .pushAndRemoveUntil(MaterialPageRoute(builder: (_) => startScreen(widget.api)), (_) => false);
+      Navigator.of(
+        context,
+      ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => startScreen(widget.api)), (_) => false);
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {

@@ -6,7 +6,8 @@ WORKDIR /src
 COPY mobile/pubspec.yaml mobile/pubspec.lock ./
 RUN flutter pub get
 COPY mobile/ ./
-RUN flutter build web --release --no-web-resources-cdn
+# --wasm: Skia/WebAssembly renderer where supported (smoother), automatic JS fallback elsewhere.
+RUN flutter build web --release --wasm --no-web-resources-cdn
 
 # 2) API + worker + scheduler.
 # Debian 12: Playwright 1.49 supports it (Debian 13 "trixie" is not supported yet).
