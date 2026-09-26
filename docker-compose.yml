@@ -3,6 +3,7 @@
 name: postyar
 
 x-app: &app
+  image: postyar-app:latest  # one image shared by api, worker and scheduler
   build:
     context: .
     dockerfile: backend/Dockerfile
