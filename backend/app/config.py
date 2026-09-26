@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     llm_provider: str = "openai_compat"  # openai_compat | fake
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
     llm_api_key: str = ""
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-flash-latest"
 
     # Images: cloudflare (Workers AI, Flux schnell) | none (brand-colour gradient)
     image_provider: str = "none"

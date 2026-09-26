@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -109,7 +110,7 @@ def generate(brand_id: str, body: GenerateIn, db: Session = Depends(get_db)):
     mode = "video" if body.post_type == "video_prompt" else body.mode
     if mode == "video" and body.post_type != "video_prompt":
         raise HTTPException(422, "mode=video requires post_type=video_prompt")
-    today = datetime.now(timezone.utc).date().isoformat()
+    today = datetime.now(ZoneInfo(settings.timezone)).date().isoformat()
     post = Post(brand_id=brand_id, post_type=body.post_type, mode=mode, topic_hint=body.topic_hint,
                 content={"n_body": body.n_body, "target_seconds": body.target_seconds}, for_date=today)
     db.add(post)

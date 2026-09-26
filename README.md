@@ -44,4 +44,4 @@ python -m pytest -q          # uses LLM_PROVIDER=fake, SQLite, real Chromium ren
 ```
 
 ## Next
-Flutter panel (fa/en, RTL) on top of this API · design docs: see `docs/ARCHITECTURE.md`.
+Mobile app: `mobile/` (Flutter, Android/iOS, Persian RTL). Design docs: `docs/ARCHITECTURE.md`.
