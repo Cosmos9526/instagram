@@ -3,7 +3,8 @@
 import json
 
 from .models import Brand
-from .template_registry import SINGLE_TEMPLATE, slot_spec_text
+from .template_registry import TEMPLATES, slot_spec_text
+from .video_styles import STYLE_BY_ID
 
 FA_RULES = """Write in fluent, natural Persian as used by good Iranian Instagram brands
 (polite-colloquial, never translated-sounding). Use Persian digits (۰-۹), the zero-width
@@ -66,10 +67,24 @@ Hard rules:
 </brand>"""
 
 
-def single_post_prompt(b: Brand, post_type: str, topic_hint: str, recent_headlines: list[str]) -> str:
-    code = SINGLE_TEMPLATE[post_type]
-    return f"""{TYPE_BRIEF[post_type]}
+def research_block(research: str) -> str:
+    if not research:
+        return ""
+    return f"""
+<market_research>
+{research}
+</market_research>
+Use this research: prefer its trends and keywords when they fit the brief, and weave 1-3 of the keywords
+naturally into the caption and hashtags. Never contradict the brand data.
+"""
 
+
+def single_post_prompt(b: Brand, post_type: str, topic_hint: str, recent_headlines: list[str],
+                       code: str, research: str = "") -> str:
+    spec = TEMPLATES[code]
+    return f"""{TYPE_BRIEF[post_type]}
+Visual format: "{spec['name_fa']}" — {spec['desc_fa']}. Write copy that suits this format.
+{research_block(research)}
 <topic_hint>{topic_hint or 'none'}</topic_hint>
 <avoid_repeating>Recent headlines of this brand (do not repeat their angle): {json.dumps(recent_headlines, ensure_ascii=False)}</avoid_repeating>
 
@@ -85,8 +100,10 @@ Return JSON:
 }}"""
 
 
-def carousel_prompt(b: Brand, post_type: str, topic_hint: str, recent_headlines: list[str], n_body: int) -> str:
+def carousel_prompt(b: Brand, post_type: str, topic_hint: str, recent_headlines: list[str], n_body: int,
+                    research: str = "") -> str:
     return f"""{TYPE_BRIEF[post_type]}
+{research_block(research)}
 Format: a CAROUSEL of {n_body + 2} slides — 1 cover, {n_body} body slides, 1 CTA slide.
 Cover headline = a curiosity hook that makes people swipe (≤ 8 words).
 Each body slide delivers exactly ONE idea and builds on the previous one.
@@ -113,10 +130,21 @@ Shorten ONLY those fields, keep the meaning and language, and return the same JS
 <json>{json.dumps(original_json, ensure_ascii=False)}</json>"""
 
 
-def video_prompt(b: Brand, topic_hint: str, target_seconds: int) -> str:
+def video_prompt(b: Brand, topic_hint: str, target_seconds: int, style_id: str = "", research: str = "") -> str:
     clips = max(1, min(4, round(target_seconds / 8)))
     lang_name = "Persian" if b.language == "fa" else "English"
-    return f"""Create a PROMPT PACKAGE for a vertical 9:16 Instagram Reel of about {target_seconds} seconds
+    style = STYLE_BY_ID.get(style_id)
+    style_block = (
+        f"""
+Video style: {style['name_en']} — {style['description_en']}
+Beat structure to follow (one beat per clip, merge or extend if the clip count differs): {'; '.join(style['beats'])}
+Camera language: {style['camera']}. Pacing: {style['pacing']}.
+"""
+        if style
+        else ""
+    )
+    return f"""{style_block}{research_block(research)}
+Create a PROMPT PACKAGE for a vertical 9:16 Instagram Reel of about {target_seconds} seconds
 for this brand. The user will paste each clip prompt into an AI video model (Veo / Kling / Sora)
 that makes ~8-second clips with no memory between clips. The clips will be joined into ONE
 continuous video, so continuity is everything.

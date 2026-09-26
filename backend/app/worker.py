@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from .db import SessionLocal, init_db
-from .models import Job, Post
+from .models import Brand, Job, Post, Research
 from .pipeline import rerender, run_post
+from .research import run_research
 
 log = logging.getLogger("worker")
 MAX_ATTEMPTS = 2
@@ -17,6 +18,24 @@ MAX_ATTEMPTS = 2
 
 def enqueue(db, post: Post, kind: str = "generate") -> None:
     db.add(Job(post_id=post.id, kind=kind))
+
+
+def enqueue_research(db, research: Research) -> None:
+    db.add(Job(research_id=research.id, kind="research"))
+
+
+def _run_research_job(db, job: Job) -> None:
+    res = db.get(Research, job.research_id)
+    res.status = "running"
+    db.commit()
+    try:
+        res.report = run_research(db.get(Brand, res.brand_id), res.focus)
+        res.status, res.error, job.status = "ready", "", "done"
+    except Exception as e:  # noqa: BLE001
+        log.exception("research %s failed", res.id)
+        res.error = str(e)[:2000]
+        res.status = job.status = "failed"
+    db.commit()
 
 
 def claim(db) -> Job | None:
@@ -35,6 +54,9 @@ def process_one() -> bool:
         job = claim(db)
         if not job:
             return False
+        if job.kind == "research":
+            _run_research_job(db, job)
+            return True
         post = db.get(Post, job.post_id)
         post.status = "running"
         db.commit()

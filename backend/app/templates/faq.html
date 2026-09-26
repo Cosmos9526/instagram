@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block style %}
+  .wrap { position: absolute; inset: 110px 72px 160px; display: flex; flex-direction: column; gap: 48px; }
+  .q { display: flex; gap: 28px; align-items: flex-start; }
+  .q i { flex: none; width: 110px; height: 110px; border-radius: 30px; background: var(--primary); color: #fff;
+         display: grid; place-items: center; font-style: normal; font-size: 72px; font-weight: 900; }
+  #question { font-size: 62px; font-weight: 800; line-height: 1.4; max-height: 330px; }
+  .a { background: color-mix(in srgb, var(--secondary) 22%, var(--bg)); border-radius: 36px; padding: 48px; }
+  #answer { font-size: 44px; line-height: 1.7; max-height: 560px; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="q"><i>{{ '؟' if lang == 'fa' else '?' }}</i><h1 id="question" class="fit">{{ s.question }}</h1></div>
+  <div class="a"><p id="answer" class="fit">{{ s.answer }}</p></div>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block style %}
+  .wrap { position: absolute; inset: 140px 72px 160px; display: flex; flex-direction: column; justify-content: center; gap: 36px; }
+  .stat { font-size: 260px; font-weight: 900; line-height: 1; color: var(--primary); }
+  .bar { width: 160px; height: 14px; background: var(--secondary); border-radius: 7px; }
+  #headline { font-size: 72px; max-height: 300px; }
+  #body { max-height: 260px; }
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="stat">{{ s.stat }}</div>
+  <div class="bar"></div>
+  <h1 id="headline" class="headline fit">{{ s.headline }}</h1>
+  <p id="body" class="body fit">{{ s.body }}</p>
+</div>
+{% endblock %}

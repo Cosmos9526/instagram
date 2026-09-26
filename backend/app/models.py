@@ -17,9 +17,23 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    email: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(200), default="")
+    password_hash: Mapped[str] = mapped_column(String(200))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Brand(Base):
+    """A user's project: one business/brand with its own profile, plan, posts and research."""
+
     __tablename__ = "brands"
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    owner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    website: Mapped[str] = mapped_column(Text, default="")
+    instagram: Mapped[str] = mapped_column(String(100), default="")
     name: Mapped[str] = mapped_column(String(200))
     industry: Mapped[str] = mapped_column(String(200))
     language: Mapped[str] = mapped_column(String(8), default="fa")  # fa | en
@@ -55,13 +69,28 @@ class Post(Base):
     brand: Mapped[Brand] = relationship()
 
 
+class Research(Base):
+    """Market research snapshot for a project: web facts, trends, keywords, top videos, video styles."""
+
+    __tablename__ = "research"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    brand_id: Mapped[str] = mapped_column(ForeignKey("brands.id", ondelete="CASCADE"), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="queued")  # queued | running | ready | failed
+    focus: Mapped[str] = mapped_column(Text, default="")  # optional: product or question to focus on
+    report: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
 class Job(Base):
     """Minimal Postgres-backed queue. One worker process, concurrency 1."""
 
     __tablename__ = "jobs"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    post_id: Mapped[str] = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"))
-    kind: Mapped[str] = mapped_column(String(10), default="generate")  # generate | rerender
+    post_id: Mapped[str | None] = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=True)
+    research_id: Mapped[str | None] = mapped_column(ForeignKey("research.id", ondelete="CASCADE"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(10), default="generate")  # generate | rerender | research
     status: Mapped[str] = mapped_column(String(10), default="queued", index=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

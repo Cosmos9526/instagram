@@ -9,9 +9,10 @@ from . import prompts
 from .config import settings
 from .images import generate_image
 from .llm import chat_json
-from .models import Brand, Post
+from .models import Brand, Post, Research
+from .research import research_brief
 from .render import render_html, renderer
-from .template_registry import SINGLE_TEMPLATE, TEMPLATES, enforce, violations
+from .template_registry import SINGLE_TEMPLATE, TEMPLATES, enforce, templates_for, violations
 
 def recent_headlines(db: Session, brand_id: str, limit: int = 15) -> list[str]:
     rows = db.scalars(
@@ -25,6 +26,27 @@ def recent_headlines(db: Session, brand_id: str, limit: int = 15) -> list[str]:
         if h:
             out.append(h)
     return out
+
+def latest_research(db: Session, brand_id: str) -> Research | None:
+    return db.scalars(
+        select(Research).where(Research.brand_id == brand_id, Research.status == "ready")
+        .order_by(Research.created_at.desc()).limit(1)
+    ).first()
+
+
+def pick_template(db: Session, brand_id: str, post_type: str) -> str:
+    """Least-recently-used template for this post type, so daily posts don't all look the same."""
+    options = templates_for(post_type) or [SINGLE_TEMPLATE[post_type]]
+    used = db.scalars(
+        select(Post).where(Post.brand_id == brand_id, Post.post_type == post_type, Post.mode == "single")
+        .order_by(Post.created_at.desc()).limit(len(options) * 2)
+    )
+    recent = [(p.content or {}).get("template") for p in used]  # newest first
+    unused = [c for c in options if c not in recent]
+    if unused:
+        return unused[0]
+    return max(options, key=recent.index)  # the one used longest ago
+
 
 def _fit(code: str, slots: dict, whole: dict, sys: str) -> dict:
     """One LLM repair round for over-long slots, then hard truncation."""
@@ -58,20 +80,26 @@ def run_post(db: Session, post: Post) -> None:
     brand = db.get(Brand, post.brand_id)
     sys = prompts.system_prompt(brand)
     recent = recent_headlines(db, brand.id)
+    res = latest_research(db, brand.id)
+    research = research_brief(res.report) if res else ""
+    opts = post.content or {}
 
     if post.post_type == "video_prompt":
-        target = int((post.content or {}).get("target_seconds", 24))
-        data = chat_json(sys, prompts.video_prompt(brand, post.topic_hint, target))
+        target = int(opts.get("target_seconds", 24))
+        style_id = opts.get("video_style", "")
+        data = chat_json(sys, prompts.video_prompt(brand, post.topic_hint, target, style_id, research))
+        data["video_style"] = style_id
         clips = data.get("clips", [])
         for c in clips:
             c["full_prompt"] = prompts.assemble_clip_prompt(data["bible_text"], c, c["n"], len(clips))
         data["target_seconds"] = target
+        _keep_inputs(opts, data)
         post.content, post.slides = data, []
         return
 
     if post.mode == "carousel":
-        n_body = int((post.content or {}).get("n_body", 4))
-        data = chat_json(sys, prompts.carousel_prompt(brand, post.post_type, post.topic_hint, recent, n_body))
+        n_body = int(opts.get("n_body", 4))
+        data = chat_json(sys, prompts.carousel_prompt(brand, post.post_type, post.topic_hint, recent, n_body, research))
         image = _image(post, data.get("image_prompt", ""))
         cover = _fit("car_cover", data["cover"], data, sys)
         bodies = [_fit("car_body", b, data, sys) for b in data["body"]]
@@ -83,8 +111,8 @@ def run_post(db: Session, post: Post) -> None:
         slides.append(_render(post, brand, "car_cta", cta, total - 1, None))
         data.update(cover=cover, body=bodies, cta=cta)
     else:
-        data = chat_json(sys, prompts.single_post_prompt(brand, post.post_type, post.topic_hint, recent))
-        code = SINGLE_TEMPLATE[post.post_type]
+        code = opts.get("template") if opts.get("template") in TEMPLATES else pick_template(db, brand.id, post.post_type)
+        data = chat_json(sys, prompts.single_post_prompt(brand, post.post_type, post.topic_hint, recent, code, research))
         data["template"] = code
         data["slots"] = _fit(code, data.get("slots", {}), data, sys)
 
@@ -92,7 +120,15 @@ def run_post(db: Session, post: Post) -> None:
         slides = [_render(post, brand, code, data["slots"], 0, image)]
 
     data["hashtags"] = list(dict.fromkeys((data.get("hashtags") or []) + (brand.hashtags or [])))
+    _keep_inputs(opts, data)
     post.content, post.slides = data, slides
+
+
+def _keep_inputs(opts: dict, data: dict) -> None:
+    """Generation inputs stay in the content so "regenerate" repeats the same request."""
+    for key in ("n_body", "target_seconds", "video_style"):
+        if key in opts:
+            data.setdefault(key, opts[key])
 
 def rerender(db: Session, post: Post) -> None:
     """After the user edits text in the panel: re-render only, no model calls."""

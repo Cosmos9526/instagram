@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block style %}
+  .stars { position: absolute; top: 120px; inset-inline: 72px; font-size: 64px; letter-spacing: 8px; color: var(--secondary); }
+  .card { position: absolute; inset: 260px 64px 180px; background: #fff; border-radius: 44px; padding: 64px 56px;
+          box-shadow: 0 30px 80px rgba(0,0,0,.08); display: flex; flex-direction: column; justify-content: space-between; }
+  #quote { font-size: 52px; line-height: 1.65; max-height: 560px; }
+  .who { display: flex; gap: 24px; align-items: center; }
+  .avatar { width: 96px; height: 96px; border-radius: 50%; background: var(--primary); color: #fff;
+            display: grid; place-items: center; font-size: 44px; font-weight: 900; }
+  .who b { font-size: 38px; display: block; }
+  .who span { font-size: 30px; opacity: .65; }
+{% endblock %}
+{% block content %}
+<div class="stars">★★★★★</div>
+<div class="card">
+  <p id="quote" class="fit">«{{ s.quote }}»</p>
+  <div class="who"><div class="avatar">{{ (s.author or '؟')[:1] }}</div><div><b>{{ s.author }}</b><span>{{ s.role }}</span></div></div>
+</div>
+{% endblock %}
