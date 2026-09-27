@@ -12,13 +12,10 @@ from collections import Counter
 from html import unescape
 from urllib.parse import urljoin, urlparse
 
-import httpx
-
+from . import safe_fetch
 from .llm import LLMError, chat_json
 
 log = logging.getLogger("business_analyzer")
-UA = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 "
-      "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1", "Accept-Language": "fa,en;q=0.8"}
 
 # industry label (same options as the app) -> words that point to it
 INDUSTRIES: dict[str, list[str]] = {
@@ -74,13 +71,10 @@ def _meta(html: str, key: str) -> str:
 
 
 def _fetch(url: str, timeout: float = 15) -> tuple[str, str]:
-    try:
-        r = httpx.get(url, headers=UA, timeout=timeout, follow_redirects=True)
-        if r.status_code < 400:
-            return str(r.url), r.text[:1_500_000]
-    except Exception as e:  # noqa: BLE001
-        log.info("fetch %s failed: %s", url, e)
-    return url, ""
+    final, html = safe_fetch.text(url, timeout=timeout)
+    if not html:
+        log.info("fetch %s failed", url)
+    return final, html
 
 
 def _is_neutral(hexc: str) -> bool:
