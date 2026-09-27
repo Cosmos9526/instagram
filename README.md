@@ -52,9 +52,17 @@ Postyar is a daily Instagram content studio for businesses. You define a busines
 - **Video style analysis:** a model maps what the top videos do to the video-style catalog.
 - **Used everywhere:** the latest research goes into every generation prompt. The daily batch refreshes research older than 3 days.
 
+### Competitor intelligence
+- **Competitors:** added one by one or bulk-pasted (site URLs, Instagram handles, `t.me` links), parsed and deduplicated server-side.
+- **Website scan:** robots.txt → sitemap discovery, up to 25 product pages per competitor, prices from JSON-LD/WooCommerce/OpenGraph markup, normalised to Toman, mapped to canonical products (ChatGPT Plus/Pro, Gemini, Claude, Midjourney, Cursor, ...) with duration. Also detects trust signals (اینماد, گارانتی, تحویل فوری), payment methods, discounts and blog posts.
+- **Instagram (best effort):** recent posts, post frequency, format mix and top hashtags, with a data-quality flag when the source is only search results.
+- **Report:** a price comparison matrix, per-competitor profiles and at least 8 content gaps with ready post ideas — every gap and idea opens Create prefilled with one tap.
+- **Safety:** every fetch of a user-supplied URL goes through one SSRF-guarded helper (`safe_fetch.py`): only http/https, private/loopback/reserved IPs rejected after DNS resolution, redirects re-checked.
+- **Used everywhere:** the latest scan's top gaps are injected into every generation prompt, same as research.
+
 ### App (Flutter)
-- **Screens:** login/sign-up → projects → inside a project: **Posts**, **Create**, **Market** (research) and **Settings**, plus a template gallery and a profile screen.
-- **Research shortcut:** any trend, content idea or video style from research opens Create with the topic already filled in.
+- **Screens:** login/sign-up → projects → inside a project: **Posts**, **Create**, **Market** (research), **Competitors** and **Settings**, plus a template gallery and a profile screen.
+- **Research shortcut:** any trend, content idea, video style or competitor gap opens Create with the topic already filled in.
 - **Install:** served by the backend as a PWA. On iPhone use Safari → *Add to Home Screen*; on Android use Chrome → *Install app*.
 - **Demo mode:** `--dart-define=DEMO=true` runs the whole app with sample data and no server.
 
@@ -101,6 +109,11 @@ All endpoints except `/health`, `/catalog` and `/auth/*` need `Authorization: Be
 | GET, PUT | `/posts/{id}` | Read a post / edit its text (free re-render) |
 | POST | `/posts/{id}/approve\|reject\|regenerate` | Review actions |
 | POST, GET | `/brands/{id}/research` | Start / list market research |
+| GET, PUT | `/brands/{id}/competitors` | List / bulk-replace competitors |
+| POST | `/brands/{id}/competitors/parse` | Parse pasted text into normalised competitor objects (no save) |
+| POST | `/brands/{id}/competitors/scan` | `{"only": [ids]?}` — enqueue a competitor scan |
+| GET | `/brands/{id}/competitors/scans` | Last 10 competitor scans |
+| GET | `/competitor-scans/{id}` | One competitor scan report |
 | GET | `/catalog` | All slide templates (with previews) and video styles |
 | POST | `/admin/run-daily` | Run the daily batch now (`ADMIN_TOKEN`) |
 
