@@ -189,6 +189,103 @@ final _brands = <Map<String, dynamic>>[
 
 Research? _research;
 
+final _competitors = <Map<String, dynamic>>[
+  {'id': 'c1', 'name': 'پارس پرمیوم', 'website': 'https://parspremium.ir', 'instagram': 'parspremium', 'telegram': '', 'notes': ''},
+  {'id': 'c2', 'name': 'کافه آرز', 'website': 'https://cafearz.com', 'instagram': 'cafearz', 'telegram': '', 'notes': ''},
+  {'id': 'c3', 'name': 'دیکاردو', 'website': 'https://dicardo.com', 'instagram': 'dicardo.ir', 'telegram': '', 'notes': ''},
+];
+
+CompetitorScan? _competitorScan;
+
+Map<String, dynamic> _competitorScanJson(String status) => {
+  'id': 's1',
+  'status': status,
+  'error': '',
+  'created_at': DateTime.now().toIso8601String(),
+  'report': status != 'ready'
+      ? {}
+      : {
+          'competitors': [
+            {
+              'id': 'c1', 'name': 'پارس پرمیوم', 'error': '',
+              'website': {
+                'ok': true,
+                'signals': {'enamad': true, 'guarantee': true, 'instant_delivery': true, 'support_hours': 'پشتیبانی ۲۴ ساعته'},
+                'discounts': ['کد تخفیف AI10 برای ۱۰٪ تخفیف'],
+              },
+              'instagram': {'post_frequency_30d': 22, 'partial': false, 'format_mix': {'image': 12, 'video': 10}},
+            },
+            {
+              'id': 'c2', 'name': 'کافه آرز', 'error': '',
+              'website': {
+                'ok': true,
+                'signals': {'enamad': false, 'guarantee': true, 'instant_delivery': false, 'support_hours': ''},
+                'discounts': [],
+              },
+              'instagram': {'post_frequency_30d': 6, 'partial': true, 'format_mix': {'image': 6}},
+            },
+            {
+              'id': 'c3', 'name': 'دیکاردو', 'error': '',
+              'website': {
+                'ok': true,
+                'signals': {'enamad': true, 'guarantee': false, 'instant_delivery': true, 'support_hours': ''},
+                'discounts': [],
+              },
+              'instagram': {'post_frequency_30d': 14, 'partial': false, 'format_mix': {'video': 14}},
+            },
+          ],
+          'price_matrix': [
+            {
+              'product': 'chatgpt_plus',
+              'prices': {'پارس پرمیوم': 1650000, 'کافه آرز': 1750000, 'دیکاردو': 1590000},
+              'cheapest': 'دیکاردو',
+            },
+            {
+              'product': 'gemini',
+              'prices': {'پارس پرمیوم': 990000, 'دیکاردو': 950000},
+              'cheapest': 'دیکاردو',
+            },
+            {
+              'product': 'claude',
+              'prices': {'کافه آرز': 1200000},
+              'cheapest': 'کافه آرز',
+            },
+            {
+              'product': 'midjourney',
+              'prices': {'پارس پرمیوم': 1400000, 'دیکاردو': 1350000},
+              'cheapest': 'دیکاردو',
+            },
+            {
+              'product': 'cursor',
+              'prices': {'کافه آرز': 890000},
+              'cheapest': 'کافه آرز',
+            },
+          ],
+          'positioning': {
+            'پارس پرمیوم': 'برند شناخته‌شده با قیمت متوسط و پشتیبانی ۲۴ ساعته',
+            'کافه آرز': 'بدون نماد اعتماد، تمرکز روی محصولات کم‌رقیب مثل Claude و Cursor',
+            'دیکاردو': 'ارزان‌ترین در اغلب محصولات، تحویل فوری',
+          },
+          'gaps': [
+            'هیچ رقیبی مقایسه‌ی شفاف ChatGPT Plus در برابر Pro منتشر نکرده',
+            'کافه آرز نماد اعتماد ندارد؛ رهبوم می‌تواند روی شفافیت و امنیت پرداخت مانور دهد',
+            'محتوای آموزشی «چطور از اکانت تیمی استفاده کنیم» در هیچ‌کدام دیده نمی‌شود',
+            'مقایسه‌ی قیمت تومانی در برابر نرخ رسمی دلاری کمیاب است',
+            'گارانتی بازگشت وجه به‌صورت واضح تبلیغ نشده',
+            'محتوای پشت‌صحنه‌ی تحویل فوری اکانت دیده نمی‌شود',
+            'نظرات واقعی مشتریان کمتر به اشتراک گذاشته می‌شود',
+            'مقایسه‌ی ابزارهای هوش مصنوعی برای کاربردهای مختلف پوشش داده نشده',
+          ],
+          'post_ideas': [
+            {'post_type': 'educational', 'mode': 'carousel', 'topic': 'ChatGPT Plus یا Pro؛ کدام برای شما بهتر است؟'},
+            {'post_type': 'promo', 'mode': 'single', 'topic': 'چرا رهبوم؛ نماد اعتماد و گارانتی بازگشت وجه'},
+            {'post_type': 'educational', 'mode': 'single', 'topic': 'راهنمای استفاده از اکانت تیمی هوش مصنوعی'},
+            {'post_type': 'sales', 'mode': 'single', 'topic': 'مقایسه‌ی قیمت رهبوم با بازار روی Midjourney'},
+          ],
+          'created': DateTime.now().toIso8601String(),
+        },
+};
+
 String _yt(String q) => 'https://www.youtube.com/results?search_query=${Uri.encodeComponent(q)}';
 
 Map<String, dynamic> _researchJson(String status) => {
@@ -307,6 +404,34 @@ http.Client demoClient() => MockClient((req) async {
     if (req.method == 'DELETE') _brands.remove(b);
     if (req.method == 'PUT') b.addAll(Map<String, dynamic>.from(body as Map));
     out = req.method == 'GET' ? b : {'id': b['id']};
+  } else if (seg.length == 3 && seg[2] == 'competitors') {
+    if (req.method == 'GET') {
+      out = _competitors;
+    } else {
+      final list = (body as Map)['competitors'] as List;
+      _competitors
+        ..clear()
+        ..addAll([
+          for (final c in list) {...Map<String, dynamic>.from(c as Map), 'id': (c['id'] as String?)?.isNotEmpty == true ? c['id'] : 'c${_next++}'},
+        ]);
+      out = _competitors;
+    }
+  } else if (seg.length == 4 && seg[2] == 'competitors' && seg[3] == 'parse') {
+    final text = '${(body as Map)['text'] ?? ''}';
+    out = [
+      for (final line in text.split(RegExp(r'[\r\n]+')))
+        if (line.trim().isNotEmpty)
+          {'id': 'p${_next++}', 'name': '', 'website': line.contains('.') && !line.contains('instagram') ? 'https://${line.trim()}' : '',
+           'instagram': line.contains('@') ? line.trim().replaceFirst('@', '') : (line.contains('instagram.com/') ? line.split('instagram.com/').last : ''),
+           'telegram': '', 'notes': ''},
+    ];
+  } else if (seg.length == 4 && seg[2] == 'competitors' && seg[3] == 'scan') {
+    _competitorScan = CompetitorScan.fromJson(_competitorScanJson('running'));
+    Timer(const Duration(seconds: 4), () => _competitorScan = CompetitorScan.fromJson(_competitorScanJson('ready')));
+    out = _competitorScanJson('running');
+  } else if (seg.length == 4 && seg[2] == 'competitors' && seg[3] == 'scans') {
+    final s = _competitorScan ?? CompetitorScan.fromJson(_competitorScanJson('ready'));
+    out = [_competitorScanJson(s.status)];
   } else if (seg.length == 3 && seg[2] == 'research') {
     if (req.method == 'POST') {
       _research = Research.fromJson(_researchJson('running'));
