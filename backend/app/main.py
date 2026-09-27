@@ -398,6 +398,10 @@ class CompetitorIn(BaseModel):
     instagram: str = ""
     telegram: str = ""
     notes: str = ""
+    instagram_status: str = ""
+    instagram_evidence: str = ""
+    telegram_status: str = ""
+    telegram_evidence: str = ""
 
 
 class CompetitorsIn(BaseModel):

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from .competitors import normalize_competitors, run_competitor_scan
+from .competitors import normalize_competitors, run_competitor_scan, write_back_handles
 from .db import SessionLocal, init_db
 from .models import Brand, CompetitorScan, Job, Post, Research
 from .pipeline import rerender, run_post
@@ -52,7 +52,13 @@ def _run_competitor_scan_job(db, job: Job) -> None:
         comps = normalize_competitors(brand.competitors)
         if scan.only:
             comps = [c for c in comps if c["id"] in scan.only]
-        scan.report = run_competitor_scan(brand, comps)
+
+        def _progress(done: int, total: int) -> None:
+            scan.report = {**(scan.report or {}), "progress": {"done": done, "total": total}}
+            db.commit()
+
+        scan.report = run_competitor_scan(brand, comps, on_progress=_progress)
+        write_back_handles(brand, scan.report)
         scan.status, scan.error, job.status = "ready", "", "done"
     except Exception as e:  # noqa: BLE001
         log.exception("competitor scan %s failed", scan.id)
