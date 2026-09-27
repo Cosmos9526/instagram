@@ -70,8 +70,15 @@ class _ProjectWizardState extends State<ProjectWizard> {
   String _language = 'fa';
   int _palette = 0;
   int _plan = 1;
+  bool _analyzing = false;
+  Map<String, dynamic>? _analysis; // result of /analyze
+  List<String>? _sitePalette; // colors found on the website
+  Map<String, List<String>>? _suggestedPlan;
+
+  List<List<String>> get _palettes => [?_sitePalette, ...brandPalettes];
 
   static const _titles = [
+    ('شروع سریع', 'آدرس سایت یا اینستاگرام را بده تا کسب‌وکارت را تحلیل کنیم و برنامه بچینیم'),
     ('کسب‌وکارت چیه؟', 'اسم و حوزه‌ی کاری'),
     ('چی می‌فروشی؟', 'محصولات یا خدماتی که می‌خواهی درباره‌شان پست بسازیم'),
     ('مشتری‌هات کی‌اند؟', 'مخاطب و لحن حرف زدن با او'),
@@ -81,11 +88,58 @@ class _ProjectWizardState extends State<ProjectWizard> {
   ];
 
   String? _stepError() => switch (_step) {
-    0 when _name.text.trim().isEmpty => 'اسم کسب‌وکار را بنویسید',
-    0 when _industry.isEmpty => 'حوزه‌ی کاری را انتخاب کنید',
-    1 when _products.every((p) => p.$1.text.trim().isEmpty) => 'حداقل یک محصول یا خدمت بنویسید',
+    1 when _name.text.trim().isEmpty => 'اسم کسب‌وکار را بنویسید',
+    1 when _industry.isEmpty => 'حوزه‌ی کاری را انتخاب کنید',
+    2 when _products.every((p) => p.$1.text.trim().isEmpty) => 'حداقل یک محصول یا خدمت بنویسید',
     _ => null,
   };
+
+  Future<void> _analyze() async {
+    final site = _website.text.trim(), ig = _instagram.text.trim();
+    if (site.isEmpty && ig.isEmpty) return showSnack(context, 'آدرس سایت یا آیدی اینستاگرام را وارد کنید');
+    FocusScope.of(context).unfocus();
+    setState(() => _analyzing = true);
+    try {
+      final r = await widget.api.analyze(site, ig.replaceFirst('@', ''));
+      final p = (r['profile'] as Map).cast<String, dynamic>();
+      List<String> split(Object? v) => '${v ?? ''}'.split(RegExp('[،,]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      setState(() {
+        _analysis = r;
+        if ('${p['name'] ?? ''}'.trim().isNotEmpty) _name.text = '${p['name']}'.trim();
+        if (industryOptions.contains(p['industry'])) _industry = ['${p['industry']}'];
+        if ('${p['website'] ?? ''}'.isNotEmpty) _website.text = '${p['website']}';
+        if ('${p['instagram'] ?? ''}'.isNotEmpty) _instagram.text = '${p['instagram']}';
+        if ('${p['telegram'] ?? ''}'.isNotEmpty) _telegram.text = '${p['telegram']}';
+        final prods = [for (final x in (p['products'] as List? ?? [])) (x as Map)];
+        if (prods.isNotEmpty) {
+          _products
+            ..clear()
+            ..addAll([
+              for (final x in prods)
+                (TextEditingController(text: '${x['name'] ?? ''}'), TextEditingController(text: '${x['desc'] ?? ''}')),
+            ]);
+        }
+        _audience = split(p['audience']);
+        _tone = split(p['tone']);
+        if ('${p['cta'] ?? ''}'.isNotEmpty) _cta = ['${p['cta']}'];
+        _forbidden = [for (final f in (p['forbidden_topics'] as List? ?? _forbidden)) '$f'];
+        final c = (p['colors'] as Map?) ?? {};
+        if (c['primary'] != null) {
+          _sitePalette = ['${c['primary']}', '${c['secondary']}', '${c['bg']}', '${c['text']}'];
+          _palette = 0;
+        }
+        final plan = (p['weekly_plan'] as Map?) ?? {};
+        if (plan.isNotEmpty) {
+          _suggestedPlan = {for (final e in plan.entries) '${e.key}': [for (final t in e.value as List) '$t']};
+          _plan = -1;
+        }
+      });
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
 
   void _go(int step) {
     FocusScope.of(context).unfocus();
@@ -101,7 +155,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
   }
 
   Future<void> _finish() async {
-    final p = brandPalettes[_palette];
+    final p = _palettes[_palette];
     final brand = Brand(
       name: _name.text.trim(),
       industry: _industry.first,
@@ -122,7 +176,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
       cta: _cta.isEmpty ? '' : _cta.first,
       forbiddenTopics: _forbidden,
       colors: {'primary': p[0], 'secondary': p[1], 'bg': p[2], 'text': p[3]},
-      weeklyPlan: _plans[_plan].$3,
+      weeklyPlan: _plan < 0 ? _suggestedPlan! : _plans[_plan].$3,
     );
     setState(() => _busy = true);
     try {
@@ -205,7 +259,8 @@ class _ProjectWizardState extends State<ProjectWizard> {
   }
 
   List<Widget> _stepBody(int i) => switch (i) {
-    0 => [
+    0 => _quickStart(),
+    1 => [
       TextField(
         controller: _name,
         textInputAction: TextInputAction.done,
@@ -221,7 +276,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
         onChanged: (v) => setState(() => _industry = v),
       ),
     ],
-    1 => [
+    2 => [
       for (var k = 0; k < _products.length; k++)
         Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -259,18 +314,6 @@ class _ProjectWizardState extends State<ProjectWizard> {
       ),
       const SizedBox(height: 24),
       TextField(
-        controller: _website,
-        textDirection: TextDirection.ltr,
-        decoration: const InputDecoration(labelText: 'وب‌سایت (اختیاری)', hintText: 'https://'),
-      ),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _instagram,
-        textDirection: TextDirection.ltr,
-        decoration: const InputDecoration(labelText: 'آیدی اینستاگرام (اختیاری)', hintText: 'mybrand'),
-      ),
-      const SizedBox(height: 12),
-      TextField(
         controller: _telegram,
         textDirection: TextDirection.ltr,
         decoration: const InputDecoration(labelText: 'کانال تلگرام (اختیاری)', hintText: 't.me/mychannel'),
@@ -286,7 +329,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
         ),
       ),
     ],
-    2 => [
+    3 => [
       ChoiceField(
         label: 'مخاطب',
         help: 'هر چند مورد',
@@ -296,7 +339,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
       ),
       ChoiceField(label: 'لحن', options: toneOptions, values: _tone, onChanged: (v) => setState(() => _tone = v)),
     ],
-    3 => [
+    4 => [
       ChoiceField(
         label: 'دعوت به اقدام',
         help: 'جمله‌ی آخر هر پست',
@@ -320,7 +363,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
         onSelectionChanged: (s) => setState(() => _language = s.first),
       ),
     ],
-    4 => [
+    5 => [
       GridView.count(
         crossAxisCount: 2,
         shrinkWrap: true,
@@ -329,12 +372,30 @@ class _ProjectWizardState extends State<ProjectWizard> {
         crossAxisSpacing: 12,
         childAspectRatio: 0.9,
         children: [
-          for (var k = 0; k < brandPalettes.length; k++)
-            _PaletteCard(p: brandPalettes[k], selected: k == _palette, onTap: () => setState(() => _palette = k)),
+          for (var k = 0; k < _palettes.length; k++)
+            _PaletteCard(p: _palettes[k], selected: k == _palette, onTap: () => setState(() => _palette = k)),
         ],
       ),
     ],
     _ => [
+      if (_suggestedPlan != null)
+        Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(
+              color: _plan < 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant,
+              width: _plan < 0 ? 2 : 1,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            onTap: () => setState(() => _plan = -1),
+            leading: Icon(_plan < 0 ? Icons.radio_button_checked : Icons.radio_button_off),
+            title: const Text('برنامه‌ی پیشنهادی تحلیل', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: Text('${faDigits(_suggestedPlan!.values.fold<int>(0, (a, v) => a + v.length))} پست در هفته، متناسب با کسب‌وکارت'),
+          ),
+        ),
       for (var k = 0; k < _plans.length; k++)
         Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -360,6 +421,97 @@ class _ProjectWizardState extends State<ProjectWizard> {
       ),
     ],
   };
+}
+
+extension on _ProjectWizardState {
+  List<Widget> _quickStart() {
+    final theme = Theme.of(context);
+    final a = _analysis;
+    return [
+      TextField(
+        controller: _website,
+        textDirection: TextDirection.ltr,
+        keyboardType: TextInputType.url,
+        decoration: const InputDecoration(labelText: 'وب‌سایت', hintText: 'example.ir', prefixIcon: Icon(Icons.language)),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _instagram,
+        textDirection: TextDirection.ltr,
+        decoration: const InputDecoration(
+          labelText: 'آیدی اینستاگرام',
+          hintText: 'mybrand',
+          prefixIcon: Icon(Icons.alternate_email),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text('یکی از این دو هم کافی است.', style: theme.textTheme.bodySmall),
+      const SizedBox(height: 16),
+      FilledButton.tonalIcon(
+        onPressed: _analyzing ? null : _analyze,
+        icon: _analyzing
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : const Icon(Icons.auto_awesome),
+        label: Text(_analyzing ? 'در حال بررسی سایت و پیج… (تا یک دقیقه)' : 'تحلیل خودکار کسب‌وکار'),
+      ),
+      if (a != null) ...[
+        const SizedBox(height: 20),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_name.text.isEmpty ? 'نتیجه‌ی تحلیل' : _name.text, style: theme.textTheme.titleMedium),
+                if (_industry.isNotEmpty) Text(_industry.first, style: theme.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                for (final e in (a['evidence'] as List? ?? []))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.check_circle, size: 16, color: PColors.teal),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text('$e', style: theme.textTheme.bodySmall)),
+                      ],
+                    ),
+                  ),
+                if (_products.any((p) => p.$1.text.isNotEmpty)) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final p in _products.take(6))
+                        if (p.$1.text.isNotEmpty) Chip(label: Text(p.$1.text), visualDensity: VisualDensity.compact),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text('برنامه‌ی هفته‌ی اول', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        for (final d in (a['plan'] as List? ?? []))
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(child: Text('${(d as Map)['day']}'.substring(0, 1))),
+              title: Text('${d['idea']}'),
+              subtitle: Text('${d['day']} · ${d['type_fa']}'),
+            ),
+          ),
+        const SizedBox(height: 4),
+        Text('همه‌چیز در مرحله‌های بعد قابل ویرایش است. «بعدی» را بزن و بررسی کن.', style: theme.textTheme.bodySmall),
+      ] else ...[
+        const SizedBox(height: 12),
+        TextButton(onPressed: () => _go(1), child: const Text('نه، خودم دستی پر می‌کنم')),
+      ],
+    ];
+  }
 }
 
 class _PaletteCard extends StatelessWidget {
