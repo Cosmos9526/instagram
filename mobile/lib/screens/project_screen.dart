@@ -4,6 +4,7 @@ import '../api.dart';
 import '../models.dart';
 import '../theme.dart';
 import 'brand_screen.dart';
+import 'competitors_screen.dart';
 import 'generate_screen.dart';
 import 'posts_screen.dart';
 import 'research_screen.dart';
@@ -43,6 +44,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
         },
       ),
       ResearchScreen(api: widget.api, brand: _brand, onUse: _goGenerate),
+      CompetitorsScreen(api: widget.api, brand: _brand, onUse: _goGenerate),
       BrandScreen(
         api: widget.api,
         brand: _brand,
@@ -67,6 +69,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
           (Icons.grid_view_outlined, Icons.grid_view_rounded, 'پست‌ها'),
           (Icons.auto_awesome_outlined, Icons.auto_awesome, 'ساخت'),
           (Icons.insights_outlined, Icons.insights, 'بازار'),
+          (Icons.groups_outlined, Icons.groups, 'رقبا'),
           (Icons.tune_outlined, Icons.tune, 'تنظیمات'),
         ],
       ),
