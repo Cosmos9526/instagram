@@ -39,5 +39,9 @@ class Settings(BaseSettings):
     daily_run_hour: int = 7  # server-local hour for the daily batch
     timezone: str = "Asia/Tehran"
 
+    # Competitor scans: bounded so a slow competitor never blocks the single worker for long
+    competitor_scan_budget_seconds: int = 720  # whole-scan wall clock budget (12 min)
+    competitor_site_budget_seconds: int = 90  # per-competitor website budget
+
 
 settings = Settings()
