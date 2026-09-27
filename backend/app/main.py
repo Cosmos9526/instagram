@@ -7,7 +7,6 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,6 +15,7 @@ from . import auth as authlib
 from .config import settings
 from .db import SessionLocal, init_db
 from .models import POST_TYPES, Brand, Post, Research, User
+from .static import FastStatic, thumbnail
 from .scheduler import create_daily_posts
 from .template_registry import TEMPLATES
 from .video_styles import VIDEO_STYLES
@@ -37,9 +37,14 @@ async def lifespan(_: FastAPI):
 os.makedirs(settings.media_dir, exist_ok=True)
 app = FastAPI(title="Postyar", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-app.mount("/media", StaticFiles(directory=settings.media_dir), name="media")
+app.mount("/media", FastStatic(directory=settings.media_dir), name="media")
+
+
+@app.get("/thumb/{path:path}")
+def thumb(path: str, w: int = 240):
+    return thumbnail(settings.media_dir, path, w)
 if PREVIEW_DIR.is_dir():
-    app.mount("/previews", StaticFiles(directory=PREVIEW_DIR), name="previews")
+    app.mount("/previews", FastStatic(directory=PREVIEW_DIR, long_cache=True), name="previews")
 
 
 def get_db():
@@ -384,4 +389,4 @@ def run_daily():
 
 # The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.
 if os.path.isdir(settings.web_dir):
-    app.mount("/", StaticFiles(directory=settings.web_dir, html=True), name="web")
+    app.mount("/", FastStatic(directory=settings.web_dir, html=True), name="web")

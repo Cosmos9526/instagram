@@ -159,7 +159,7 @@ class _PostScreenState extends State<PostScreen> {
                 itemBuilder: (_, i) => ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
+                    '${widget.api.thumbUrl(p.slides[i], 1080)}&v=$_version',
                     fit: BoxFit.contain,
                     gaplessPlayback: true,
                     loadingBuilder: (_, child, progress) =>

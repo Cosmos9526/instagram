@@ -7,7 +7,9 @@ COPY mobile/pubspec.yaml mobile/pubspec.lock ./
 RUN flutter pub get
 COPY mobile/ ./
 # --wasm: Skia/WebAssembly renderer where supported (smoother), automatic JS fallback elsewhere.
-RUN flutter build web --release --wasm --no-web-resources-cdn
+RUN flutter build web --release --wasm --no-web-resources-cdn \
+    && find build/web -type f \( -name '*.wasm' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' \
+       -o -name '*.otf' -o -name '*.ttf' -o -name '*.html' -o -name '*.symbols' \) -exec gzip -9 -k {} \;
 
 # 2) API + worker + scheduler.
 # Debian 12 (bookworm): supported by Playwright; Chromium 140 renders Persian ZWNJ correctly.
