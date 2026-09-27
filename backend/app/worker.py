@@ -7,8 +7,9 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
+from .competitors import normalize_competitors, run_competitor_scan, write_back_handles
 from .db import SessionLocal, init_db
-from .models import Brand, Job, Post, Research
+from .models import Brand, CompetitorScan, Job, Post, Research
 from .pipeline import rerender, run_post
 from .research import run_research
 
@@ -24,6 +25,10 @@ def enqueue_research(db, research: Research) -> None:
     db.add(Job(research_id=research.id, kind="research"))
 
 
+def enqueue_competitor_scan(db, scan: CompetitorScan) -> None:
+    db.add(Job(competitor_scan_id=scan.id, kind="compete"))
+
+
 def _run_research_job(db, job: Job) -> None:
     res = db.get(Research, job.research_id)
     res.status = "running"
@@ -35,6 +40,41 @@ def _run_research_job(db, job: Job) -> None:
         log.exception("research %s failed", res.id)
         res.error = str(e)[:2000]
         res.status = job.status = "failed"
+    db.commit()
+
+
+def _run_competitor_scan_job(db, job: Job) -> None:
+    scan = db.get(CompetitorScan, job.competitor_scan_id)
+    scan.status = "running"
+    db.commit()
+    try:
+        brand = db.get(Brand, scan.brand_id)
+        comps = normalize_competitors(brand.competitors)
+        if scan.only:
+            comps = [c for c in comps if c["id"] in scan.only]
+
+        def _progress(done: int, total: int) -> None:
+            scan.report = {**(scan.report or {}), "progress": {"done": done, "total": total}}
+            db.commit()
+
+        scan.report = run_competitor_scan(brand, comps, on_progress=_progress)
+        write_back_handles(brand, scan.report)
+        scan.status, scan.error, job.status = "ready", "", "done"
+    except Exception as e:  # noqa: BLE001
+        log.exception("competitor scan %s failed", scan.id)
+        scan.error = str(e)[:2000]
+        scan.status = job.status = "failed"
+    scan.updated_at = datetime.now(timezone.utc)
+    db.commit()
+
+
+def _prune_scans(db, brand_id: str, keep: int = 10) -> None:
+    old = db.scalars(
+        select(CompetitorScan).where(CompetitorScan.brand_id == brand_id)
+        .order_by(CompetitorScan.created_at.desc()).offset(keep)
+    )
+    for scan in old:
+        db.delete(scan)
     db.commit()
 
 
@@ -56,6 +96,10 @@ def process_one() -> bool:
             return False
         if job.kind == "research":
             _run_research_job(db, job)
+            return True
+        if job.kind == "compete":
+            _run_competitor_scan_job(db, job)
+            _prune_scans(db, db.get(CompetitorScan, job.competitor_scan_id).brand_id)
             return True
         post = db.get(Post, job.post_id)
         post.status = "running"

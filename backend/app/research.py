@@ -376,8 +376,9 @@ def run_research(b: Brand, focus: str) -> dict:
     # Instagram without login: niche hashtags + the brand's and competitors' pages, last 3 days
     try:
         from . import instagram_free
+        from .competitors import competitor_handles
 
-        profiles = [p for p in [b.instagram, *(getattr(b, "competitors", None) or [])] if p]
+        profiles = [p for p in [b.instagram, *competitor_handles(b.competitors)] if p]
         ig = instagram_free.collect([], profiles, days=3, target=100) if profiles else {"posts": [], "errors": []}
         if profiles:
             ran["instagram_pages"] = f"{len(ig['posts'])} posts" if ig["posts"] else "blocked"

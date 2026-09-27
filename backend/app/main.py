@@ -12,14 +12,15 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import auth as authlib
+from .competitors import normalize_competitors, parse_competitors_text
 from .config import settings
 from .db import SessionLocal, init_db
-from .models import POST_TYPES, Brand, Post, Research, User
+from .models import POST_TYPES, Brand, CompetitorScan, Post, Research, User
 from .static import FastStatic, thumbnail
 from .scheduler import create_daily_posts
 from .template_registry import TEMPLATES
 from .video_styles import VIDEO_STYLES
-from .worker import enqueue, enqueue_research
+from .worker import enqueue, enqueue_competitor_scan, enqueue_research
 
 PREVIEW_DIR = Path(__file__).parent / "previews"
 
@@ -153,7 +154,7 @@ class BrandIn(BaseModel):
     website: str = ""
     instagram: str = ""
     telegram: str = ""
-    competitors: list[str] = []
+    competitors: list = []
     products: list[dict] = []
     audience: str = ""
     tone: str = ""
@@ -166,12 +167,16 @@ class BrandIn(BaseModel):
 
 def brand_out(b: Brand) -> dict:
     # Plain read, no validation: projects saved before a rule was added must still load.
-    return {"id": b.id, **{k: getattr(b, k) for k in BrandIn.model_fields}}
+    out = {"id": b.id, **{k: getattr(b, k) for k in BrandIn.model_fields}}
+    out["competitors"] = normalize_competitors(out["competitors"])
+    return out
 
 
 @app.post("/brands")
 def create_brand(body: BrandIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    b = Brand(owner_id=user.id, **body.model_dump())
+    data = body.model_dump()
+    data["competitors"] = normalize_competitors(data["competitors"])
+    b = Brand(owner_id=user.id, **data)
     db.add(b)
     db.commit()
     return {"id": b.id}
@@ -190,7 +195,9 @@ def get_brand(brand_id: str, user: User = Depends(current_user), db: Session = D
 @app.put("/brands/{brand_id}")
 def update_brand(brand_id: str, body: BrandIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     b = own_brand(brand_id, user, db)
-    for k, v in body.model_dump().items():
+    data = body.model_dump()
+    data["competitors"] = normalize_competitors(data["competitors"])
+    for k, v in data.items():
         setattr(b, k, v)
     db.commit()
     return {"id": b.id}
@@ -380,6 +387,91 @@ def review(post_id: str, action: str, user: User = Depends(current_user), db: Se
         raise HTTPException(404, "unknown action")
     db.commit()
     return post_out(p)
+
+
+# ---------- competitors ----------
+
+class CompetitorIn(BaseModel):
+    id: str = ""
+    name: str = ""
+    website: str = ""
+    instagram: str = ""
+    telegram: str = ""
+    notes: str = ""
+    instagram_status: str = ""
+    instagram_evidence: str = ""
+    telegram_status: str = ""
+    telegram_evidence: str = ""
+
+
+class CompetitorsIn(BaseModel):
+    competitors: list[CompetitorIn]
+
+
+class ParseTextIn(BaseModel):
+    text: str
+
+
+class ScanIn(BaseModel):
+    only: list[str] = []
+
+
+def scan_out(s: CompetitorScan) -> dict:
+    return {"id": s.id, "brand_id": s.brand_id, "status": s.status, "report": s.report, "error": s.error,
+            "created_at": s.created_at, "updated_at": s.updated_at}
+
+
+@app.get("/brands/{brand_id}/competitors")
+def list_competitors(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    return normalize_competitors(own_brand(brand_id, user, db).competitors)
+
+
+@app.put("/brands/{brand_id}/competitors")
+def replace_competitors(brand_id: str, body: CompetitorsIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    b = own_brand(brand_id, user, db)
+    b.competitors = normalize_competitors([c.model_dump() for c in body.competitors])
+    db.commit()
+    return b.competitors
+
+
+@app.post("/brands/{brand_id}/competitors/parse")
+def parse_competitors(brand_id: str, body: ParseTextIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    own_brand(brand_id, user, db)
+    return parse_competitors_text(body.text)
+
+
+@app.post("/brands/{brand_id}/competitors/scan")
+def start_competitor_scan(brand_id: str, body: ScanIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    own_brand(brand_id, user, db)
+    busy = db.scalar(
+        select(CompetitorScan.id).where(CompetitorScan.brand_id == brand_id, CompetitorScan.status.in_(["queued", "running"]))
+    )
+    if busy:
+        raise HTTPException(409, "scan already running")
+    scan = CompetitorScan(brand_id=brand_id, only=body.only)
+    db.add(scan)
+    db.flush()
+    enqueue_competitor_scan(db, scan)
+    db.commit()
+    return scan_out(scan)
+
+
+@app.get("/brands/{brand_id}/competitors/scans")
+def list_competitor_scans(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    own_brand(brand_id, user, db)
+    rows = db.scalars(
+        select(CompetitorScan).where(CompetitorScan.brand_id == brand_id).order_by(CompetitorScan.created_at.desc()).limit(10)
+    )
+    return [scan_out(s) for s in rows]
+
+
+@app.get("/competitor-scans/{scan_id}")
+def get_competitor_scan(scan_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    s = db.get(CompetitorScan, scan_id)
+    if not s:
+        _404()
+    own_brand(s.brand_id, user, db)
+    return scan_out(s)
 
 
 @app.post("/admin/run-daily", dependencies=[Depends(admin)])

@@ -52,9 +52,19 @@ Postyar is a daily Instagram content studio for businesses. You define a busines
 - **Video style analysis:** a model maps what the top videos do to the video-style catalog.
 - **Used everywhere:** the latest research goes into every generation prompt. The daily batch refreshes research older than 3 days.
 
+### Competitor intelligence
+- **Competitors:** added one by one or bulk-pasted (site URLs, Instagram handles, `t.me` links), parsed and deduplicated server-side.
+- **Website scan:** robots.txt → sitemap discovery, up to 25 product pages per competitor (including WooCommerce variable products, one row per variation), prices from JSON-LD/WooCommerce/OpenGraph markup — decimal fractions, price ranges and IRR/IRT currency all handled, with a sanity range (10,000–500,000,000 Toman) that routes obviously-wrong prices to the competitor's errors instead of the matrix. Names map to canonical products (ChatGPT Plus/Pro/Team, Gemini, Claude, Midjourney, Cursor, Grok, Copilot, Canva, CapCut, Spotify, YouTube Premium, Netflix, Adobe, Windows/Office licenses, ...) with an LLM fallback (one batched call per scan) for unmatched names. Also detects trust signals (اینماد, گارانتی, تحویل فوری — `null` when the site couldn't be fetched, never a false negative), payment methods, discounts and blog posts.
+- **Social handles:** never guessed from the domain name. Each handle is `manual` (typed in), `verified` (linked from the competitor's own site, with the page as evidence) or `not_found`/`inaccessible`; a verified handle found during a scan is written back into the competitor automatically.
+- **Instagram (best effort):** recent posts, post frequency, format mix and top hashtags, with a data-quality flag when the source is only search results.
+- **Report:** a price comparison matrix keyed by product **and duration** (a 1-month price is never compared to a 1-year one), per-competitor profiles, and evidence-backed **gaps** (each cites the competitor data behind it) kept separate from generic **suggestions** — every gap, suggestion and idea opens Create prefilled with one tap.
+- **Bounded scans:** a 12-minute whole-scan budget and a 90-second per-competitor budget (both configurable), a 5s connect timeout, and a 3-consecutive-failure circuit breaker per host, so one slow competitor can't block the single worker for long; an exhausted budget marks the scan `partial` rather than failing it, and progress is written to the scan as competitors finish.
+- **Safety:** every fetch of a user-supplied URL goes through one SSRF-guarded, streaming helper (`safe_fetch.py`): only http/https, private/loopback/reserved IPs rejected after DNS resolution, redirects re-checked on every hop (even if a caller's `httpx.Client` was built with `follow_redirects=True`), body capped while streaming instead of loaded in full.
+- **Used everywhere:** the latest scan's top gaps are injected into every generation prompt, same as research.
+
 ### App (Flutter)
-- **Screens:** login/sign-up → projects → inside a project: **Posts**, **Create**, **Market** (research) and **Settings**, plus a template gallery and a profile screen.
-- **Research shortcut:** any trend, content idea or video style from research opens Create with the topic already filled in.
+- **Screens:** login/sign-up → projects → inside a project: **Posts**, **Create**, **Market** (research), **Competitors** and **Settings**, plus a template gallery and a profile screen.
+- **Research shortcut:** any trend, content idea, video style or competitor gap opens Create with the topic already filled in.
 - **Install:** served by the backend as a PWA. On iPhone use Safari → *Add to Home Screen*; on Android use Chrome → *Install app*.
 - **Demo mode:** `--dart-define=DEMO=true` runs the whole app with sample data and no server.
 
@@ -101,6 +111,11 @@ All endpoints except `/health`, `/catalog` and `/auth/*` need `Authorization: Be
 | GET, PUT | `/posts/{id}` | Read a post / edit its text (free re-render) |
 | POST | `/posts/{id}/approve\|reject\|regenerate` | Review actions |
 | POST, GET | `/brands/{id}/research` | Start / list market research |
+| GET, PUT | `/brands/{id}/competitors` | List / bulk-replace competitors |
+| POST | `/brands/{id}/competitors/parse` | Parse pasted text into normalised competitor objects (no save) |
+| POST | `/brands/{id}/competitors/scan` | `{"only": [ids]?}` — enqueue a competitor scan |
+| GET | `/brands/{id}/competitors/scans` | Last 10 competitor scans |
+| GET | `/competitor-scans/{id}` | One competitor scan report |
 | GET | `/catalog` | All slide templates (with previews) and video styles |
 | POST | `/admin/run-daily` | Run the daily batch now (`ADMIN_TOKEN`) |
 

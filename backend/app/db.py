@@ -21,6 +21,7 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 _ADDED_COLUMNS = [
     ("brands", "telegram", "VARCHAR(100)", "''"),
     ("brands", "competitors", "JSON", "'[]'"),
+    ("jobs", "competitor_scan_id", "VARCHAR(36)", "NULL"),
 ]
 
 

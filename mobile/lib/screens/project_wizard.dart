@@ -165,7 +165,7 @@ class _ProjectWizardState extends State<ProjectWizard> {
       telegram: _telegram.text.trim().replaceAll(RegExp(r'^(https?://)?(t\.me/)?@?'), ''),
       competitors: [
         for (final c in _competitors.text.split(RegExp(r'[\s,،]+')))
-          if (c.trim().isNotEmpty) c.trim().replaceFirst('@', ''),
+          if (c.trim().isNotEmpty) Competitor(instagram: c.trim().replaceFirst('@', '')),
       ],
       products: [
         for (final (n, d) in _products)

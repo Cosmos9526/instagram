@@ -6,11 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import offline, prompts
+from .competitors import competitors_brief
 from .config import settings
 from .images import generate_image
 from .llm import LLMError, chat_json
 from .video_styles import STYLE_BY_ID
-from .models import Brand, Post, Research
+from .models import Brand, CompetitorScan, Post, Research
 from .research import research_brief
 from .render import render_html, renderer
 from .template_registry import SINGLE_TEMPLATE, TEMPLATES, enforce, templates_for, violations
@@ -32,6 +33,12 @@ def latest_research(db: Session, brand_id: str) -> Research | None:
     return db.scalars(
         select(Research).where(Research.brand_id == brand_id, Research.status == "ready")
         .order_by(Research.created_at.desc()).limit(1)
+    ).first()
+
+def latest_competitor_scan(db: Session, brand_id: str) -> CompetitorScan | None:
+    return db.scalars(
+        select(CompetitorScan).where(CompetitorScan.brand_id == brand_id, CompetitorScan.status == "ready")
+        .order_by(CompetitorScan.created_at.desc()).limit(1)
     ).first()
 
 
@@ -83,6 +90,11 @@ def run_post(db: Session, post: Post) -> None:
     recent = recent_headlines(db, brand.id)
     res = latest_research(db, brand.id)
     research = research_brief(res.report) if res else ""
+    scan = latest_competitor_scan(db, brand.id)
+    if scan:
+        comp_brief = competitors_brief(scan.report)
+        if comp_brief:
+            research = f"{research}\n\n{comp_brief}" if research else comp_brief
     report = res.report if res else {}
     opts = post.content or {}
 

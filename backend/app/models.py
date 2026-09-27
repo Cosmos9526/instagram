@@ -85,6 +85,20 @@ class Research(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
 
+class CompetitorScan(Base):
+    """One scan of a project's competitor list: website + Instagram analysis and the synthesized report."""
+
+    __tablename__ = "competitor_scans"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    brand_id: Mapped[str] = mapped_column(ForeignKey("brands.id", ondelete="CASCADE"), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="queued")  # queued | running | ready | failed
+    only: Mapped[list] = mapped_column(JSON, default=list)  # competitor ids to scan; empty = all
+    report: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
 class Job(Base):
     """Minimal Postgres-backed queue. One worker process, concurrency 1."""
 
@@ -92,7 +106,10 @@ class Job(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     post_id: Mapped[str | None] = mapped_column(ForeignKey("posts.id", ondelete="CASCADE"), nullable=True)
     research_id: Mapped[str | None] = mapped_column(ForeignKey("research.id", ondelete="CASCADE"), nullable=True)
-    kind: Mapped[str] = mapped_column(String(10), default="generate")  # generate | rerender | research
+    competitor_scan_id: Mapped[str | None] = mapped_column(
+        ForeignKey("competitor_scans.id", ondelete="CASCADE"), nullable=True
+    )
+    kind: Mapped[str] = mapped_column(String(10), default="generate")  # generate | rerender | research | compete
     status: Mapped[str] = mapped_column(String(10), default="queued", index=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

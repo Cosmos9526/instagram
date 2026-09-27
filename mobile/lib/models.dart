@@ -103,6 +103,86 @@ class Research {
   Map<String, dynamic> get ran => Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }
 
+/// Status of a competitor's discovered social handle: verified (linked from their own site), manual
+/// (typed in by the user), or not found / their site was unreachable.
+const socialStatusLabels = <String, String>{
+  'verified': 'تأیید شده از سایت',
+  'manual': 'وارد شده دستی',
+  'likely': 'احتمالی',
+  'not_found': 'پیدا نشد',
+  'inaccessible': 'سایت در دسترس نبود',
+};
+
+class Competitor {
+  Competitor({
+    this.id = '',
+    this.name = '',
+    this.website = '',
+    this.instagram = '',
+    this.telegram = '',
+    this.notes = '',
+    this.instagramStatus = '',
+    this.instagramEvidence = '',
+    this.telegramStatus = '',
+    this.telegramEvidence = '',
+  });
+  String id, name, website, instagram, telegram, notes;
+  String instagramStatus, instagramEvidence, telegramStatus, telegramEvidence;
+
+  factory Competitor.fromJson(Map<String, dynamic> j) => Competitor(
+    id: '${j['id'] ?? ''}',
+    name: '${j['name'] ?? ''}',
+    website: '${j['website'] ?? ''}',
+    instagram: '${j['instagram'] ?? ''}',
+    telegram: '${j['telegram'] ?? ''}',
+    notes: '${j['notes'] ?? ''}',
+    instagramStatus: '${j['instagram_status'] ?? ''}',
+    instagramEvidence: '${j['instagram_evidence'] ?? ''}',
+    telegramStatus: '${j['telegram_status'] ?? ''}',
+    telegramEvidence: '${j['telegram_evidence'] ?? ''}',
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id, 'name': name, 'website': website, 'instagram': instagram, 'telegram': telegram, 'notes': notes,
+    'instagram_status': instagramStatus, 'instagram_evidence': instagramEvidence,
+    'telegram_status': telegramStatus, 'telegram_evidence': telegramEvidence,
+  };
+
+  String get label => name.isNotEmpty ? name : (website.isNotEmpty ? website : (instagram.isNotEmpty ? '@$instagram' : 'رقیب'));
+}
+
+class CompetitorScan {
+  CompetitorScan.fromJson(Map<String, dynamic> j)
+    : id = '${j['id']}',
+      status = '${j['status']}',
+      error = '${j['error'] ?? ''}',
+      report = Map<String, dynamic>.from(j['report'] as Map? ?? {}),
+      createdAt = DateTime.tryParse('${j['created_at']}');
+  final String id, status, error;
+  final Map<String, dynamic> report;
+  final DateTime? createdAt;
+
+  bool get isBusy => status == 'queued' || status == 'running';
+  List<Map<String, dynamic>> _maps(String k) => [
+    for (final e in (report[k] as List? ?? const [])) Map<String, dynamic>.from(e as Map),
+  ];
+  List<Map<String, dynamic>> get competitors => _maps('competitors');
+  List<Map<String, dynamic>> get priceMatrix => _maps('price_matrix');
+
+  /// Evidence-backed findings: each has 'text' and 'evidence' (competitor names/URLs that support it).
+  List<Map<String, dynamic>> get gaps => _maps('gaps');
+
+  /// Generic content angles, not necessarily backed by collected data — shown separately from gaps.
+  List<String> get suggestions => _strings(report['suggestions']);
+  List<Map<String, dynamic>> get postIdeas => _maps('post_ideas');
+  List<Map<String, dynamic>> get trustCompare => _maps('trust_compare');
+  bool get isPartial => report['partial'] == true;
+  Map<String, dynamic> get progress => Map<String, dynamic>.from(report['progress'] as Map? ?? {});
+  Map<String, dynamic> get positioning => Map<String, dynamic>.from(report['positioning'] as Map? ?? {});
+  Map<String, dynamic> get strengthsWeaknesses =>
+      Map<String, dynamic>.from(report['strengths_weaknesses'] as Map? ?? {});
+}
+
 class Product {
   Product({this.name = '', this.desc = '', this.price = ''});
   String name, desc, price;
@@ -123,7 +203,7 @@ class Brand {
     this.website = '',
     this.instagram = '',
     this.telegram = '',
-    List<String>? competitors,
+    List<Competitor>? competitors,
     List<Product>? products,
     this.audience = '',
     this.tone = '',
@@ -141,7 +221,7 @@ class Brand {
 
   String? id;
   String name, industry, language, description, website, instagram, telegram, audience, tone, cta;
-  List<String> competitors;
+  List<Competitor> competitors;
   List<Product> products;
   Map<String, String> colors;
   List<String> forbiddenTopics, hashtags;
@@ -158,7 +238,7 @@ class Brand {
     website: '${j['website'] ?? ''}',
     instagram: '${j['instagram'] ?? ''}',
     telegram: '${j['telegram'] ?? ''}',
-    competitors: _strings(j['competitors']),
+    competitors: [for (final c in (j['competitors'] as List? ?? const [])) Competitor.fromJson(c is Map ? Map<String, dynamic>.from(c) : {'instagram': '$c'})],
     products: [for (final p in (j['products'] as List? ?? const [])) Product.fromJson(p)],
     audience: '${j['audience'] ?? ''}',
     tone: '${j['tone'] ?? ''}',
@@ -177,7 +257,7 @@ class Brand {
     'website': website,
     'instagram': instagram,
     'telegram': telegram,
-    'competitors': competitors,
+    'competitors': [for (final c in competitors) c.toJson()],
     'products': [for (final p in products) p.toJson()],
     'audience': audience,
     'tone': tone,
