@@ -190,9 +190,12 @@ final _brands = <Map<String, dynamic>>[
 Research? _research;
 
 final _competitors = <Map<String, dynamic>>[
-  {'id': 'c1', 'name': 'پارس پرمیوم', 'website': 'https://parspremium.ir', 'instagram': 'parspremium', 'telegram': '', 'notes': ''},
-  {'id': 'c2', 'name': 'کافه آرز', 'website': 'https://cafearz.com', 'instagram': 'cafearz', 'telegram': '', 'notes': ''},
-  {'id': 'c3', 'name': 'دیکاردو', 'website': 'https://dicardo.com', 'instagram': 'dicardo.ir', 'telegram': '', 'notes': ''},
+  {'id': 'c1', 'name': 'پارس پرمیوم', 'website': 'https://parspremium.ir', 'instagram': 'parspremium', 'telegram': '', 'notes': '',
+   'instagram_status': 'verified', 'instagram_evidence': 'https://parspremium.ir'},
+  {'id': 'c2', 'name': 'کافه آرز', 'website': 'https://cafearz.com', 'instagram': 'cafearz', 'telegram': '', 'notes': '',
+   'instagram_status': 'manual', 'instagram_evidence': ''},
+  {'id': 'c3', 'name': 'دیکاردو', 'website': 'https://dicardo.com', 'instagram': 'dicardo.ir', 'telegram': '', 'notes': '',
+   'instagram_status': 'verified', 'instagram_evidence': 'https://dicardo.com'},
 ];
 
 CompetitorScan? _competitorScan;
@@ -208,6 +211,7 @@ Map<String, dynamic> _competitorScanJson(String status) => {
           'competitors': [
             {
               'id': 'c1', 'name': 'پارس پرمیوم', 'error': '',
+              'instagram_status': 'verified', 'instagram_evidence': 'https://parspremium.ir',
               'website': {
                 'ok': true,
                 'signals': {'enamad': true, 'guarantee': true, 'instant_delivery': true, 'support_hours': 'پشتیبانی ۲۴ ساعته'},
@@ -217,6 +221,7 @@ Map<String, dynamic> _competitorScanJson(String status) => {
             },
             {
               'id': 'c2', 'name': 'کافه آرز', 'error': '',
+              'instagram_status': 'manual', 'instagram_evidence': '',
               'website': {
                 'ok': true,
                 'signals': {'enamad': false, 'guarantee': true, 'instant_delivery': false, 'support_hours': ''},
@@ -226,6 +231,7 @@ Map<String, dynamic> _competitorScanJson(String status) => {
             },
             {
               'id': 'c3', 'name': 'دیکاردو', 'error': '',
+              'instagram_status': 'verified', 'instagram_evidence': 'https://dicardo.com',
               'website': {
                 'ok': true,
                 'signals': {'enamad': true, 'guarantee': false, 'instant_delivery': true, 'support_hours': ''},
@@ -236,27 +242,27 @@ Map<String, dynamic> _competitorScanJson(String status) => {
           ],
           'price_matrix': [
             {
-              'product': 'chatgpt_plus',
+              'product': 'chatgpt_plus', 'duration': '1m',
               'prices': {'پارس پرمیوم': 1650000, 'کافه آرز': 1750000, 'دیکاردو': 1590000},
               'cheapest': 'دیکاردو',
             },
             {
-              'product': 'gemini',
+              'product': 'gemini', 'duration': '1m',
               'prices': {'پارس پرمیوم': 990000, 'دیکاردو': 950000},
               'cheapest': 'دیکاردو',
             },
             {
-              'product': 'claude',
+              'product': 'claude', 'duration': '1m',
               'prices': {'کافه آرز': 1200000},
               'cheapest': 'کافه آرز',
             },
             {
-              'product': 'midjourney',
+              'product': 'midjourney', 'duration': '3m',
               'prices': {'پارس پرمیوم': 1400000, 'دیکاردو': 1350000},
               'cheapest': 'دیکاردو',
             },
             {
-              'product': 'cursor',
+              'product': 'cursor', 'duration': '1m',
               'prices': {'کافه آرز': 890000},
               'cheapest': 'کافه آرز',
             },
@@ -267,14 +273,20 @@ Map<String, dynamic> _competitorScanJson(String status) => {
             'دیکاردو': 'ارزان‌ترین در اغلب محصولات، تحویل فوری',
           },
           'gaps': [
+            {'text': 'کافه آرز نماد اعتماد الکترونیکی (اینماد) روی سایتش ندارد', 'evidence': ['کافه آرز']},
+            {'text': 'دیکاردو گارانتی یا ضمانت را در سایتش اعلام نکرده', 'evidence': ['دیکاردو']},
+            {'text': 'روی ChatGPT Plus (یک ماهه)، رقبا (پارس پرمیوم، کافه آرز، دیکاردو) قیمتی بین ۱٬۵۹۰٬۰۰۰ تا ۱٬۷۵۰٬۰۰۰ تومان دارند',
+             'evidence': ['پارس پرمیوم', 'کافه آرز', 'دیکاردو']},
+          ],
+          'suggestions': [
             'هیچ رقیبی مقایسه‌ی شفاف ChatGPT Plus در برابر Pro منتشر نکرده',
-            'کافه آرز نماد اعتماد ندارد؛ رهبوم می‌تواند روی شفافیت و امنیت پرداخت مانور دهد',
             'محتوای آموزشی «چطور از اکانت تیمی استفاده کنیم» در هیچ‌کدام دیده نمی‌شود',
             'مقایسه‌ی قیمت تومانی در برابر نرخ رسمی دلاری کمیاب است',
             'گارانتی بازگشت وجه به‌صورت واضح تبلیغ نشده',
             'محتوای پشت‌صحنه‌ی تحویل فوری اکانت دیده نمی‌شود',
             'نظرات واقعی مشتریان کمتر به اشتراک گذاشته می‌شود',
             'مقایسه‌ی ابزارهای هوش مصنوعی برای کاربردهای مختلف پوشش داده نشده',
+            'آموزش رفع مشکلات رایج اکانت‌های پرمیوم پوشش داده نشده',
           ],
           'post_ideas': [
             {'post_type': 'educational', 'mode': 'carousel', 'topic': 'ChatGPT Plus یا Pro؛ کدام برای شما بهتر است؟'},
@@ -282,6 +294,7 @@ Map<String, dynamic> _competitorScanJson(String status) => {
             {'post_type': 'educational', 'mode': 'single', 'topic': 'راهنمای استفاده از اکانت تیمی هوش مصنوعی'},
             {'post_type': 'sales', 'mode': 'single', 'topic': 'مقایسه‌ی قیمت رهبوم با بازار روی Midjourney'},
           ],
+          'partial': false,
           'created': DateTime.now().toIso8601String(),
         },
 };

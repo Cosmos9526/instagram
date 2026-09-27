@@ -11,12 +11,31 @@ const _productLabels = <String, String>{
   'chatgpt_plus': 'ChatGPT Plus',
   'chatgpt_pro': 'ChatGPT Pro',
   'chatgpt_team': 'ChatGPT Team',
+  'chatgpt': 'ChatGPT',
   'gemini': 'Gemini',
   'claude': 'Claude',
   'midjourney': 'Midjourney',
   'cursor': 'Cursor',
   'perplexity': 'Perplexity',
+  'grok': 'Grok',
+  'copilot': 'Copilot',
+  'canva': 'Canva',
+  'capcut': 'CapCut',
+  'spotify': 'Spotify',
+  'youtube_premium': 'YouTube Premium',
+  'netflix': 'Netflix',
+  'adobe': 'Adobe',
+  'windows': 'Windows',
+  'office': 'Office',
 };
+
+const _durationLabels = <String, String>{'1m': 'یک ماهه', '3m': 'سه ماهه', '6m': 'شش ماهه', '12m': 'یک ساله', '': ''};
+
+String _productRowLabel(Map<String, dynamic> row) {
+  final base = _productLabels['${row['product']}'] ?? '${row['product']}';
+  final dur = _durationLabels['${row['duration'] ?? ''}'] ?? '';
+  return dur.isEmpty ? base : '$base ($dur)';
+}
 
 String _fmtPrice(dynamic n) {
   if (n == null) return '—';
@@ -141,13 +160,22 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       ),
     );
     if (ok != true) return;
+    final newIg = ig.text.trim().replaceFirst('@', '');
+    final newTg = tg.text.trim().replaceFirst('@', '');
+    // Editing the handle by hand makes it manual again; leaving it untouched keeps its verified status.
+    final keepIg = existing != null && newIg == existing.instagram;
+    final keepTg = existing != null && newTg == existing.telegram;
     final updated = Competitor(
       id: existing?.id ?? '',
       name: name.text.trim(),
       website: website.text.trim(),
-      instagram: ig.text.trim().replaceFirst('@', ''),
-      telegram: tg.text.trim().replaceFirst('@', ''),
+      instagram: newIg,
+      telegram: newTg,
       notes: notes.text.trim(),
+      instagramStatus: keepIg ? existing.instagramStatus : (newIg.isEmpty ? '' : 'manual'),
+      instagramEvidence: keepIg ? existing.instagramEvidence : '',
+      telegramStatus: keepTg ? existing.telegramStatus : (newTg.isEmpty ? '' : 'manual'),
+      telegramEvidence: keepTg ? existing.telegramEvidence : '',
     );
     final items = [...?_items];
     if (existing == null) {
@@ -294,6 +322,17 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           style: theme.textTheme.labelSmall,
         ),
       ),
+      if (s.isPartial)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              const Expanded(child: Text('این اسکن به‌خاطر محدودیت زمانی ناقص است؛ بخشی از رقبا کامل بررسی نشدند.')),
+            ],
+          ),
+        ),
       if (s.priceMatrix.isNotEmpty) ...[
         const SectionTitle('مقایسه‌ی قیمت'),
         SingleChildScrollView(
@@ -306,7 +345,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
             rows: [
               for (final row in s.priceMatrix)
                 DataRow(cells: [
-                  DataCell(Text(_productLabels[row['product']] ?? '${row['product']}')),
+                  DataCell(Text(_productRowLabel(row))),
                   for (final n in names)
                     DataCell(Text(
                       _fmtPrice((row['prices'] as Map?)?[n]),
@@ -321,21 +360,41 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
         const SectionTitle('پروفایل رقبا'),
         for (final c in s.competitors) _CompetitorReportCard(c: c, positioning: '${s.positioning[c['name']] ?? ''}'),
       ],
-      if (s.gaps.isNotEmpty || s.postIdeas.isNotEmpty) ...[
-        const SectionTitle('خلأها و ایده‌ها'),
+      if (s.gaps.isNotEmpty) ...[
+        const SectionTitle('خلأهای مبتنی بر داده'),
         for (final g in s.gaps)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
-              leading: const Icon(Icons.lightbulb_outline),
-              title: Text(g),
+              leading: const Icon(Icons.fact_check_outlined),
+              title: Text('${g['text'] ?? ''}'),
+              subtitle: Text('شواهد: ${(g['evidence'] as List? ?? const []).join('، ')}', style: theme.textTheme.bodySmall),
               trailing: TextButton.icon(
-                onPressed: () => widget.onUse(postType: 'educational', topic: g),
+                onPressed: () => widget.onUse(postType: 'educational', topic: '${g['text'] ?? ''}'),
                 icon: const Icon(Icons.auto_awesome, size: 18),
                 label: const Text('بساز'),
               ),
             ),
           ),
+      ],
+      if (s.suggestions.isNotEmpty) ...[
+        const SectionTitle('ایده‌های عمومی (بدون شاهد مستقیم)'),
+        for (final sug in s.suggestions)
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: const Icon(Icons.lightbulb_outline),
+              title: Text(sug),
+              trailing: TextButton.icon(
+                onPressed: () => widget.onUse(postType: 'educational', topic: sug),
+                icon: const Icon(Icons.auto_awesome, size: 18),
+                label: const Text('بساز'),
+              ),
+            ),
+          ),
+      ],
+      if (s.postIdeas.isNotEmpty) ...[
+        const SectionTitle('ایده‌های پست آماده'),
         for (final i in s.postIdeas)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
@@ -370,7 +429,18 @@ class _CompetitorCard extends StatelessWidget {
       onTap: onTap,
       leading: CircleAvatar(child: Text(c.label.characters.first.toUpperCase())),
       title: Text(c.label),
-      subtitle: Text([if (c.website.isNotEmpty) c.website, if (c.instagram.isNotEmpty) '@${c.instagram}'].join(' · ')),
+      subtitle: Row(
+        children: [
+          Expanded(
+            child: Text(
+              [if (c.website.isNotEmpty) c.website, if (c.instagram.isNotEmpty) '@${c.instagram}'].join(' · '),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (c.instagramStatus == 'verified')
+            const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.verified, size: 14)),
+        ],
+      ),
       trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: onDelete),
     ),
   );
@@ -383,10 +453,13 @@ class _CompetitorReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final website = Map<String, dynamic>.from(c['website'] as Map? ?? {});
+    final reachable = website['ok'] == true;
     final signals = Map<String, dynamic>.from(website['signals'] as Map? ?? {});
     final ig = Map<String, dynamic>.from(c['instagram'] as Map? ?? {});
     final discounts = [for (final d in (website['discounts'] as List? ?? const [])) '$d'];
+    final igStatus = '${c['instagram_status'] ?? ''}';
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
@@ -394,31 +467,38 @@ class _CompetitorReportCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${c['name']}', style: Theme.of(context).textTheme.titleSmall),
+            Text('${c['name']}', style: theme.textTheme.titleSmall),
             if (positioning.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(positioning)),
-            if ('${c['error'] ?? ''}'.isNotEmpty)
+            if (!reachable)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('برخی داده‌ها در دسترس نبود', style: Theme.of(context).textTheme.bodySmall),
+                child: Text('سایت این رقیب در دسترس نبود؛ نمادهای اعتماد نامعلوم است', style: theme.textTheme.bodySmall),
               ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                if (signals['enamad'] == true) const Chip(label: Text('اینماد'), visualDensity: VisualDensity.compact),
-                if (signals['guarantee'] == true) const Chip(label: Text('گارانتی'), visualDensity: VisualDensity.compact),
-                if (signals['instant_delivery'] == true)
+                if (reachable && signals['enamad'] == true) const Chip(label: Text('اینماد'), visualDensity: VisualDensity.compact),
+                if (reachable && signals['guarantee'] == true) const Chip(label: Text('گارانتی'), visualDensity: VisualDensity.compact),
+                if (reachable && signals['instant_delivery'] == true)
                   const Chip(label: Text('تحویل فوری'), visualDensity: VisualDensity.compact),
                 for (final d in discounts.take(2))
                   Chip(label: Text(d, overflow: TextOverflow.ellipsis), visualDensity: VisualDensity.compact),
+                if (igStatus.isNotEmpty)
+                  Chip(
+                    avatar: const Icon(Icons.camera_alt_outlined, size: 14),
+                    label: Text(socialStatusLabels[igStatus] ?? igStatus),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: igStatus == 'verified' ? theme.colorScheme.primaryContainer : null,
+                  ),
               ],
             ),
-            if (ig.isNotEmpty) ...[
+            if (ig.isNotEmpty && (ig['post_frequency_30d'] ?? 0) > 0) ...[
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.camera_alt_outlined, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(Icons.camera_alt_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text('${faDigits(ig['post_frequency_30d'] ?? 0)} پست در ۳۰ روز اخیر'),
                   if (ig['partial'] == true) ...[
@@ -426,7 +506,7 @@ class _CompetitorReportCard extends StatelessWidget {
                     Chip(
                       label: const Text('اطلاعات ناقص'),
                       visualDensity: VisualDensity.compact,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     ),
                   ],
                 ],

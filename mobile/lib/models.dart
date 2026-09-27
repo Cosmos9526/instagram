@@ -103,9 +103,31 @@ class Research {
   Map<String, dynamic> get ran => Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }
 
+/// Status of a competitor's discovered social handle: verified (linked from their own site), manual
+/// (typed in by the user), or not found / their site was unreachable.
+const socialStatusLabels = <String, String>{
+  'verified': 'تأیید شده از سایت',
+  'manual': 'وارد شده دستی',
+  'likely': 'احتمالی',
+  'not_found': 'پیدا نشد',
+  'inaccessible': 'سایت در دسترس نبود',
+};
+
 class Competitor {
-  Competitor({this.id = '', this.name = '', this.website = '', this.instagram = '', this.telegram = '', this.notes = ''});
+  Competitor({
+    this.id = '',
+    this.name = '',
+    this.website = '',
+    this.instagram = '',
+    this.telegram = '',
+    this.notes = '',
+    this.instagramStatus = '',
+    this.instagramEvidence = '',
+    this.telegramStatus = '',
+    this.telegramEvidence = '',
+  });
   String id, name, website, instagram, telegram, notes;
+  String instagramStatus, instagramEvidence, telegramStatus, telegramEvidence;
 
   factory Competitor.fromJson(Map<String, dynamic> j) => Competitor(
     id: '${j['id'] ?? ''}',
@@ -114,10 +136,17 @@ class Competitor {
     instagram: '${j['instagram'] ?? ''}',
     telegram: '${j['telegram'] ?? ''}',
     notes: '${j['notes'] ?? ''}',
+    instagramStatus: '${j['instagram_status'] ?? ''}',
+    instagramEvidence: '${j['instagram_evidence'] ?? ''}',
+    telegramStatus: '${j['telegram_status'] ?? ''}',
+    telegramEvidence: '${j['telegram_evidence'] ?? ''}',
   );
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'name': name, 'website': website, 'instagram': instagram, 'telegram': telegram, 'notes': notes};
+  Map<String, dynamic> toJson() => {
+    'id': id, 'name': name, 'website': website, 'instagram': instagram, 'telegram': telegram, 'notes': notes,
+    'instagram_status': instagramStatus, 'instagram_evidence': instagramEvidence,
+    'telegram_status': telegramStatus, 'telegram_evidence': telegramEvidence,
+  };
 
   String get label => name.isNotEmpty ? name : (website.isNotEmpty ? website : (instagram.isNotEmpty ? '@$instagram' : 'رقیب'));
 }
@@ -139,9 +168,16 @@ class CompetitorScan {
   ];
   List<Map<String, dynamic>> get competitors => _maps('competitors');
   List<Map<String, dynamic>> get priceMatrix => _maps('price_matrix');
-  List<String> get gaps => _strings(report['gaps']);
+
+  /// Evidence-backed findings: each has 'text' and 'evidence' (competitor names/URLs that support it).
+  List<Map<String, dynamic>> get gaps => _maps('gaps');
+
+  /// Generic content angles, not necessarily backed by collected data — shown separately from gaps.
+  List<String> get suggestions => _strings(report['suggestions']);
   List<Map<String, dynamic>> get postIdeas => _maps('post_ideas');
   List<Map<String, dynamic>> get trustCompare => _maps('trust_compare');
+  bool get isPartial => report['partial'] == true;
+  Map<String, dynamic> get progress => Map<String, dynamic>.from(report['progress'] as Map? ?? {});
   Map<String, dynamic> get positioning => Map<String, dynamic>.from(report['positioning'] as Map? ?? {});
   Map<String, dynamic> get strengthsWeaknesses =>
       Map<String, dynamic>.from(report['strengths_weaknesses'] as Map? ?? {});
