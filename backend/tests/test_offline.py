@@ -30,7 +30,7 @@ def test_posts_are_built_offline_when_no_model(monkeypatch):
     monkeypatch.setattr(ss, "google_suggest", lambda q, lang="fa": [q + " تهران"])
     monkeypatch.setattr(ss, "google_rising", lambda kws, geo="IR": [{"query": "دستیار کدنویسی رایگان", "growth": "+250%", "seed": kws[0]}])
     monkeypatch.setattr(ss, "video_search", lambda q, days=7: [])
-    monkeypatch.setattr(ss, "instagram_via_search", lambda kws, days=3, target=100: {"posts": [
+    monkeypatch.setattr(ss, "instagram_via_search", lambda kws, days=3, target=100, must=None: {"posts": [
         {"platform": "instagram", "url": "https://www.instagram.com/reel/X1/", "code": "X1", "type": "video",
          "channel": "rival", "title": "آموزش هوش مصنوعی", "likes": 900, "comments": 20, "views": 0,
          "age_hours": 30, "engagement": 960, "source": "search"}], "total_seen": 1, "errors": []})

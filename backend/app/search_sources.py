@@ -68,15 +68,16 @@ def parse_instagram_result(r: dict) -> dict | None:
     }
 
 
-def instagram_via_search(keywords: list[str], days: int = 3, target: int = 100) -> dict:
-    """Recent public Instagram posts for the keywords, found through a search engine."""
+def instagram_via_search(keywords: list[str], days: int = 3, target: int = 100, must: list[str] | None = None) -> dict:
+    """Recent public Instagram posts for the keywords, found through a search engine.
+    `must`: core topics; a post has to mention one of their words (defaults to the keywords)."""
     from ddgs import DDGS
 
     posts: dict[str, dict] = {}
     errors = []
     limit = "w" if days <= 7 else "m"
     # relevance: a post must mention at least one meaningful word of the keywords
-    words = {w for kw in keywords for w in re.findall(r"[\w\u200c]{3,}", kw.lower())}
+    words = {w for kw in (must or keywords) for w in re.findall(r"[\w\u200c]{3,}", kw.lower())}
     for kw in keywords[:12]:
         for q in (f"site:instagram.com {kw}", f"site:instagram.com/reel {kw}", f"instagram {kw}"):
             try:

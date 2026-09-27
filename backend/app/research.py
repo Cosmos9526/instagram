@@ -217,10 +217,19 @@ def _safe(text: str, b: Brand) -> bool:
 
 
 def seed_keywords(b: Brand, focus: str) -> list[str]:
+    """Specific topics first (focus, products). The broad industry name is only a last resort: words like
+    «سلامت» pulled in unrelated news and posts."""
     seeds = [focus] if focus else []
     seeds += [p["name"] for p in (b.products or []) if (p.get("name") or "").strip()][:3]
-    seeds += [b.industry] if b.industry else []
+    if not seeds and b.industry:
+        seeds = [b.industry]
     return list(dict.fromkeys(s.strip() for s in seeds if s and s.strip()))[:4]
+
+
+def _relevant(text: str, seeds: list[str]) -> bool:
+    words = {w for s in seeds for w in _tokens(s)}
+    t = (text or "").lower()
+    return not words or any(w in t for w in words)
 
 
 def collect_free(b: Brand, focus: str) -> dict:
@@ -233,16 +242,16 @@ def collect_free(b: Brand, focus: str) -> dict:
     suggestions = [s for seed in seeds[:2] for s in ss.google_suggest(seed, b.language)[:6]]
     rising = ss.google_rising(seeds[:2])
     ig_keywords = list(dict.fromkeys(seeds + [r["query"] for r in rising[:4]] + suggestions[:6]))
-    ig = ss.instagram_via_search(ig_keywords, days=3, target=100)
+    ig = ss.instagram_via_search(ig_keywords, days=3, target=100, must=seeds)
     topic = focus or (b.products[0]["name"] if b.products else b.industry)
-    queries = [q for q in (f"{b.name} {b.industry}", f"{topic} {b.industry}", f"ترند {b.industry}") if q.strip()]
+    queries = [q for q in (f"{b.name}", f"{topic}", f"{topic} جدید") if q.strip()]
     web, seen = [], set()
     for q in queries:
         for r in web_search(q, 6):
             if r["url"] not in seen:
                 seen.add(r["url"])
                 web.append(r)
-    news = news_search(f"{b.industry} {focus}".strip(), 8)
+    news = [n for n in news_search(seeds[0] if seeds else b.industry, 10) if _relevant(n["title"] + " " + n["snippet"], seeds)]
     videos = []
     for q in (f"آموزش {topic}", f"{b.industry}"):
         videos += youtube_search(q, 6)
@@ -282,7 +291,9 @@ Return ONLY JSON, user-facing text in {lang}:
 
 def heuristic_report(b: Brand, focus: str, data: dict) -> dict:
     """Report built only from the search results, for when no text model is available."""
-    texts = [r["title"] + " " + r["snippet"] for r in data["web"] + data["news"] if _safe(r["title"], b)]
+    seeds = data.get("seeds", [])
+    texts = [r["title"] + " " + r["snippet"] for r in data["web"] + data["news"]
+             if _safe(r["title"], b) and _relevant(r["title"] + " " + r["snippet"], seeds)]
     texts += [p["title"] for p in data.get("instagram", [])]
     texts += [v["title"] for v in data["videos"]]
     kws = list(dict.fromkeys(data.get("seeds", []) + data.get("suggestions", [])[:6] + _keywords(texts)))[:20]
@@ -290,7 +301,8 @@ def heuristic_report(b: Brand, focus: str, data: dict) -> dict:
     trends = [
         {"title": n["title"], "why_now": f"خبر این هفته از {n.get('source') or 'اخبار'}",
          "angle_for_brand": f"ربط دادن این خبر به {product}", "post_type": "news"}
-        for n in [n for n in data["news"] if _safe(n["title"] + " " + n["snippet"], b)][:5]
+        for n in [n for n in data["news"] if _safe(n["title"] + " " + n["snippet"], b)
+                  and _relevant(n["title"] + " " + n["snippet"], data.get("seeds", []))][:5]
     ]
     trends = [{"title": r["query"], "why_now": f"جست‌وجوی رو به رشد در گوگل ({r['growth']})",
                "angle_for_brand": f"پاسخ {b.name} به «{r['query']}»", "post_type": "educational"}
