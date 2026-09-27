@@ -35,6 +35,10 @@ class Api {
 
   String mediaUrl(String path) => '$baseUrl$path';
 
+  /// Small JPEG of a rendered slide (much lighter than the 1080px PNG); `path` is a /media/... path.
+  String thumbUrl(String path, int width) =>
+      path.startsWith('/media/') ? '$baseUrl/thumb/${path.substring(7)}?w=$width' : mediaUrl(path);
+
   Map<String, String> get _headers => {
     if (token.isNotEmpty) 'Authorization': 'Bearer $token',
     'Content-Type': 'application/json; charset=utf-8',

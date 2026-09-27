@@ -107,7 +107,7 @@ class _PostTile extends StatelessWidget {
         ? ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
-              api.mediaUrl(post.slides.first),
+              '${api.thumbUrl(post.slides.first, 200)}&s=${post.status}',
               width: 56,
               height: 70,
               cacheWidth: 168, // decode at display size (3x), not 1080px
