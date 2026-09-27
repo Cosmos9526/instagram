@@ -13,6 +13,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Skipped until the secrets exist (see deploy/README.md), so merges don't show a failed run.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     steps:
       - name: Run update on the server (restricted key: can only run deploy/update.sh)
         env:
