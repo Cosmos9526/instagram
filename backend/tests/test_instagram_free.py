@@ -38,3 +38,18 @@ def test_blocked_returns_empty_with_reason(monkeypatch):
     ig.last_errors.clear()
     assert ig.hashtag_posts("x") == []
     assert "429" in ig.last_errors[0]
+
+
+def test_parse_instagram_search_result():
+    from app.search_sources import parse_instagram_result
+
+    p = parse_instagram_result({
+        "href": "https://www.instagram.com/reel/DdqobMXq1hN/",
+        "title": "Milad Ebrahimpour | آموزش ساخت AI Agent",
+        "body": '3 days ago · 25 likes, 5 comments - miladxaitalks on September 24, 2026: "آموزش ساخت AI Agent"',
+    })
+    assert p["likes"] == 25 and p["comments"] == 5 and p["channel"] == "miladxaitalks"
+    assert p["type"] == "video" and p["age_hours"] == 72 and p["title"].startswith("آموزش")
+    q = parse_instagram_result({"href": "https://www.instagram.com/p/AbC/", "title": "x", "body": "Follow 1.2K likes page"})
+    assert q["likes"] == 1200
+    assert parse_instagram_result({"href": "https://example.com/a", "title": "", "body": ""}) is None

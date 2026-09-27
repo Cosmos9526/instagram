@@ -137,19 +137,20 @@ class _ResearchScreenState extends State<ResearchScreen> {
     final theme = Theme.of(context);
     final ran = r.ran;
     String label(String k, String v) => switch ((k, v)) {
-      ('web', 'web') => 'جست‌وجوی وب',
-      ('web', 'model_only') => 'بدون دسترسی وب (فقط دانش مدل)',
-      ('web', 'fake') => 'نمونه',
+      ('web', 'web') => 'جست‌وجوی وب (گوگل)',
       ('web', 'search') => 'جست‌وجوی وب و خبر',
       ('web', 'search_only') => 'جست‌وجوی وب (بدون خلاصه‌ی هوش مصنوعی)',
+      ('web', 'model_only') => 'بدون دسترسی وب',
+      ('web', 'fake') => 'نمونه',
+      ('instagram_search', _) => 'اینستاگرام: ${v.replaceAll('posts', 'پست')}',
+      ('instagram_pages', _) => 'پیج‌های اینستاگرام: ${v == 'blocked' ? 'مسدود' : v.replaceAll('posts', 'پست')}',
+      ('google_trends', 'ok') => 'ترندهای گوگل',
+      ('google_trends', _) => 'ترندهای گوگل: بی‌نتیجه',
+      ('youtube', 'ok') => 'ویدیوها و یوتیوب',
       ('youtube_api', _) => 'یوتیوب (API)',
-      ('instagram_free', 'blocked') => 'اینستاگرام: مسدود شد',
-      ('instagram_free', 'none') => 'اینستاگرام: پستی نبود',
-      ('instagram_free', 'error') => 'اینستاگرام: خطا',
-      ('instagram_free', _) => 'اینستاگرام: $v',
-      (_, 'ok') => k == 'youtube' ? 'یوتیوب' : 'اینستاگرام',
-      (_, 'error') => '${k == 'youtube' ? 'یوتیوب' : 'اینستاگرام'}: خطا',
-      _ => '${k == 'youtube' ? 'یوتیوب' : 'اینستاگرام'}: غیرفعال',
+      (_, 'error') => '$k: خطا',
+      (_, 'off') => '$k: غیرفعال',
+      _ => '$k: $v',
     };
     return [
       SectionTitle(
