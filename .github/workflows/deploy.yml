@@ -16,7 +16,7 @@ jobs:
     # Skipped until the secrets exist (see deploy/README.md), so merges don't show a failed run.
     if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     steps:
-      - name: Run update on the server (restricted key: can only run deploy/update.sh)
+      - name: Run update on the server (restricted key, can only run deploy/update.sh)
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_HOST: ${{ secrets.DEPLOY_HOST }}
