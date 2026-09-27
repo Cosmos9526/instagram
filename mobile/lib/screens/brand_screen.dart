@@ -16,7 +16,7 @@ const planOptions = <String, String>{
   'video_prompt': 'پرامپت ویدیو',
 };
 
-const _palettes = <List<String>>[
+const brandPalettes = <List<String>>[
   ['#0E7C66', '#F4B400', '#FFFFFF', '#111111'],
   ['#6B3E26', '#F2C14E', '#FFF8F0', '#2B1B12'],
   ['#1F3A93', '#FF6B6B', '#F7F9FC', '#0B1B3F'],
@@ -25,7 +25,7 @@ const _palettes = <List<String>>[
   ['#2A9D8F', '#E76F51', '#FDFBF7', '#1D3557'],
 ];
 
-Color _hex(String s) => Color(int.parse('FF${s.replaceFirst('#', '')}', radix: 16));
+Color hexColor(String s) => Color(int.parse('FF${s.replaceFirst('#', '')}', radix: 16));
 
 class BrandScreen extends StatefulWidget {
   const BrandScreen({super.key, required this.api, this.brand, this.embedded = false, this.onSaved, this.onDeleted});
@@ -238,7 +238,7 @@ class _BrandScreenState extends State<BrandScreen> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              for (final p in _palettes)
+              for (final p in brandPalettes)
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () =>
@@ -262,7 +262,7 @@ class _BrandScreenState extends State<BrandScreen> {
                             width: 22,
                             height: 22,
                             decoration: BoxDecoration(
-                              color: _hex(c),
+                              color: hexColor(c),
                               border: Border.all(color: Colors.black12),
                             ),
                           ),

@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 /// Postyar design tokens: turquoise (فیروزه‌ای) primary, saffron accent, ink text, soft teal-tinted neutrals.
@@ -43,7 +42,7 @@ ThemeData buildTheme(Brightness brightness) {
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: SoftPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(), // native swipe-back on iPhone
+        TargetPlatform.iOS: SoftPageTransitionsBuilder(),
         TargetPlatform.macOS: SoftPageTransitionsBuilder(),
         TargetPlatform.windows: SoftPageTransitionsBuilder(),
         TargetPlatform.linux: SoftPageTransitionsBuilder(),
@@ -254,12 +253,16 @@ class HeroCard extends StatelessWidget {
   );
 }
 
-/// Short fade + small slide (direction-aware for RTL). Cheap to render: no scaling, no blur, no shadows.
+/// Quick slide only (no fade): opacity over a full page is expensive in the web renderer and looked like
+/// slow motion. A transform-only slide stays cheap. Direction-aware for RTL.
 class SoftPageTransitionsBuilder extends PageTransitionsBuilder {
   const SoftPageTransitionsBuilder();
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 220);
+  Duration get transitionDuration => const Duration(milliseconds: 160);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 130);
 
   @override
   Widget buildTransitions<T>(
@@ -270,55 +273,32 @@ class SoftPageTransitionsBuilder extends PageTransitionsBuilder {
     Widget child,
   ) {
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween(begin: Offset(rtl ? -0.06 : 0.06, 0), end: Offset.zero).animate(curved),
-        child: child,
-      ),
+    return SlideTransition(
+      position: Tween(
+        begin: Offset(rtl ? -1 : 1, 0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic)),
+      child: child,
     );
   }
 }
 
-/// Keeps every tab alive (scroll position, loaded data) but only paints and animates the visible one,
-/// with a quick cross-fade when switching.
-class FadeIndexedStack extends StatefulWidget {
+/// Keeps every tab alive (scroll position, loaded data); switching is instant and only the visible tab
+/// ticks and paints.
+class FadeIndexedStack extends StatelessWidget {
   const FadeIndexedStack({super.key, required this.index, required this.children});
   final int index;
   final List<Widget> children;
 
   @override
-  State<FadeIndexedStack> createState() => _FadeIndexedStackState();
-}
-
-class _FadeIndexedStackState extends State<FadeIndexedStack> with SingleTickerProviderStateMixin {
-  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 180), value: 1);
-
-  @override
-  void didUpdateWidget(FadeIndexedStack old) {
-    super.didUpdateWidget(old);
-    if (old.index != widget.index) _c.forward(from: 0);
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: CurvedAnimation(parent: _c, curve: Curves.easeOut),
-    child: IndexedStack(
-      index: widget.index,
-      children: [
-        for (var i = 0; i < widget.children.length; i++)
-          TickerMode(
-            enabled: i == widget.index,
-            child: RepaintBoundary(child: widget.children[i]),
-          ),
-      ],
-    ),
+  Widget build(BuildContext context) => IndexedStack(
+    index: index,
+    children: [
+      for (var i = 0; i < children.length; i++)
+        TickerMode(
+          enabled: i == index,
+          child: RepaintBoundary(child: children[i]),
+        ),
+    ],
   );
 }
