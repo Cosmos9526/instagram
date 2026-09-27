@@ -21,6 +21,11 @@ def _read(name: str) -> str:
 # ---------- normalisation ----------
 
 
+def test_blank_competitors_are_dropped():
+    items = comp.normalize_competitors(["", "  ", "@", {"name": ""}, {"notes": "x"}, None, {"website": "https://a.ir"}])
+    assert [c["website"] for c in items] == ["https://a.ir"]
+
+
 def test_legacy_string_competitors_become_objects():
     items = comp.normalize_competitors(["rival_shop", "@another_one", {"instagram": "third", "name": "Third"}])
     assert items[0]["instagram"] == "rival_shop" and items[0]["website"] == "" and "id" in items[0]
