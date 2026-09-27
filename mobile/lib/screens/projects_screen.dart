@@ -5,7 +5,7 @@ import '../models.dart';
 import '../widgets/common.dart';
 import '../theme.dart';
 import 'auth_screen.dart';
-import 'brand_screen.dart';
+import 'project_wizard.dart';
 import 'profile_screen.dart';
 import 'project_screen.dart';
 import 'templates_screen.dart';
@@ -64,7 +64,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Future<void> _newProject() async {
     final id = await Navigator.of(
       context,
-    ).push<String>(MaterialPageRoute(builder: (_) => BrandScreen(api: widget.api)));
+    ).push<String>(MaterialPageRoute(builder: (_) => ProjectWizard(api: widget.api)));
     if (id == null) return;
     await _load();
     final b = _brands?.where((b) => b.id == id).firstOrNull;
