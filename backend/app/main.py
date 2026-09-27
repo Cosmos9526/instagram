@@ -147,6 +147,8 @@ class BrandIn(BaseModel):
     description: str = ""
     website: str = ""
     instagram: str = ""
+    telegram: str = ""
+    competitors: list[str] = []
     products: list[dict] = []
     audience: str = ""
     tone: str = ""
@@ -215,6 +217,18 @@ def catalog():
             for s in VIDEO_STYLES
         ],
     }
+
+
+# ---------- source diagnostics ----------
+
+@app.get("/tools/instagram")
+def tool_instagram(tag: str = "", user: str = "", _: User = Depends(current_user)):
+    """Checks whether the no-login Instagram endpoints work from this server's IP."""
+    from . import instagram_free as ig
+
+    ig.last_errors.clear()
+    posts = (ig.hashtag_posts(tag) if tag else []) + (ig.profile_posts(user) if user else [])
+    return {"count": len(posts), "errors": ig.last_errors, "sample": posts[:5]}
 
 
 # ---------- research ----------

@@ -61,6 +61,8 @@ class _ProjectWizardState extends State<ProjectWizard> {
   final _name = TextEditingController();
   final _website = TextEditingController();
   final _instagram = TextEditingController();
+  final _telegram = TextEditingController();
+  final _competitors = TextEditingController();
   final List<(TextEditingController, TextEditingController)> _products = [
     (TextEditingController(), TextEditingController()),
   ];
@@ -106,6 +108,11 @@ class _ProjectWizardState extends State<ProjectWizard> {
       language: _language,
       website: _website.text.trim(),
       instagram: _instagram.text.trim().replaceFirst('@', ''),
+      telegram: _telegram.text.trim().replaceAll(RegExp(r'^(https?://)?(t\.me/)?@?'), ''),
+      competitors: [
+        for (final c in _competitors.text.split(RegExp(r'[\s,،]+')))
+          if (c.trim().isNotEmpty) c.trim().replaceFirst('@', ''),
+      ],
       products: [
         for (final (n, d) in _products)
           if (n.text.trim().isNotEmpty) Product(name: n.text.trim(), desc: d.text.trim()),
@@ -261,6 +268,22 @@ class _ProjectWizardState extends State<ProjectWizard> {
         controller: _instagram,
         textDirection: TextDirection.ltr,
         decoration: const InputDecoration(labelText: 'آیدی اینستاگرام (اختیاری)', hintText: 'mybrand'),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _telegram,
+        textDirection: TextDirection.ltr,
+        decoration: const InputDecoration(labelText: 'کانال تلگرام (اختیاری)', hintText: 't.me/mychannel'),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _competitors,
+        textDirection: TextDirection.ltr,
+        decoration: const InputDecoration(
+          labelText: 'پیج اینستاگرام رقبا (اختیاری)',
+          hintText: 'competitor1, competitor2',
+          helperText: 'برای تحقیق بازار: پست‌های اخیر و پربازدید رقبا بررسی می‌شود',
+        ),
       ),
     ],
     2 => [

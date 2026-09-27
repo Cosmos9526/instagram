@@ -143,6 +143,10 @@ class _ResearchScreenState extends State<ResearchScreen> {
       ('web', 'search') => 'جست‌وجوی وب و خبر',
       ('web', 'search_only') => 'جست‌وجوی وب (بدون خلاصه‌ی هوش مصنوعی)',
       ('youtube_api', _) => 'یوتیوب (API)',
+      ('instagram_free', 'blocked') => 'اینستاگرام: مسدود شد',
+      ('instagram_free', 'none') => 'اینستاگرام: پستی نبود',
+      ('instagram_free', 'error') => 'اینستاگرام: خطا',
+      ('instagram_free', _) => 'اینستاگرام: $v',
       (_, 'ok') => k == 'youtube' ? 'یوتیوب' : 'اینستاگرام',
       (_, 'error') => '${k == 'youtube' ? 'یوتیوب' : 'اینستاگرام'}: خطا',
       _ => '${k == 'youtube' ? 'یوتیوب' : 'اینستاگرام'}: غیرفعال',
@@ -200,6 +204,25 @@ class _ResearchScreenState extends State<ResearchScreen> {
               topic: '${s['hook_example'] ?? s['pattern'] ?? ''}',
               videoStyle: '${s['style_id'] ?? ''}',
             ),
+          ),
+      ],
+      if (r.instagramPosts.isNotEmpty) ...[
+        SectionTitle('پربازدیدترین پست‌های اینستاگرام (۳ روز اخیر، ${faDigits(r.instagramPosts.length)} پست)'),
+        for (final v in r.instagramPosts.take(20))
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(v['type'] == 'video' ? Icons.movie_outlined : Icons.photo_outlined),
+            title: Text(
+              '${v['title']}'.isEmpty ? '(بدون کپشن)' : '${v['title']}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '@${v['channel']}، ${faDigits(_compact(v['likes']))} لایک'
+              '${(v['views'] ?? 0) != 0 ? '، ${faDigits(_compact(v['views']))} بازدید' : ''}، ${faDigits(_compact(v['comments']))} کامنت',
+            ),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _open('${v['url']}'),
           ),
       ],
       if (r.topVideos.isNotEmpty) ...[

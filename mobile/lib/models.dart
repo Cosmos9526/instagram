@@ -97,6 +97,7 @@ class Research {
   List<Map<String, dynamic>> get competitors => _maps('competitors');
   List<Map<String, dynamic>> get ideas => _maps('content_ideas');
   List<Map<String, dynamic>> get topVideos => _maps('top_videos');
+  List<Map<String, dynamic>> get instagramPosts => _maps('instagram_posts');
   List<Map<String, dynamic>> get videoStyles => _maps('video_styles');
   List<Map<String, dynamic>> get sources => _maps('sources');
   Map<String, dynamic> get ran => Map<String, dynamic>.from(report['ran'] as Map? ?? {});
@@ -121,6 +122,8 @@ class Brand {
     this.description = '',
     this.website = '',
     this.instagram = '',
+    this.telegram = '',
+    List<String>? competitors,
     List<Product>? products,
     this.audience = '',
     this.tone = '',
@@ -129,14 +132,16 @@ class Brand {
     this.cta = '',
     List<String>? hashtags,
     Map<String, List<String>>? weeklyPlan,
-  }) : products = products ?? [],
+  }) : competitors = competitors ?? [],
+       products = products ?? [],
        colors = colors ?? {'primary': '#0E7C66', 'secondary': '#F4B400', 'bg': '#FFFFFF', 'text': '#111111'},
        forbiddenTopics = forbiddenTopics ?? [],
        hashtags = hashtags ?? [],
        weeklyPlan = weeklyPlan ?? {};
 
   String? id;
-  String name, industry, language, description, website, instagram, audience, tone, cta;
+  String name, industry, language, description, website, instagram, telegram, audience, tone, cta;
+  List<String> competitors;
   List<Product> products;
   Map<String, String> colors;
   List<String> forbiddenTopics, hashtags;
@@ -152,6 +157,8 @@ class Brand {
     description: '${j['description'] ?? ''}',
     website: '${j['website'] ?? ''}',
     instagram: '${j['instagram'] ?? ''}',
+    telegram: '${j['telegram'] ?? ''}',
+    competitors: _strings(j['competitors']),
     products: [for (final p in (j['products'] as List? ?? const [])) Product.fromJson(p)],
     audience: '${j['audience'] ?? ''}',
     tone: '${j['tone'] ?? ''}',
@@ -169,6 +176,8 @@ class Brand {
     'description': description,
     'website': website,
     'instagram': instagram,
+    'telegram': telegram,
+    'competitors': competitors,
     'products': [for (final p in products) p.toJson()],
     'audience': audience,
     'tone': tone,

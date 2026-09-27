@@ -34,6 +34,8 @@ class Brand(Base):
     owner_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     website: Mapped[str] = mapped_column(Text, default="")
     instagram: Mapped[str] = mapped_column(String(100), default="")
+    telegram: Mapped[str] = mapped_column(String(100), default="")
+    competitors: Mapped[list] = mapped_column(JSON, default=list)  # competitor Instagram usernames
     name: Mapped[str] = mapped_column(String(200))
     industry: Mapped[str] = mapped_column(String(200))
     language: Mapped[str] = mapped_column(String(8), default="fa")  # fa | en
