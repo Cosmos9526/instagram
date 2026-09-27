@@ -110,6 +110,10 @@ class Api {
     return res['id'] as String;
   }
 
+  /// Proposed project (profile, weekly plan, first-week ideas) from a website and/or Instagram page.
+  Future<Map<String, dynamic>> analyze(String website, String instagram) async =>
+      (await _send('POST', '/analyze', body: {'website': website, 'instagram': instagram})) as Map<String, dynamic>;
+
   Future<void> deleteBrand(String id) async => _send('DELETE', '/brands/$id');
 
   // ---- catalog ----

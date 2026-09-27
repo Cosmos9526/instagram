@@ -231,6 +231,21 @@ def tool_instagram(tag: str = "", user: str = "", _: User = Depends(current_user
     return {"count": len(posts), "errors": ig.last_errors, "sample": posts[:5]}
 
 
+class AnalyzeIn(BaseModel):
+    website: str = ""
+    instagram: str = ""
+
+
+@app.post("/analyze")
+def analyze(body: AnalyzeIn, _: User = Depends(current_user)):
+    """Proposes a whole project (profile + weekly plan + first-week ideas) from a website and/or Instagram page."""
+    if not body.website.strip() and not body.instagram.strip():
+        raise HTTPException(422, "آدرس سایت یا اینستاگرام را وارد کنید")
+    from .business_analyzer import analyze_business
+
+    return analyze_business(body.website.strip(), body.instagram.strip())
+
+
 # ---------- research ----------
 
 class ResearchIn(BaseModel):
