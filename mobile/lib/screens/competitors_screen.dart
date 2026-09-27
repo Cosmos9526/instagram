@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../models.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 import 'research_screen.dart' show UseIdea;
 
@@ -130,7 +131,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
             children: [
               Text(existing == null ? 'رقیب جدید' : 'ویرایش رقیب', style: Theme.of(ctx).textTheme.titleMedium),
               const SizedBox(height: 12),
-              TextField(controller: name, decoration: const InputDecoration(labelText: 'نام')),
+              TextField(
+                controller: name,
+                decoration: const InputDecoration(labelText: 'نام'),
+              ),
               const SizedBox(height: 10),
               TextField(
                 controller: website,
@@ -150,7 +154,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
                 decoration: const InputDecoration(labelText: 'تلگرام (اختیاری)', hintText: 'username'),
               ),
               const SizedBox(height: 10),
-              TextField(controller: notes, decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)')),
+              TextField(
+                controller: notes,
+                decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)'),
+              ),
               const SizedBox(height: 16),
               FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('ذخیره')),
               const SizedBox(height: 24),
@@ -269,24 +276,51 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: pagePadding(context, maxWidth: 900),
         children: [
           SectionTitle(
             'رقبا (${faDigits(items.length)})',
+            subtitle: 'قیمت، اعتمادسازی و محتوای رقبا؛ ایده‌ها در «امروز» هم می‌آیند',
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(icon: const Icon(Icons.content_paste_go), tooltip: 'افزودن گروهی', onPressed: _bulkPaste),
-                IconButton(icon: const Icon(Icons.add), tooltip: 'افزودن رقیب', onPressed: () => _editCompetitor()),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.add),
+                  tooltip: 'افزودن رقیب',
+                  onPressed: () => _editCompetitor(),
+                ),
               ],
             ),
           ),
           if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('هنوز رقیبی اضافه نشده. با دکمه‌ی + یا افزودن گروهی شروع کن.'),
+            EmptyState(
+              icon: Icons.groups_outlined,
+              title: 'هنوز رقیبی اضافه نشده',
+              body: 'آدرس سایت یا اینستاگرام رقبا را یکجا paste کن؛ قیمت‌ها و صفحه‌هایشان خودکار بررسی می‌شود.',
+              action: Wrap(
+                spacing: 8,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _bulkPaste,
+                    icon: const Icon(Icons.content_paste_go),
+                    label: const Text('افزودن گروهی'),
+                  ),
+                  OutlinedButton(onPressed: () => _editCompetitor(), child: const Text('افزودن یکی')),
+                ],
+              ),
             ),
-          for (final c in items) _CompetitorCard(c: c, onTap: () => _editCompetitor(c), onDelete: () => _deleteCompetitor(c)),
+          ResponsiveGrid(
+            minTile: 380,
+            spacing: 0,
+            children: [
+              for (final c in items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _CompetitorCard(c: c, onTap: () => _editCompetitor(c), onDelete: () => _deleteCompetitor(c)),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: items.isEmpty || busy || _starting ? null : _startScan,
@@ -304,7 +338,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
               ),
             ),
           if (latest == null && !busy && items.isNotEmpty)
-            const Padding(padding: EdgeInsets.all(24), child: Text('هنوز اسکنی انجام نشده.', textAlign: TextAlign.center)),
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text('هنوز اسکنی انجام نشده.', textAlign: TextAlign.center),
+            ),
           if (latest != null) ..._report(latest),
         ],
       ),
@@ -313,7 +350,6 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
 
   List<Widget> _report(CompetitorScan s) {
     final theme = Theme.of(context);
-    final names = [for (final c in s.competitors) '${c['name']}'];
     return [
       SectionTitle(
         'گزارش رقبا',
@@ -334,26 +370,13 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           ),
         ),
       if (s.priceMatrix.isNotEmpty) ...[
-        const SectionTitle('مقایسه‌ی قیمت'),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: [
-              const DataColumn(label: Text('محصول')),
-              for (final n in names) DataColumn(label: Text(n)),
-            ],
-            rows: [
-              for (final row in s.priceMatrix)
-                DataRow(cells: [
-                  DataCell(Text(_productRowLabel(row))),
-                  for (final n in names)
-                    DataCell(Text(
-                      _fmtPrice((row['prices'] as Map?)?[n]),
-                      style: row['cheapest'] == n ? TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w800) : null,
-                    )),
-                ]),
-            ],
-          ),
+        const SectionTitle('مقایسه‌ی قیمت', subtitle: 'ارزان‌ترین فروشنده‌ی هر محصول بالای لیست است'),
+        ResponsiveGrid(
+          minTile: 280,
+          spacing: 10,
+          children: [
+            for (final row in s.priceMatrix) _PriceCard(label: _productRowLabel(row), row: row, fmt: _fmtPrice),
+          ],
         ),
       ],
       if (s.competitors.isNotEmpty) ...[
@@ -368,7 +391,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
             child: ListTile(
               leading: const Icon(Icons.fact_check_outlined),
               title: Text('${g['text'] ?? ''}'),
-              subtitle: Text('شواهد: ${(g['evidence'] as List? ?? const []).join('، ')}', style: theme.textTheme.bodySmall),
+              subtitle: Text(
+                'شواهد: ${(g['evidence'] as List? ?? const []).join('، ')}',
+                style: theme.textTheme.bodySmall,
+              ),
               trailing: TextButton.icon(
                 onPressed: () => widget.onUse(postType: 'educational', topic: '${g['text'] ?? ''}'),
                 icon: const Icon(Icons.auto_awesome, size: 18),
@@ -472,19 +498,27 @@ class _CompetitorReportCard extends StatelessWidget {
             if (!reachable)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('سایت این رقیب در دسترس نبود؛ نمادهای اعتماد نامعلوم است', style: theme.textTheme.bodySmall),
+                child: Text(
+                  'سایت این رقیب در دسترس نبود؛ نمادهای اعتماد نامعلوم است',
+                  style: theme.textTheme.bodySmall,
+                ),
               ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                if (reachable && signals['enamad'] == true) const Chip(label: Text('اینماد'), visualDensity: VisualDensity.compact),
-                if (reachable && signals['guarantee'] == true) const Chip(label: Text('گارانتی'), visualDensity: VisualDensity.compact),
+                if (reachable && signals['enamad'] == true)
+                  const Chip(label: Text('اینماد'), visualDensity: VisualDensity.compact),
+                if (reachable && signals['guarantee'] == true)
+                  const Chip(label: Text('گارانتی'), visualDensity: VisualDensity.compact),
                 if (reachable && signals['instant_delivery'] == true)
                   const Chip(label: Text('تحویل فوری'), visualDensity: VisualDensity.compact),
                 for (final d in discounts.take(2))
-                  Chip(label: Text(d, overflow: TextOverflow.ellipsis), visualDensity: VisualDensity.compact),
+                  Chip(
+                    label: Text(d, overflow: TextOverflow.ellipsis),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 if (igStatus.isNotEmpty)
                   Chip(
                     avatar: const Icon(Icons.camera_alt_outlined, size: 14),
@@ -512,6 +546,68 @@ class _CompetitorReportCard extends StatelessWidget {
                 ],
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One product (and duration) with every competitor's price, cheapest first.
+class _PriceCard extends StatelessWidget {
+  const _PriceCard({required this.label, required this.row, required this.fmt});
+  final String label;
+  final Map<String, dynamic> row;
+  final String Function(Object?) fmt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final prices = [
+      for (final e in ((row['prices'] as Map?) ?? const {}).entries)
+        if (e.value is num) (name: '${e.key}', price: e.value as num),
+    ]..sort((a, b) => a.price.compareTo(b.price));
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: theme.textTheme.titleSmall),
+            const SizedBox(height: 6),
+            for (final (i, p) in prices.indexed)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w400),
+                      ),
+                    ),
+                    if (i == 0 && prices.length > 1)
+                      Container(
+                        margin: const EdgeInsetsDirectional.only(end: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: scheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('ارزان‌ترین', style: TextStyle(fontSize: 11, color: scheme.onPrimaryContainer)),
+                      ),
+                    Text(
+                      fmt(p.price),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: i == 0 ? scheme.primary : scheme.onSurface),
+                    ),
+                  ],
+                ),
+              ),
+            if (prices.isEmpty) Text('قیمتی پیدا نشد', style: theme.textTheme.bodySmall),
           ],
         ),
       ),

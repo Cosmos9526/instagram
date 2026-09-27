@@ -292,7 +292,13 @@ class Post {
     final c = content;
     final slots = c['slots'] as Map?;
     final cover = c['cover'] as Map?;
-    return '${slots?['headline'] ?? cover?['headline'] ?? c['title'] ?? postTypes[postType] ?? ''}';
+    // Templates name their main line differently (headline, question, myth, quote, stat).
+    for (final k in const ['headline', 'question', 'myth', 'quote', 'stat', 'title']) {
+      final v = '${slots?[k] ?? ''}'.trim();
+      if (v.isNotEmpty) return v;
+    }
+    final t = '${cover?['headline'] ?? c['title'] ?? c['topic_hint'] ?? ''}'.trim();
+    return t.isNotEmpty ? t : (postTypes[postType] ?? '');
   }
 
   String get caption => '${content['caption'] ?? ''}';

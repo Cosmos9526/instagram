@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 
-/// Shows a video prompt package: one copy button per clip, in the order they must be generated.
+String _secs(num s) => faDigits(s % 1 == 0 ? s.toInt() : s);
+
+/// A video production package: timeline of shots, the opening-frame prompt, one English prompt per shot
+/// (in generation order) with its Persian voice-over and on-screen text, music and caption.
 class VideoPromptView extends StatelessWidget {
   const VideoPromptView({super.key, required this.post});
   final Post post;
@@ -13,95 +17,145 @@ class VideoPromptView extends StatelessWidget {
     final c = post.content;
     final clips = [for (final e in (c['clips'] as List? ?? const [])) Map<String, dynamic>.from(e as Map)];
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final total = clips.fold<num>(0, (n, cl) => n + ((cl['seconds'] as num?) ?? 8));
+    final starts = <num>[];
+    var t = 0 as num;
+    for (final cl in clips) {
+      starts.add(t);
+      t += (cl['seconds'] as num?) ?? 8;
+    }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: pagePadding(context, maxWidth: 760, top: 8, bottom: 32),
       children: [
-        Text('${c['title'] ?? ''}', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 6),
-        Text('${c['idea'] ?? ''}'),
-        const SizedBox(height: 6),
-        Text(
-          '${faDigits(c['target_seconds'] ?? c['total_seconds'] ?? '')} ثانیه، ${faDigits(clips.length)} کلیپ',
-          style: theme.textTheme.labelLarge,
+        Row(
+          children: [
+            const TypeBadge('video_prompt', label: 'ویدیو'),
+            const SizedBox(width: 8),
+            Text(
+              '${faDigits(total)} ثانیه · ${faDigits(clips.length)} شات · ۹:۱۶',
+              style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
+        Text('${c['title'] ?? ''}', style: theme.textTheme.titleLarge),
+        if ('${c['idea'] ?? ''}'.isNotEmpty) Text('${c['idea']}', style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 16),
+        // Timeline: one segment per shot, proportional to its duration.
+        if (clips.isNotEmpty)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Row(
+              children: [
+                for (final (i, cl) in clips.indexed)
+                  Expanded(
+                    flex: (((cl['seconds'] as num?) ?? 8) * 10).round(),
+                    child: Container(
+                      height: 38,
+                      margin: EdgeInsetsDirectional.only(end: i == clips.length - 1 ? 0 : 2),
+                      color: i.isEven ? scheme.primary : scheme.primary.withValues(alpha: .72),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'شات ${faDigits(i + 1)}',
+                        style: TextStyle(color: scheme.onPrimary, fontWeight: FontWeight.w700, fontSize: 12),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 16),
         Card(
-          color: theme.colorScheme.secondaryContainer,
-          margin: const EdgeInsets.symmetric(vertical: 16),
-          child: const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'روش ساخت:\n'
-              '۱. «پرامپت فریم اول» را در مدل تصویر بساز.\n'
-              '۲. کلیپ ۱ را در حالت «تصویر به ویدیو» با همان عکس به‌عنوان فریم شروع بساز.\n'
-              '۳. آخرین فریم هر کلیپ را ذخیره کن و تصویر شروع کلیپ بعدی کن.\n'
-              '۴. کلیپ‌ها را به ترتیب کنار هم بگذار، موسیقی و زیرنویس اضافه کن.',
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('روش ساخت در Google Flow / Veo', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 6),
+                for (final (i, s) in const [
+                  'پرامپت «فریم اول» را در ابزار تصویر بساز.',
+                  'شات ۱ را در حالت تصویر به ویدیو، با همان تصویر به‌عنوان فریم شروع بساز.',
+                  'آخرین فریم هر شات را ذخیره کن و فریم شروع شات بعدی کن.',
+                  'شات‌ها را به ترتیب کنار هم بگذار؛ گویندگی، متن روی تصویر و موسیقی را در تدوین اضافه کن.',
+                ].indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${faDigits(i + 1)}. ',
+                          style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w800),
+                        ),
+                        Expanded(child: Text(s, style: theme.textTheme.bodyMedium)),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 6),
+                Text(
+                  'مدت هر شات را با محدودیت فعلی ابزار تولید چک کن؛ این فقط زمان‌بندی تدوین است.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
         ),
-        _PromptCard(title: 'پرامپت فریم اول (تصویر)', prompt: '${c['keyframe_prompt'] ?? ''}'),
-        for (final clip in clips)
-          _PromptCard(
-            title: 'کلیپ ${faDigits(clip['n'] ?? '')} — ${faDigits(clip['seconds'] ?? 8)} ثانیه',
-            prompt: '${clip['full_prompt'] ?? ''}',
-            footer: [
-              if ('${clip['voiceover'] ?? ''}'.isNotEmpty) 'گوینده: ${clip['voiceover']}',
-              if ('${clip['caption_text'] ?? ''}'.isNotEmpty) 'زیرنویس: ${clip['caption_text']}',
-            ],
+        if ('${c['keyframe_prompt'] ?? ''}'.isNotEmpty) ...[
+          const SectionTitle('فریم اول', subtitle: 'تصویر شروع ویدیو'),
+          PromptBlock(text: '${c['keyframe_prompt']}', label: 'Opening frame — image prompt'),
+        ],
+        for (final (i, clip) in clips.indexed) ...[
+          SectionTitle(
+            'شات ${faDigits(i + 1)}',
+            subtitle: 'از ثانیه‌ی ${_secs(starts[i])} تا ${_secs(starts[i] + ((clip['seconds'] as num?) ?? 8))}',
           ),
-        if ('${c['music_mood'] ?? ''}'.isNotEmpty)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.music_note_outlined),
-            title: const Text('حال‌وهوای موسیقی'),
-            subtitle: Text('${c['music_mood']}', textDirection: TextDirection.ltr),
-          ),
+          PromptBlock(text: '${clip['full_prompt'] ?? clip['action'] ?? ''}', label: 'Shot ${i + 1} — video prompt'),
+          if ('${clip['voiceover'] ?? ''}'.isNotEmpty || '${clip['caption_text'] ?? ''}'.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  if ('${clip['voiceover'] ?? ''}'.isNotEmpty)
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.record_voice_over_outlined),
+                      title: const Text('گویندگی'),
+                      subtitle: SelectableText('${clip['voiceover']}', style: theme.textTheme.bodyMedium),
+                    ),
+                  if ('${clip['caption_text'] ?? ''}'.isNotEmpty)
+                    ListTile(
+                      dense: true,
+                      leading: const Icon(Icons.subtitles_outlined),
+                      title: const Text('متن روی تصویر'),
+                      subtitle: SelectableText('${clip['caption_text']}', style: theme.textTheme.bodyMedium),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+        if ('${c['music_mood'] ?? ''}'.isNotEmpty) ...[
+          const SectionTitle('موسیقی'),
+          PromptBlock(text: '${c['music_mood']}', label: 'Music mood'),
+        ],
         SectionTitle(
           'کپشن',
-          trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => copyText(context, post.captionWithTags)),
+          trailing: TextButton.icon(
+            onPressed: () => copyText(context, post.captionWithTags, label: 'کپشن و هشتگ‌ها کپی شد'),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            label: const Text('کپی'),
+          ),
         ),
-        SelectableText(post.captionWithTags),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(padding: const EdgeInsets.all(14), child: SelectableText(post.captionWithTags)),
+        ),
       ],
     );
   }
-}
-
-class _PromptCard extends StatelessWidget {
-  const _PromptCard({required this.title, required this.prompt, this.footer = const []});
-  final String title, prompt;
-  final List<String> footer;
-
-  @override
-  Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 4, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
-              IconButton(
-                tooltip: 'کپی پرامپت',
-                icon: const Icon(Icons.copy),
-                onPressed: () => copyText(context, prompt, label: 'پرامپت کپی شد'),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              prompt,
-              textDirection: TextDirection.ltr,
-              maxLines: 6,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ),
-          for (final f in footer) Padding(padding: const EdgeInsets.only(top: 6), child: Text(f)),
-        ],
-      ),
-    ),
-  );
 }

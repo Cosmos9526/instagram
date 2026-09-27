@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:postyar/api.dart';
 import 'package:postyar/main.dart';
+import 'package:postyar/theme.dart';
 import 'package:postyar/models.dart';
 import 'package:postyar/screens/project_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +23,7 @@ void main() {
     await expectLater(api.brands(), throwsA(isA<ApiException>()));
   });
 
-  testWidgets('desktop has a sidebar; mobile retains bottom navigation', (
+  testWidgets('same bottom navigation on desktop and mobile, no sidebar', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;
@@ -56,12 +57,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(NavigationRail), findsNothing);
+    expect(find.byType(FloatingNav), findsOneWidget);
+    expect(find.text('امروز چی منتشر کنیم؟'), findsOneWidget);
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
     expect(find.byType(NavigationRail), findsNothing);
-    expect(find.text('ساخت'), findsOneWidget);
+    expect(find.byType(FloatingNav), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
