@@ -301,6 +301,10 @@ def run_research(b: Brand, focus: str) -> dict:
             log.warning("gemini research failed, using free sources: %s", e)
     if report is None and (settings.research_provider == "fake" or settings.llm_provider == "fake"):
         report, sources, ran["web"] = web_research(b, focus)
+        report["instagram_posts"] = []
+        report["top_videos"], report["video_styles"], report["sources"], report["ran"] = [], [], sources, ran
+        report["created"] = datetime.now(timezone.utc).isoformat()
+        return report
     if report is None:
         data = collect_free(b, focus)
         videos += data["videos"]
@@ -325,6 +329,20 @@ def run_research(b: Brand, focus: str) -> dict:
         except Exception as e:  # noqa: BLE001 — one source failing must not sink the report
             log.warning("%s source failed: %s", name, e)
             ran[name] = "error"
+    # Instagram without login: niche hashtags + the brand's and competitors' pages, last 3 days
+    try:
+        from . import instagram_free
+
+        tags = [h for h in (list(b.hashtags or []) + list(report.get("hashtags", []))) if h][:8]
+        profiles = [p for p in [b.instagram, *(getattr(b, "competitors", None) or [])] if p]
+        ig = instagram_free.collect(tags, profiles, days=3, target=100)
+        report["instagram_posts"] = ig["posts"]
+        ran["instagram_free"] = f"{len(ig['posts'])} posts" if ig["posts"] else ("blocked" if ig["errors"] else "none")
+        report["instagram_errors"] = ig["errors"]
+        videos += [p for p in ig["posts"] if p["type"] == "video"][:10]
+    except Exception as e:  # noqa: BLE001
+        log.warning("instagram free failed: %s", e)
+        ran["instagram_free"] = "error"
     uniq = {v["url"]: v for v in videos}
     report["top_videos"] = sorted(uniq.values(), key=lambda v: v.get("views", 0), reverse=True)[:15]
     try:

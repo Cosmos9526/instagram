@@ -17,7 +17,23 @@ engine = make_engine(settings.database_url)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
+# Columns added after the first release: (table, column, SQL type, default literal).
+_ADDED_COLUMNS = [
+    ("brands", "telegram", "VARCHAR(100)", "''"),
+    ("brands", "competitors", "JSON", "'[]'"),
+]
+
+
 def init_db(bind=None):
+    from sqlalchemy import inspect, text
+
     from . import models  # noqa: F401
 
-    Base.metadata.create_all(bind or engine)
+    bind = bind or engine
+    Base.metadata.create_all(bind)
+    # Tiny forward-only migration: add new columns to existing tables.
+    insp = inspect(bind)
+    with bind.begin() as conn:
+        for table, col, typ, default in _ADDED_COLUMNS:
+            if table in insp.get_table_names() and col not in {c["name"] for c in insp.get_columns(table)}:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typ} DEFAULT {default}"))

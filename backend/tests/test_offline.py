@@ -22,6 +22,9 @@ def test_posts_are_built_offline_when_no_model(monkeypatch):
     monkeypatch.setattr(settings, "llm_api_key", "")
     monkeypatch.setattr(settings, "llm_fallback_url", "")
     monkeypatch.setattr(settings, "research_provider", "free")
+    from app import instagram_free
+
+    monkeypatch.setattr(instagram_free, "collect", lambda *a, **k: {"posts": [], "total_seen": 0, "errors": []})
     monkeypatch.setattr(sources, "web_search", lambda q, n=8, region="wt-wt": [
         {"title": "هوش مصنوعی در برنامه نویسی", "snippet": "دستیار کدنویسی هوش مصنوعی محبوب شده", "url": f"https://x/{q}"}])
     monkeypatch.setattr(sources, "news_search", lambda q, n=8, region="wt-wt": [
