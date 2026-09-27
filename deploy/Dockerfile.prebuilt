@@ -1,0 +1,6 @@
+# Optional low-resource release: build Flutter locally, then copy build/web here.
+# BASE_IMAGE must be the previously deployed image from this project, tagged for rollback.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY web/ /app/web/
+COPY static.py /app/app/static.py
