@@ -50,3 +50,16 @@ def test_new_build_clears_browser_cache_once(tmp_path):
     app2 = FastAPI()
     app2.mount("/", FastStatic(directory=tmp_path, html=True))
     assert TestClient(app2).get("/", headers={"Cookie": old}).headers["clear-site-data"] == '"cache"'
+
+
+def test_precompressed_symlink_cannot_escape_static_root(tmp_path):
+    root = tmp_path / "web"
+    root.mkdir()
+    secret = tmp_path / "private.gz"
+    secret.write_bytes(gzip.compress(b"private-data"))
+    (root / "leak.js.gz").symlink_to(secret)
+    app = FastAPI()
+    app.mount("/", FastStatic(directory=root))
+    response = TestClient(app).get("/leak.js", headers={"Accept-Encoding": "gzip"})
+    assert response.status_code == 404
+    assert b"private-data" not in response.content

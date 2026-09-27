@@ -51,8 +51,10 @@ class FastStatic(StaticFiles):
     async def get_response(self, path: str, scope: Scope):
         accepts = b"gzip" in dict(scope.get("headers") or []).get(b"accept-encoding", b"")
         if accepts and self.directory and path and not path.endswith("/"):
-            gz = Path(self.directory) / (path + ".gz")
-            if gz.is_file():
+            # Reuse StaticFiles containment checks, including symlink resolution.
+            gz_path, gz_stat = self.lookup_path(path + ".gz")
+            gz = Path(gz_path)
+            if gz_stat is not None and gz.is_file():
                 media = mimetypes.guess_type(path)[0] or "application/octet-stream"
                 resp = FileResponse(gz, media_type=media, stat_result=os.stat(gz), headers={"Content-Encoding": "gzip", "Vary": "Accept-Encoding"})
                 resp.headers["Cache-Control"] = self._cache(path)

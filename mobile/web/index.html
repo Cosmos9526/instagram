@@ -26,13 +26,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Postyar">
+  <meta name="apple-mobile-web-app-title" content="استودیوی محتوا">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>Postyar</title>
+  <title>استودیوی محتوا</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -44,6 +44,28 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js" async></script>
+  <style>
+    body { margin: 0; background: #f3f6f5; }
+    #startup { position: fixed; inset: 0; display: grid; place-items: center;
+      font-family: Tahoma, sans-serif; color: #0b1b22; padding: 28px; text-align: center; }
+    #startup section { max-width: 420px; line-height: 1.9; }
+    #startup h1 { font-size: 24px; }
+    #startup p { color: #52676b; font-size: 14px; }
+    #startup button { background: #0b9488; color: white; border: 0; border-radius: 12px;
+      padding: 12px 22px; font: inherit; cursor: pointer; }
+    #startup button[hidden] { display: none; }
+    .pulse { display: inline-block; width: 36px; height: 36px; border: 3px solid #d2e7e2;
+      border-top-color: #0b9488; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  </style>
+  <div id="startup" role="status" aria-live="polite">
+    <section><span class="pulse" aria-hidden="true"></span><h1>استودیوی محتوا</h1>
+      <p id="startup-message">در حال آماده‌کردن فضای کاری شما… بارگذاری نخست ممکن است کمی زمان ببرد.</p>
+      <button id="retry" hidden onclick="location.reload()">تلاش دوباره</button>
+    </section>
+  </div>
+  <script src="startup.js"></script>
+  <script src="flutter_bootstrap.js" async onerror="window.studioLoadFailed()"></script>
 </body>
 </html>
