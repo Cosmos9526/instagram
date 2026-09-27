@@ -31,7 +31,7 @@ class PostyarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Postyar',
+      title: 'استودیوی محتوا',
       debugShowCheckedModeBanner: false,
       locale: const Locale('fa'),
       supportedLocales: const [Locale('fa'), Locale('en')],
@@ -43,25 +43,15 @@ class PostyarApp extends StatelessWidget {
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
-      // Phone layout everywhere: in a wide desktop browser the app stays phone-width and centred.
-      builder: (context, child) {
-        // Phone layout everywhere: the app lives in a centred column at most 480 wide, and MediaQuery reports
-        // that column (not the whole browser window) so every screen sizes itself correctly.
-        final mq = MediaQuery.of(context);
-        final width = mq.size.width.clamp(0.0, 480.0);
-        return ColoredBox(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: SizedBox(
-              width: width,
-              child: MediaQuery(
-                data: mq.copyWith(size: Size(width, mq.size.height)),
-                child: child!,
-              ),
-            ),
+      builder: (context, child) => ColoredBox(
+        color: Theme.of(context).colorScheme.surface,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1440),
+            child: child!,
           ),
-        );
-      },
+        ),
+      ),
       home: startScreen(api),
     );
   }

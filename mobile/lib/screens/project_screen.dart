@@ -6,10 +6,11 @@ import '../theme.dart';
 import 'brand_screen.dart';
 import 'competitors_screen.dart';
 import 'generate_screen.dart';
-import 'posts_screen.dart';
+import 'home_screen.dart';
 import 'research_screen.dart';
 
-/// One project: posts, create, market research, settings.
+/// One project: today, create, market, competitors, brand profile. The same bottom navigation on every
+/// screen size; content is centered on wide screens.
 class ProjectScreen extends StatefulWidget {
   const ProjectScreen({super.key, required this.api, required this.brand});
   final Api api;
@@ -22,7 +23,7 @@ class ProjectScreen extends StatefulWidget {
 class _ProjectScreenState extends State<ProjectScreen> {
   late Brand _brand = widget.brand;
   int _tab = 0;
-  final _postsKey = GlobalKey<PostsScreenState>();
+  final _homeKey = GlobalKey<HomeScreenState>();
   final _generateKey = GlobalKey<GenerateScreenState>();
 
   void _goGenerate({required String postType, String topic = '', String mode = 'single', String videoStyle = ''}) {
@@ -30,17 +31,57 @@ class _ProjectScreenState extends State<ProjectScreen> {
     _generateKey.currentState?.prefill(postType: postType, topic: topic, mode: mode, videoStyle: videoStyle);
   }
 
+  void _selectTab(int i) {
+    setState(() => _tab = i);
+    if (i == 0) _homeKey.currentState?.refresh();
+  }
+
+  Future<void> _switchProject() async {
+    final brands = await widget.api.brands().catchError((_) => <Brand>[]);
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<Brand>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Text('پروژه‌ها', style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            for (final b in brands)
+              ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                leading: ProjectAvatar(brand: b),
+                title: Text(b.name.isEmpty ? 'بدون نام' : b.name),
+                subtitle: Text(b.industry),
+                trailing: b.id == _brand.id ? Icon(Icons.check_circle, color: Theme.of(ctx).colorScheme.primary) : null,
+                onTap: () => Navigator.pop(ctx, b),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked == null || picked.id == _brand.id || !mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => ProjectScreen(api: widget.api, brand: picked),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = [
-      PostsScreen(key: _postsKey, api: widget.api, brand: _brand),
+      HomeScreen(key: _homeKey, api: widget.api, brand: _brand, onCreate: _goGenerate, onTab: _selectTab),
       GenerateScreen(
         key: _generateKey,
         api: widget.api,
         brand: _brand,
         onCreated: () {
           setState(() => _tab = 0);
-          _postsKey.currentState?.refresh();
+          _homeKey.currentState?.refresh();
         },
       ),
       ResearchScreen(api: widget.api, brand: _brand, onUse: _goGenerate),
@@ -57,21 +98,86 @@ class _ProjectScreenState extends State<ProjectScreen> {
       ),
     ];
     return Scaffold(
-      appBar: AppBar(title: Text(_brand.name)),
+      appBar: AppBar(
+        titleSpacing: 4,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: _switchProject,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ProjectAvatar(brand: _brand, size: 32),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_brand.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        _brand.industry,
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.2),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.expand_more, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: FadeIndexedStack(index: _tab, children: pages),
+      extendBody: true,
       bottomNavigationBar: FloatingNav(
         index: _tab,
-        onTap: (i) {
-          setState(() => _tab = i);
-          if (i == 0) _postsKey.currentState?.refresh();
-        },
+        onTap: _selectTab,
         items: const [
-          (Icons.grid_view_outlined, Icons.grid_view_rounded, 'پست‌ها'),
-          (Icons.auto_awesome_outlined, Icons.auto_awesome, 'ساخت'),
+          (Icons.today_outlined, Icons.today, 'امروز'),
+          (Icons.add_circle_outline, Icons.add_circle, 'ساخت'),
           (Icons.insights_outlined, Icons.insights, 'بازار'),
           (Icons.groups_outlined, Icons.groups, 'رقبا'),
-          (Icons.tune_outlined, Icons.tune, 'تنظیمات'),
+          (Icons.storefront_outlined, Icons.storefront, 'برند'),
         ],
+      ),
+    );
+  }
+}
+
+Color _hex(String? s, Color fallback) {
+  try {
+    return Color(int.parse('FF${s!.replaceFirst('#', '')}', radix: 16));
+  } catch (_) {
+    return fallback;
+  }
+}
+
+/// Rounded square with the project's initial in its brand colors.
+class ProjectAvatar extends StatelessWidget {
+  const ProjectAvatar({super.key, required this.brand, this.size = 40});
+  final Brand brand;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(size * .3),
+        gradient: LinearGradient(
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+          colors: [_hex(brand.colors['primary'], scheme.primary), _hex(brand.colors['secondary'], PColors.tealDeep)],
+        ),
+      ),
+      child: Text(
+        brand.name.isEmpty ? '؟' : brand.name.characters.first,
+        style: TextStyle(color: Colors.white, fontSize: size * .42, fontWeight: FontWeight.w900, height: 1.2),
       ),
     );
   }

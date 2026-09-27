@@ -39,7 +39,7 @@ class _ServerScreenState extends State<ServerScreen> {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('آدرس سرور Postyar را وارد کنید.'),
+        const Text('آدرس سرور استودیوی محتوا را وارد کنید.'),
         const SizedBox(height: 16),
         TextField(
           controller: _url,

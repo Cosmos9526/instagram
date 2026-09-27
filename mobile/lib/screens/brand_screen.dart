@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../api.dart';
 import '../models.dart';
+import '../theme.dart';
 import '../widgets/choice_field.dart';
 import '../widgets/common.dart';
 
@@ -147,7 +148,7 @@ class _BrandScreenState extends State<BrandScreen> {
     final form = Form(
       key: _form,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+        padding: pagePadding(context, maxWidth: 760),
         children: [
           const SectionTitle('مشخصات'),
           _field('name', 'نام کسب‌وکار', required: true),

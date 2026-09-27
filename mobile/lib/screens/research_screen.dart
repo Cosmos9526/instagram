@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../api.dart';
 import '../models.dart';
+import '../theme.dart';
 import '../widgets/common.dart';
 
 typedef UseIdea = void Function({required String postType, String topic, String mode, String videoStyle});
@@ -78,7 +79,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: pagePadding(context, maxWidth: 900),
         children: [
           Card(
             child: Padding(
