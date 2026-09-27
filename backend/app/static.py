@@ -17,7 +17,9 @@ from starlette.types import Scope
 
 LONG = "public, max-age=604800"
 REVALIDATE = "no-cache"
-_LONG_PREFIXES = ("canvaskit/", "assets/", "icons/", "favicon", "brand/")
+# Only files whose content never changes under the same URL. Not "assets/": the icon font there is tree-shaken
+# per build, so a cached copy from an older build lacks newly used icons.
+_LONG_PREFIXES = ("canvaskit/", "icons/", "favicon", "brand/")
 
 
 class FastStatic(StaticFiles):

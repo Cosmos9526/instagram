@@ -46,7 +46,9 @@ def normalize_competitor(c) -> dict:
 
 
 def normalize_competitors(items: list) -> list[dict]:
-    return [normalize_competitor(c) for c in (items or [])]
+    """Drops entries with nothing to scan (e.g. a blank legacy string)."""
+    out = [normalize_competitor(c) for c in (items or []) if isinstance(c, (str, dict))]
+    return [c for c in out if c["name"].strip() or c["website"].strip() or c["instagram"] or c["telegram"]]
 
 
 def competitor_handles(items: list) -> list[str]:
