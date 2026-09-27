@@ -216,10 +216,24 @@ def _safe(text: str, b: Brand) -> bool:
     return not any(w.lower() in t for w in SENSITIVE + list(b.forbidden_topics or []))
 
 
+def seed_keywords(b: Brand, focus: str) -> list[str]:
+    seeds = [focus] if focus else []
+    seeds += [p["name"] for p in (b.products or []) if (p.get("name") or "").strip()][:3]
+    seeds += [b.industry] if b.industry else []
+    return list(dict.fromkeys(s.strip() for s in seeds if s and s.strip()))[:4]
+
+
 def collect_free(b: Brand, focus: str) -> dict:
-    """Keyless open-source sources: DuckDuckGo web + news (ddgs) and YouTube (yt-dlp)."""
+    """Keyless sources: search engine (web, news, Instagram posts, videos), Google autocomplete and
+    Trends, YouTube (yt-dlp)."""
+    from . import search_sources as ss
     from .sources import news_search, web_search, youtube_search
 
+    seeds = seed_keywords(b, focus)
+    suggestions = [s for seed in seeds[:2] for s in ss.google_suggest(seed, b.language)[:6]]
+    rising = ss.google_rising(seeds[:2])
+    ig_keywords = list(dict.fromkeys(seeds + [r["query"] for r in rising[:4]] + suggestions[:6]))
+    ig = ss.instagram_via_search(ig_keywords, days=3, target=100)
     topic = focus or (b.products[0]["name"] if b.products else b.industry)
     queries = [q for q in (f"{b.name} {b.industry}", f"{topic} {b.industry}", f"ترند {b.industry}") if q.strip()]
     web, seen = [], set()
@@ -232,16 +246,20 @@ def collect_free(b: Brand, focus: str) -> dict:
     videos = []
     for q in (f"آموزش {topic}", f"{b.industry}"):
         videos += youtube_search(q, 6)
-    uniq = {v["url"]: v for v in videos}
-    videos = sorted(uniq.values(), key=lambda v: v["views"], reverse=True)
-    return {"web": web, "news": news, "videos": videos, "queries": queries}
+    for seed in seeds[:2]:
+        videos += ss.video_search(seed)
+    uniq = {v["url"]: v for v in videos if v.get("url")}
+    videos = sorted(uniq.values(), key=lambda v: v.get("views", 0), reverse=True)
+    return {"web": web, "news": news, "videos": videos, "queries": queries, "instagram": ig["posts"],
+            "instagram_errors": ig["errors"], "suggestions": suggestions, "rising": rising, "seeds": seeds}
 
 
 def _free_prompt(b: Brand, focus: str, data: dict) -> str:
     lang = "Persian" if b.language == "fa" else "English"
     web = [{k: r[k] for k in ("title", "snippet", "url")} for r in data["web"][:15]]
     news = [{k: r[k] for k in ("title", "snippet", "date", "url")} for r in data["news"][:8]]
-    vids = [{k: v[k] for k in ("title", "views")} for v in data["videos"][:10]]
+    vids = [{k: v.get(k) for k in ("title", "views", "platform")} for v in data["videos"][:10]]
+    igp = [{k: p.get(k) for k in ("channel", "title", "likes", "comments", "type", "age_hours")} for p in data.get("instagram", [])[:25]]
     return f"""You are a market researcher. Using ONLY the search results below (collected today), write a market
 report for this brand. Do not invent facts that are not supported by the results.
 
@@ -251,7 +269,10 @@ report for this brand. Do not invent facts that are not supported by the results
 <focus>{focus or 'the business as a whole'}</focus>
 <web_results>{json.dumps(web, ensure_ascii=False)}</web_results>
 <news_this_week>{json.dumps(news, ensure_ascii=False)}</news_this_week>
-<top_youtube_videos>{json.dumps(vids, ensure_ascii=False)}</top_youtube_videos>
+<top_videos>{json.dumps(vids, ensure_ascii=False)}</top_videos>
+<instagram_posts_last_3_days>{json.dumps(igp, ensure_ascii=False)}</instagram_posts_last_3_days>
+<google_rising_searches>{json.dumps(data.get("rising", [])[:15], ensure_ascii=False)}</google_rising_searches>
+<google_autocomplete>{json.dumps(data.get("suggestions", [])[:12], ensure_ascii=False)}</google_autocomplete>
 
 Return ONLY JSON, user-facing text in {lang}:
 {{"summary": "...", "business_facts": ["..."], "competitors": [{{"name": "...", "what_they_post": "...", "gap_we_can_fill": "..."}}],
@@ -262,15 +283,21 @@ Return ONLY JSON, user-facing text in {lang}:
 def heuristic_report(b: Brand, focus: str, data: dict) -> dict:
     """Report built only from the search results, for when no text model is available."""
     texts = [r["title"] + " " + r["snippet"] for r in data["web"] + data["news"] if _safe(r["title"], b)]
+    texts += [p["title"] for p in data.get("instagram", [])]
     texts += [v["title"] for v in data["videos"]]
-    kws = _keywords(texts)
+    kws = list(dict.fromkeys(data.get("seeds", []) + data.get("suggestions", [])[:6] + _keywords(texts)))[:20]
     product = b.products[0]["name"] if b.products else b.industry
     trends = [
         {"title": n["title"], "why_now": f"خبر این هفته از {n.get('source') or 'اخبار'}",
          "angle_for_brand": f"ربط دادن این خبر به {product}", "post_type": "news"}
         for n in [n for n in data["news"] if _safe(n["title"] + " " + n["snippet"], b)][:5]
     ]
-    ideas = [{"title": v["title"], "post_type": "educational", "format": "carousel"} for v in data["videos"][:3]]
+    trends = [{"title": r["query"], "why_now": f"جست‌وجوی رو به رشد در گوگل ({r['growth']})",
+               "angle_for_brand": f"پاسخ {b.name} به «{r['query']}»", "post_type": "educational"}
+              for r in data.get("rising", []) if _safe(r["query"], b)][:6] + trends
+    ideas = [{"title": p["title"][:90], "post_type": "educational", "format": "video"}
+             for p in data.get("instagram", [])[:3] if p["title"]]
+    ideas += [{"title": v["title"], "post_type": "educational", "format": "carousel"} for v in data["videos"][:3]]
     ideas += [{"title": f"{k} از نگاه {b.name}", "post_type": "educational", "format": "single"} for k in kws[:3]]
     summary = (
         f"{len(data['web'])} نتیجه‌ی وب، {len(data['news'])} خبر این هفته و {len(data['videos'])} ویدیو بررسی شد. "
@@ -317,6 +344,11 @@ def run_research(b: Brand, focus: str) -> dict:
             report = heuristic_report(b, focus, data)
             ran["web"] = "search_only"
         ran["youtube"] = "ok" if data["videos"] else "off"
+        ran["instagram_search"] = f"{len(data['instagram'])} posts"
+        ran["google_trends"] = "ok" if data["rising"] else "off"
+        report["instagram_posts"] = data["instagram"]
+        report["rising_searches"] = data["rising"]
+        report["suggestions"] = data["suggestions"]
     for name, fn, arg in (
         ("youtube_api", youtube_top_videos, report.get("keywords", [])),
         ("instagram", instagram_top_posts, report.get("hashtags", [])),
@@ -333,13 +365,12 @@ def run_research(b: Brand, focus: str) -> dict:
     try:
         from . import instagram_free
 
-        tags = [h for h in (list(b.hashtags or []) + list(report.get("hashtags", []))) if h][:8]
         profiles = [p for p in [b.instagram, *(getattr(b, "competitors", None) or [])] if p]
-        ig = instagram_free.collect(tags, profiles, days=3, target=100)
-        report["instagram_posts"] = ig["posts"]
-        ran["instagram_free"] = f"{len(ig['posts'])} posts" if ig["posts"] else ("blocked" if ig["errors"] else "none")
-        report["instagram_errors"] = ig["errors"]
-        videos += [p for p in ig["posts"] if p["type"] == "video"][:10]
+        ig = instagram_free.collect([], profiles, days=3, target=100) if profiles else {"posts": [], "errors": []}
+        if profiles:
+            ran["instagram_pages"] = f"{len(ig['posts'])} posts" if ig["posts"] else "blocked"
+        seen = {p["code"] for p in report.get("instagram_posts", [])}
+        report["instagram_posts"] = report.get("instagram_posts", []) + [p for p in ig["posts"] if p["code"] not in seen]
     except Exception as e:  # noqa: BLE001
         log.warning("instagram free failed: %s", e)
         ran["instagram_free"] = "error"

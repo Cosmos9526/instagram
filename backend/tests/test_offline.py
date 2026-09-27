@@ -25,6 +25,15 @@ def test_posts_are_built_offline_when_no_model(monkeypatch):
     from app import instagram_free
 
     monkeypatch.setattr(instagram_free, "collect", lambda *a, **k: {"posts": [], "total_seen": 0, "errors": []})
+    from app import search_sources as ss
+
+    monkeypatch.setattr(ss, "google_suggest", lambda q, lang="fa": [q + " تهران"])
+    monkeypatch.setattr(ss, "google_rising", lambda kws, geo="IR": [{"query": "دستیار کدنویسی رایگان", "growth": "+250%", "seed": kws[0]}])
+    monkeypatch.setattr(ss, "video_search", lambda q, days=7: [])
+    monkeypatch.setattr(ss, "instagram_via_search", lambda kws, days=3, target=100: {"posts": [
+        {"platform": "instagram", "url": "https://www.instagram.com/reel/X1/", "code": "X1", "type": "video",
+         "channel": "rival", "title": "آموزش هوش مصنوعی", "likes": 900, "comments": 20, "views": 0,
+         "age_hours": 30, "engagement": 960, "source": "search"}], "total_seen": 1, "errors": []})
     monkeypatch.setattr(sources, "web_search", lambda q, n=8, region="wt-wt": [
         {"title": "هوش مصنوعی در برنامه نویسی", "snippet": "دستیار کدنویسی هوش مصنوعی محبوب شده", "url": f"https://x/{q}"}])
     monkeypatch.setattr(sources, "news_search", lambda q, n=8, region="wt-wt": [
@@ -43,6 +52,8 @@ def test_posts_are_built_offline_when_no_model(monkeypatch):
         assert rep["report"]["ran"]["web"] == "search_only"
         assert "هوش مصنوعی" in " ".join(rep["report"]["keywords"])
         assert rep["report"]["top_videos"][0]["url"] == "https://y/1"
+        assert rep["report"]["instagram_posts"][0]["code"] == "X1"
+        assert rep["report"]["trends"][0]["title"] == "دستیار کدنویسی رایگان"
         ids = [c.post(f"/brands/{bid}/generate", json=b, headers=h).json()["id"] for b in (
             {"post_type": "educational"}, {"post_type": "sales", "template": "sales_offer"},
             {"post_type": "promo", "mode": "carousel", "n_body": 3},
