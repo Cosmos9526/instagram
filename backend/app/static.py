@@ -34,7 +34,12 @@ class FastStatic(StaticFiles):
         if not self.build_id or scope["type"] != "http":
             return await super().__call__(scope, receive, send)
         cookie = dict(scope.get("headers") or []).get(b"cookie", b"").decode()
-        stale = f"pv={self.build_id}" not in cookie
+        path = scope.get("path", "")
+        is_page = path.endswith(".html") or not os.path.splitext(path)[1]
+        stale = is_page and f"pv={self.build_id}" not in cookie
+        if stale:  # no 304 for a stale browser: the full page must arrive to carry the header below
+            scope = {**scope, "headers": [(k, v) for k, v in scope.get("headers") or []
+                                          if k not in (b"if-none-match", b"if-modified-since")]}
 
         async def send_wrapper(message):
             if stale and message["type"] == "http.response.start":
