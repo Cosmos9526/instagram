@@ -26,6 +26,27 @@ class FastStatic(StaticFiles):
     def __init__(self, *args, long_cache: bool = False, **kw):
         super().__init__(*args, **kw)
         self.long_cache = long_cache
+        self.build_id = _build_id(self.directory) if kw.get("html") else ""
+
+    async def __call__(self, scope, receive, send):
+        # After a deploy, the first page load tells the browser to drop its HTTP cache once (via a build cookie),
+        # so files cached by an older build (e.g. the icon font) are fetched again. Login data is not touched.
+        if not self.build_id or scope["type"] != "http":
+            return await super().__call__(scope, receive, send)
+        cookie = dict(scope.get("headers") or []).get(b"cookie", b"").decode()
+        stale = f"pv={self.build_id}" not in cookie
+
+        async def send_wrapper(message):
+            if stale and message["type"] == "http.response.start":
+                headers = list(message.get("headers") or [])
+                ctype = dict(headers).get(b"content-type", b"")
+                if ctype.startswith(b"text/html"):
+                    headers.append((b"clear-site-data", b'"cache"'))
+                    headers.append((b"set-cookie", f"pv={self.build_id}; Path=/; Max-Age=31536000; SameSite=Lax".encode()))
+                    message = {**message, "headers": headers}
+            await send(message)
+
+        return await super().__call__(scope, receive, send_wrapper)
 
     async def get_response(self, path: str, scope: Scope):
         accepts = b"gzip" in dict(scope.get("headers") or []).get(b"accept-encoding", b"")
@@ -51,6 +72,14 @@ class FastStatic(StaticFiles):
 
     def _cache(self, path: str) -> str:
         return LONG if self.long_cache or path.startswith(_LONG_PREFIXES) else REVALIDATE
+
+
+def _build_id(directory) -> str:
+    """Changes on every deploy: newest modification time of the app's top-level files."""
+    try:
+        return str(max(int(e.stat().st_mtime) for e in os.scandir(directory) if e.is_file()))
+    except (OSError, ValueError, TypeError):
+        return ""
 
 
 def thumbnail(media_dir: str, path: str, w: int) -> FileResponse:
