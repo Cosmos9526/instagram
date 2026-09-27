@@ -19,7 +19,7 @@ NEGATIVE = "no text, no letters, no words, no logos, no watermark, no signage"
 
 
 def _pollinations(prompt: str, out: Path) -> Path | None:
-    from PIL import Image
+    from PIL import Image, ImageFilter
 
     url = f"https://image.pollinations.ai/prompt/{quote(prompt + '. ' + NEGATIVE)}"
     resp = httpx.get(url, params={"width": 1080, "height": 1200, "nologo": "true", "seed": random.randint(1, 10**6)},
@@ -28,6 +28,9 @@ def _pollinations(prompt: str, out: Path) -> Path | None:
     img = Image.open(io.BytesIO(resp.content)).convert("RGB")
     w, h = img.size
     img = img.crop((0, 0, w, int(h * 0.9)))  # the free tier stamps a small mark in the bottom corner
+    if img.width < 1080:  # free tier returns ~730px: upscale properly and sharpen instead of letting CSS stretch it
+        img = img.resize((1080, round(img.height * 1080 / img.width)), Image.LANCZOS)
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=80, threshold=2))
     out.parent.mkdir(parents=True, exist_ok=True)
     img.save(out, "PNG")
     return out

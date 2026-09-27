@@ -141,25 +141,31 @@ class _PostScreenState extends State<PostScreen> {
   );
 
   Widget _slides(Post p) {
-    final width = MediaQuery.sizeOf(context).width - 32;
+    // Always the whole slide at its real 4:5 ratio, never taller than ~62% of the screen.
+    // (MediaQuery width is the browser window, not the phone-width column, so size by aspect ratio.)
+    final maxWidth = MediaQuery.sizeOf(context).height * 0.62 * 1080 / 1350;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (p.content['source'] == 'offline') _OfflineNote(),
-        SizedBox(
-          height: width * 1350 / 1080,
-          child: PageView.builder(
-            itemCount: p.slides.length,
-            onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (_, i) => ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
-                cacheWidth: 1080,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-                loadingBuilder: (_, child, progress) =>
-                    progress == null ? child : const Center(child: CircularProgressIndicator()),
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: AspectRatio(
+              aspectRatio: 1080 / 1350,
+              child: PageView.builder(
+                itemCount: p.slides.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (_, i) => ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    '${widget.api.mediaUrl(p.slides[i])}?v=$_version',
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                    loadingBuilder: (_, child, progress) =>
+                        progress == null ? child : const Center(child: CircularProgressIndicator()),
+                  ),
+                ),
               ),
             ),
           ),
