@@ -45,6 +45,10 @@ def test_new_build_clears_browser_cache_once(tmp_path):
     assert r.headers["clear-site-data"] == '"cache"' and "pv=" in r.headers["set-cookie"]
     assert "clear-site-data" not in c.get("/main.dart.js").headers  # only on the page itself
     old = r.headers["set-cookie"].split(";")[0]
+    # a browser from an older build revalidates the page: it must get the full page with the header, not a 304
+    again = c.get("/", headers={"If-None-Match": r.headers["etag"], "Cookie": "pv=1"})
+    assert again.status_code == 200 and again.headers["clear-site-data"] == '"cache"'
+    assert c.get("/", headers={"If-None-Match": r.headers["etag"], "Cookie": old}).status_code == 304
     assert "clear-site-data" not in c.get("/", headers={"Cookie": old}).headers  # cookie matches this build
     os.utime(tmp_path / "main.dart.js", (2_000_000_000, 2_000_000_000))  # a new deploy
     app2 = FastAPI()
