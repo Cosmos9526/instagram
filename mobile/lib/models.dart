@@ -103,6 +103,50 @@ class Research {
   Map<String, dynamic> get ran => Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }
 
+class Competitor {
+  Competitor({this.id = '', this.name = '', this.website = '', this.instagram = '', this.telegram = '', this.notes = ''});
+  String id, name, website, instagram, telegram, notes;
+
+  factory Competitor.fromJson(Map<String, dynamic> j) => Competitor(
+    id: '${j['id'] ?? ''}',
+    name: '${j['name'] ?? ''}',
+    website: '${j['website'] ?? ''}',
+    instagram: '${j['instagram'] ?? ''}',
+    telegram: '${j['telegram'] ?? ''}',
+    notes: '${j['notes'] ?? ''}',
+  );
+
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'name': name, 'website': website, 'instagram': instagram, 'telegram': telegram, 'notes': notes};
+
+  String get label => name.isNotEmpty ? name : (website.isNotEmpty ? website : (instagram.isNotEmpty ? '@$instagram' : 'رقیب'));
+}
+
+class CompetitorScan {
+  CompetitorScan.fromJson(Map<String, dynamic> j)
+    : id = '${j['id']}',
+      status = '${j['status']}',
+      error = '${j['error'] ?? ''}',
+      report = Map<String, dynamic>.from(j['report'] as Map? ?? {}),
+      createdAt = DateTime.tryParse('${j['created_at']}');
+  final String id, status, error;
+  final Map<String, dynamic> report;
+  final DateTime? createdAt;
+
+  bool get isBusy => status == 'queued' || status == 'running';
+  List<Map<String, dynamic>> _maps(String k) => [
+    for (final e in (report[k] as List? ?? const [])) Map<String, dynamic>.from(e as Map),
+  ];
+  List<Map<String, dynamic>> get competitors => _maps('competitors');
+  List<Map<String, dynamic>> get priceMatrix => _maps('price_matrix');
+  List<String> get gaps => _strings(report['gaps']);
+  List<Map<String, dynamic>> get postIdeas => _maps('post_ideas');
+  List<Map<String, dynamic>> get trustCompare => _maps('trust_compare');
+  Map<String, dynamic> get positioning => Map<String, dynamic>.from(report['positioning'] as Map? ?? {});
+  Map<String, dynamic> get strengthsWeaknesses =>
+      Map<String, dynamic>.from(report['strengths_weaknesses'] as Map? ?? {});
+}
+
 class Product {
   Product({this.name = '', this.desc = '', this.price = ''});
   String name, desc, price;
@@ -123,7 +167,7 @@ class Brand {
     this.website = '',
     this.instagram = '',
     this.telegram = '',
-    List<String>? competitors,
+    List<Competitor>? competitors,
     List<Product>? products,
     this.audience = '',
     this.tone = '',
@@ -141,7 +185,7 @@ class Brand {
 
   String? id;
   String name, industry, language, description, website, instagram, telegram, audience, tone, cta;
-  List<String> competitors;
+  List<Competitor> competitors;
   List<Product> products;
   Map<String, String> colors;
   List<String> forbiddenTopics, hashtags;
@@ -158,7 +202,7 @@ class Brand {
     website: '${j['website'] ?? ''}',
     instagram: '${j['instagram'] ?? ''}',
     telegram: '${j['telegram'] ?? ''}',
-    competitors: _strings(j['competitors']),
+    competitors: [for (final c in (j['competitors'] as List? ?? const [])) Competitor.fromJson(c is Map ? Map<String, dynamic>.from(c) : {'instagram': '$c'})],
     products: [for (final p in (j['products'] as List? ?? const [])) Product.fromJson(p)],
     audience: '${j['audience'] ?? ''}',
     tone: '${j['tone'] ?? ''}',
@@ -177,7 +221,7 @@ class Brand {
     'website': website,
     'instagram': instagram,
     'telegram': telegram,
-    'competitors': competitors,
+    'competitors': [for (final c in competitors) c.toJson()],
     'products': [for (final p in products) p.toJson()],
     'audience': audience,
     'tone': tone,

@@ -150,4 +150,27 @@ class Api {
 
   /// action: approve | reject | regenerate
   Future<Post> review(String id, String action) async => Post.fromJson(await _send('POST', '/posts/$id/$action'));
+
+  // ---- competitors ----
+
+  Future<List<Competitor>> competitors(String brandId) async => [
+    for (final c in await _send('GET', '/brands/$brandId/competitors') as List) Competitor.fromJson(c),
+  ];
+
+  Future<List<Competitor>> saveCompetitors(String brandId, List<Competitor> items) async {
+    final res = await _send('PUT', '/brands/$brandId/competitors', body: {'competitors': [for (final c in items) c.toJson()]});
+    return [for (final c in res as List) Competitor.fromJson(c)];
+  }
+
+  Future<List<Competitor>> parseCompetitorsText(String brandId, String text) async {
+    final res = await _send('POST', '/brands/$brandId/competitors/parse', body: {'text': text});
+    return [for (final c in res as List) Competitor.fromJson(c)];
+  }
+
+  Future<CompetitorScan> startCompetitorScan(String brandId, {List<String> only = const []}) async =>
+      CompetitorScan.fromJson(await _send('POST', '/brands/$brandId/competitors/scan', body: {'only': only}));
+
+  Future<List<CompetitorScan>> competitorScans(String brandId) async => [
+    for (final s in await _send('GET', '/brands/$brandId/competitors/scans') as List) CompetitorScan.fromJson(s),
+  ];
 }
