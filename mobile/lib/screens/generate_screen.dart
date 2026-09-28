@@ -262,7 +262,6 @@ class _Step extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 22, 0, 10),
       child: Row(
@@ -271,10 +270,10 @@ class _Step extends StatelessWidget {
             width: 24,
             height: 24,
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: scheme.primary, shape: BoxShape.circle),
+            decoration: const BoxDecoration(gradient: PColors.heroGradient, shape: BoxShape.circle),
             child: Text(
               faDigits(n),
-              style: TextStyle(color: scheme.onPrimary, fontSize: 12, fontWeight: FontWeight.w800, height: 1.3),
+              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, height: 1.3),
             ),
           ),
           const SizedBox(width: 10),

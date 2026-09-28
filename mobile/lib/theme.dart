@@ -1,39 +1,57 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens: deep teal primary, saffron accent, warm paper neutrals, ink text.
+/// Design tokens — "night studio": near-black canvas, layered charcoal cards, and one vivid
+/// violet → pink → orange gradient (the creator/Instagram energy) for everything that matters.
 class PColors {
-  static const teal = Color(0xFF0F766E);
-  static const tealBright = Color(0xFF2DD4BF);
-  static const tealDeep = Color(0xFF0B3B3C);
-  static const saffron = Color(0xFFF59E0B);
-  static const ink = Color(0xFF111827);
-  static const paper = Color(0xFFF6F5F1);
-  static const night = Color(0xFF0D1214);
+  static const violet = Color(0xFF8B5CF6);
+  static const pink = Color(0xFFEC4899);
+  static const orange = Color(0xFFF97316);
+  static const lilac = Color(0xFFC4B5FD);
+
+  static const canvas = Color(0xFF0B0B10);
+  static const card = Color(0xFF15151D);
+  static const raised = Color(0xFF1D1D28);
+  static const line = Color(0xFF2A2A38);
+  static const text = Color(0xFFF5F5F8);
+  static const muted = Color(0xFF9B9BB0);
+  static const backdrop = Color(0xFF050507);
+
+  // Older names kept so every screen maps onto the new palette.
+  static const teal = violet;
+  static const tealBright = lilac;
+  static const tealDeep = Color(0xFF2E1065);
+  static const saffron = orange;
+  static const ink = canvas;
+  static const paper = canvas;
+  static const night = canvas;
 
   static const heroGradient = LinearGradient(
     begin: AlignmentDirectional.topStart,
     end: AlignmentDirectional.bottomEnd,
-    colors: [Color(0xFF0F766E), Color(0xFF0B4F4C), Color(0xFF0B3B3C)],
+    colors: [violet, pink, orange],
+    stops: [0, .55, 1],
   );
 
-  /// Soft per-objective accents (background, foreground) for badges and create cards.
-  static (Color, Color) objective(String type, bool dark) => switch (type) {
-    'educational' => dark ? (const Color(0xFF12343A), const Color(0xFF7EE0D2)) : (const Color(0xFFE0F2EF), teal),
-    'news' =>
-      dark ? (const Color(0xFF1E2A44), const Color(0xFF9DB8FF)) : (const Color(0xFFE6ECFB), const Color(0xFF3056C8)),
-    'promo' =>
-      dark ? (const Color(0xFF3A2A12), const Color(0xFFFFC66B)) : (const Color(0xFFFDF1DC), const Color(0xFFB45F06)),
-    'sales' =>
-      dark ? (const Color(0xFF3A1A22), const Color(0xFFFF9FB2)) : (const Color(0xFFFCE7EC), const Color(0xFFBE123C)),
-    _ => dark ? (const Color(0xFF2A2140), const Color(0xFFC4B5FD)) : (const Color(0xFFEFEAFD), const Color(0xFF6D28D9)),
+  static const accentGradient = LinearGradient(
+    begin: AlignmentDirectional.centerStart,
+    end: AlignmentDirectional.centerEnd,
+    colors: [violet, pink],
+  );
+
+  /// Per-objective accents (background, foreground) for badges and create cards.
+  static (Color, Color) objective(String type, [bool dark = true]) => switch (type) {
+    'educational' => (const Color(0xFF1F1B3D), const Color(0xFFA5B4FC)),
+    'news' => (const Color(0xFF0E2A33), const Color(0xFF67E8F9)),
+    'promo' => (const Color(0xFF33200F), const Color(0xFFFDBA74)),
+    'sales' => (const Color(0xFF361427), const Color(0xFFF9A8D4)),
+    _ => (const Color(0xFF1E2A12), const Color(0xFFBEF264)),
   };
 }
 
-/// Horizontal padding that keeps content in a readable, centered column on wide screens while the scroll
-/// area stays full width.
-EdgeInsets pagePadding(BuildContext context, {double top = 8, double bottom = 110, double maxWidth = 880}) {
+/// Page padding for the phone column.
+EdgeInsets pagePadding(BuildContext context, {double top = 8, double bottom = 120, double maxWidth = 880}) {
   final w = MediaQuery.sizeOf(context).width;
-  final side = w > maxWidth + 48 ? (w - maxWidth) / 2 : (w >= 600 ? 24.0 : 16.0);
+  final side = w > maxWidth + 48 ? (w - maxWidth) / 2 : 16.0;
   return EdgeInsets.fromLTRB(side, top, side, bottom);
 }
 
@@ -44,34 +62,36 @@ int gridColumns(BuildContext context, {double minTile = 300}) {
 }
 
 ThemeData buildTheme(Brightness brightness) {
-  final dark = brightness == Brightness.dark;
-  final scheme =
-      ColorScheme.fromSeed(
-        seedColor: PColors.teal,
-        brightness: brightness,
-        primary: dark ? PColors.tealBright : PColors.teal,
-        onPrimary: dark ? PColors.night : Colors.white,
-        secondary: PColors.saffron,
-        surface: dark ? PColors.night : PColors.paper,
-        onSurface: dark ? const Color(0xFFE8EDEC) : PColors.ink,
-      ).copyWith(
-        onSurfaceVariant: dark ? const Color(0xFF9AA8A7) : const Color(0xFF5B6470),
-        surfaceContainerLowest: dark ? const Color(0xFF0A0E10) : Colors.white,
-        surfaceContainerLow: dark ? const Color(0xFF151C1F) : Colors.white,
-        surfaceContainer: dark ? const Color(0xFF182125) : Colors.white,
-        surfaceContainerHigh: dark ? const Color(0xFF1C272B) : const Color(0xFFF0EFEA),
-        surfaceContainerHighest: dark ? const Color(0xFF223036) : const Color(0xFFE9E8E2),
-        outlineVariant: dark ? const Color(0xFF26333A) : const Color(0xFFE5E3DC),
-        primaryContainer: dark ? const Color(0xFF12343A) : const Color(0xFFD9F1ED),
-        onPrimaryContainer: dark ? const Color(0xFF9FEBDF) : const Color(0xFF0B4F4C),
-      );
-  final base = ThemeData(useMaterial3: true, colorScheme: scheme, fontFamily: 'Vazirmatn', brightness: brightness);
+  final scheme = ColorScheme.fromSeed(seedColor: PColors.violet, brightness: Brightness.dark).copyWith(
+    primary: PColors.lilac,
+    onPrimary: const Color(0xFF1A0B3D),
+    secondary: PColors.pink,
+    onSecondary: Colors.white,
+    tertiary: PColors.orange,
+    surface: PColors.canvas,
+    onSurface: PColors.text,
+    onSurfaceVariant: PColors.muted,
+    surfaceContainerLowest: const Color(0xFF08080C),
+    surfaceContainerLow: PColors.card,
+    surfaceContainer: PColors.card,
+    surfaceContainerHigh: PColors.raised,
+    surfaceContainerHighest: const Color(0xFF262633),
+    outline: const Color(0xFF3A3A4C),
+    outlineVariant: PColors.line,
+    primaryContainer: const Color(0xFF2A1F4D),
+    onPrimaryContainer: const Color(0xFFDDD6FE),
+    secondaryContainer: const Color(0xFF3A1430),
+    onSecondaryContainer: const Color(0xFFFBCFE8),
+    error: const Color(0xFFFB7185),
+    errorContainer: const Color(0xFF3B1219),
+    onErrorContainer: const Color(0xFFFECDD3),
+  );
+  final base = ThemeData(useMaterial3: true, colorScheme: scheme, fontFamily: 'Vazirmatn', brightness: Brightness.dark);
   final t = base.textTheme;
-  final radius = BorderRadius.circular(14);
+  final radius = BorderRadius.circular(16);
 
   return base.copyWith(
-    scaffoldBackgroundColor: scheme.surface,
-    visualDensity: VisualDensity.standard,
+    scaffoldBackgroundColor: PColors.canvas,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: SoftPageTransitionsBuilder(),
@@ -83,123 +103,146 @@ ThemeData buildTheme(Brightness brightness) {
       },
     ),
     textTheme: t.copyWith(
-      headlineMedium: t.headlineMedium?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -.3, height: 1.4),
-      headlineSmall: t.headlineSmall?.copyWith(fontWeight: FontWeight.w900, height: 1.45),
-      titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.5),
+      headlineMedium: t.headlineMedium?.copyWith(fontWeight: FontWeight.w900, height: 1.35, color: PColors.text),
+      headlineSmall: t.headlineSmall?.copyWith(fontWeight: FontWeight.w900, height: 1.4, color: PColors.text),
+      titleLarge: t.titleLarge?.copyWith(fontWeight: FontWeight.w900, height: 1.45),
       titleMedium: t.titleMedium?.copyWith(fontWeight: FontWeight.w800, height: 1.5),
       titleSmall: t.titleSmall?.copyWith(fontWeight: FontWeight.w700, height: 1.5),
       bodyLarge: t.bodyLarge?.copyWith(height: 1.75),
-      bodyMedium: t.bodyMedium?.copyWith(height: 1.75),
-      bodySmall: t.bodySmall?.copyWith(height: 1.65, color: scheme.onSurfaceVariant),
-      labelLarge: t.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+      bodyMedium: t.bodyMedium?.copyWith(height: 1.75, color: const Color(0xFFE4E4EC)),
+      bodySmall: t.bodySmall?.copyWith(height: 1.65, color: PColors.muted),
+      labelLarge: t.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+      labelMedium: t.labelMedium?.copyWith(color: PColors.muted, fontWeight: FontWeight.w600),
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: scheme.surface,
+      backgroundColor: PColors.canvas,
+      foregroundColor: PColors.text,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleSpacing: 16,
-      titleTextStyle: t.titleLarge?.copyWith(
-        fontWeight: FontWeight.w900,
-        color: scheme.onSurface,
-        fontFamily: 'Vazirmatn',
-      ),
+      titleTextStyle: t.titleLarge?.copyWith(fontWeight: FontWeight.w900, color: PColors.text, fontFamily: 'Vazirmatn'),
     ),
     cardTheme: CardThemeData(
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 5),
-      color: scheme.surfaceContainerLow,
+      color: PColors.card,
       surfaceTintColor: Colors.transparent,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(22),
+        side: const BorderSide(color: PColors.line),
       ),
     ),
-    dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1),
-    listTileTheme: const ListTileThemeData(contentPadding: EdgeInsets.symmetric(horizontal: 16)),
+    dividerTheme: const DividerThemeData(color: PColors.line, space: 1),
+    listTileTheme: const ListTileThemeData(
+      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+      iconColor: PColors.muted,
+    ),
+    iconTheme: const IconThemeData(color: PColors.text),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: scheme.surfaceContainerLow,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: .8)),
+      fillColor: PColors.card,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+      hintStyle: const TextStyle(color: Color(0xFF6E6E84)),
+      labelStyle: const TextStyle(color: PColors.muted),
       border: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: scheme.outlineVariant),
+        borderSide: const BorderSide(color: PColors.line),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: scheme.outlineVariant),
+        borderSide: const BorderSide(color: PColors.line),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: radius,
-        borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        borderSide: const BorderSide(color: PColors.violet, width: 1.8),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 52),
+        backgroundColor: PColors.violet,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: PColors.raised,
+        disabledForegroundColor: const Color(0xFF6E6E84),
+        minimumSize: const Size(0, 54),
         padding: const EdgeInsets.symmetric(horizontal: 22),
-        shape: RoundedRectangleBorder(borderRadius: radius),
-        textStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w800, fontSize: 15),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        textStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w900, fontSize: 15),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
+        foregroundColor: PColors.text,
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 18),
-        shape: RoundedRectangleBorder(borderRadius: radius),
-        side: BorderSide(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        side: const BorderSide(color: Color(0xFF3A3A4C)),
         textStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w700),
+        foregroundColor: PColors.lilac,
+        textStyle: const TextStyle(fontFamily: 'Vazirmatn', fontWeight: FontWeight.w800),
       ),
     ),
     chipTheme: base.chipTheme.copyWith(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      side: BorderSide(color: scheme.outlineVariant),
-      backgroundColor: scheme.surfaceContainerLow,
-      selectedColor: scheme.primaryContainer,
-      labelStyle: TextStyle(fontFamily: 'Vazirmatn', color: scheme.onSurface, fontSize: 13),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      side: const BorderSide(color: PColors.line),
+      backgroundColor: PColors.card,
+      selectedColor: const Color(0xFF2A1F4D),
+      labelStyle: const TextStyle(fontFamily: 'Vazirmatn', color: PColors.text, fontSize: 13),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        side: BorderSide(color: scheme.outlineVariant),
+        backgroundColor: PColors.card,
+        selectedBackgroundColor: const Color(0xFF2A1F4D),
+        selectedForegroundColor: const Color(0xFFDDD6FE),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        side: const BorderSide(color: PColors.line),
       ),
     ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: dark ? PColors.tealBright : PColors.ink,
-      foregroundColor: dark ? PColors.night : Colors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    sliderTheme: const SliderThemeData(activeTrackColor: PColors.violet, thumbColor: PColors.pink),
+    switchTheme: SwitchThemeData(
+      trackColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? PColors.violet : PColors.raised,
+      ),
     ),
-    bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: scheme.surface,
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: PColors.lilac),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: PColors.violet,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: StadiumBorder(),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: PColors.card,
       showDragHandle: true,
-      constraints: const BoxConstraints(maxWidth: 640),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      dragHandleColor: Color(0xFF3A3A4C),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: PColors.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      width: 440,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      backgroundColor: PColors.raised,
+      contentTextStyle: const TextStyle(fontFamily: 'Vazirmatn', color: PColors.text),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: PColors.line),
+      ),
     ),
     tooltipTheme: TooltipThemeData(
-      decoration: BoxDecoration(color: PColors.ink.withValues(alpha: .92), borderRadius: BorderRadius.circular(8)),
-      textStyle: const TextStyle(fontFamily: 'Vazirmatn', color: Colors.white, fontSize: 12),
+      decoration: BoxDecoration(color: PColors.raised, borderRadius: BorderRadius.circular(8)),
+      textStyle: const TextStyle(fontFamily: 'Vazirmatn', color: PColors.text, fontSize: 12),
     ),
   );
 }
 
-/// Floating bottom navigation used inside a project. Same on every screen size (centered on wide screens).
+/// Floating dark pill navigation; the selected tab gets a glowing gradient icon bubble.
 class FloatingNav extends StatelessWidget {
   const FloatingNav({super.key, required this.items, required this.index, required this.onTap});
   final List<(IconData, IconData, String)> items;
@@ -207,54 +250,38 @@ class FloatingNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      child: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          // Opaque: taps on the bar's padding must never fall through to the page content behind it.
-          child: Listener(
-            behavior: HitTestBehavior.opaque,
-            child: RepaintBoundary(
-              child: Container(
-                height: 66,
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: dark ? const Color(0xFF182125) : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: scheme.outlineVariant),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: dark ? .35 : .08),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+  Widget build(BuildContext context) => SafeArea(
+    minimum: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+    // Opaque: taps on the bar's padding must never fall through to the page content behind it.
+    child: Listener(
+      behavior: HitTestBehavior.opaque,
+      child: RepaintBoundary(
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xF2181822),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: PColors.line),
+            boxShadow: const [BoxShadow(color: Color(0x99000000), blurRadius: 30, offset: Offset(0, 12))],
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: _NavItem(
+                    icon: i == index ? items[i].$2 : items[i].$1,
+                    label: items[i].$3,
+                    selected: i == index,
+                    onTap: () => onTap(i),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < items.length; i++)
-                      Expanded(
-                        child: _NavItem(
-                          icon: i == index ? items[i].$2 : items[i].$1,
-                          label: items[i].$3,
-                          selected: i == index,
-                          onTap: () => onTap(i),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _NavItem extends StatelessWidget {
@@ -265,47 +292,49 @@ class _NavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    label: label,
+    excludeSemantics: true,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            width: selected ? 44 : 34,
+            height: 30,
+            decoration: BoxDecoration(
+              gradient: selected ? PColors.accentGradient : null,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: selected
+                  ? const [BoxShadow(color: Color(0x668B5CF6), blurRadius: 14, offset: Offset(0, 4))]
+                  : null,
+            ),
+            child: Icon(icon, size: 20, color: selected ? Colors.white : PColors.muted),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 22, color: selected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                  color: selected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+          const SizedBox(height: 3),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: selected ? FontWeight.w900 : FontWeight.w500,
+              color: selected ? PColors.text : PColors.muted,
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
 }
 
-/// Gradient header card.
+/// Big gradient card with soft light blobs.
 class HeroCard extends StatelessWidget {
   const HeroCard({super.key, required this.title, required this.subtitle, this.trailing, this.child});
   final String title, subtitle;
@@ -313,40 +342,82 @@ class HeroCard extends StatelessWidget {
   final Widget? child;
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-    decoration: BoxDecoration(gradient: PColors.heroGradient, borderRadius: BorderRadius.circular(24)),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      height: 1.45,
-                    ),
-                  ),
-                  if (subtitle.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: .82), height: 1.6)),
-                  ],
-                ],
-              ),
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(28),
+    child: Container(
+      decoration: const BoxDecoration(gradient: PColors.heroGradient),
+      child: Stack(
+        children: [
+          PositionedDirectional(
+            top: -40,
+            end: -30,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: .12)),
             ),
-            ?trailing,
-          ],
-        ),
-        if (child != null) ...[const SizedBox(height: 16), child!],
-      ],
+          ),
+          PositionedDirectional(
+            bottom: -50,
+            start: -20,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: .10)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 23,
+                              fontWeight: FontWeight.w900,
+                              height: 1.4,
+                            ),
+                          ),
+                          if (subtitle.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: .88), height: 1.6)),
+                          ],
+                        ],
+                      ),
+                    ),
+                    ?trailing,
+                  ],
+                ),
+                if (child != null) ...[const SizedBox(height: 16), child!],
+              ],
+            ),
+          ),
+        ],
+      ),
     ),
+  );
+}
+
+/// Icon in a small gradient tile, used for headers of tiles and empty states.
+class GradientIcon extends StatelessWidget {
+  const GradientIcon(this.icon, {super.key, this.size = 44});
+  final IconData icon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(gradient: PColors.heroGradient, borderRadius: BorderRadius.circular(size * .32)),
+    child: Icon(icon, color: Colors.white, size: size * .5),
   );
 }
 

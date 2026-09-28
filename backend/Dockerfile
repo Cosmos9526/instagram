@@ -7,7 +7,8 @@ COPY mobile/pubspec.yaml mobile/pubspec.lock ./
 RUN flutter pub get
 COPY mobile/ ./
 # --wasm: Skia/WebAssembly renderer where supported (smoother), automatic JS fallback elsewhere.
-RUN flutter build web --release --wasm --no-web-resources-cdn \
+# --no-tree-shake-icons: the icon font stays complete, so a copy cached by an older build never lacks new icons.
+RUN flutter build web --release --wasm --no-web-resources-cdn --no-tree-shake-icons \
     && find build/web -type f \( -name '*.wasm' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' \
        -o -name '*.otf' -o -name '*.ttf' -o -name '*.html' -o -name '*.symbols' \) -exec gzip -9 -k {} \;
 

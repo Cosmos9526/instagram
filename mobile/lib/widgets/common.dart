@@ -28,14 +28,11 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final (bg, fg) = switch (status) {
-      'ready' =>
-        dark ? (const Color(0xFF1E2A44), const Color(0xFF9DB8FF)) : (const Color(0xFFE6ECFB), const Color(0xFF3056C8)),
-      'approved' => (scheme.primaryContainer, scheme.onPrimaryContainer),
-      'failed' || 'rejected' => (scheme.errorContainer, scheme.onErrorContainer),
-      _ => (scheme.surfaceContainerHighest, scheme.onSurfaceVariant),
+      'ready' => (const Color(0xFF2A1F4D), const Color(0xFFC4B5FD)),
+      'approved' => (const Color(0xFF0F2E24), const Color(0xFF6EE7B7)),
+      'failed' || 'rejected' => (const Color(0xFF3B1219), const Color(0xFFFDA4AF)),
+      _ => (const Color(0xFF262633), const Color(0xFFB4B4C6)),
     };
     return Container(
       padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 2 : 4),
@@ -123,12 +120,7 @@ class EmptyState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(16)),
-            child: Icon(icon, color: scheme.onPrimaryContainer),
-          ),
+          GradientIcon(icon, size: 52),
           const SizedBox(height: 12),
           Text(title, style: Theme.of(context).textTheme.titleSmall, textAlign: TextAlign.center),
           if (body != null) ...[
@@ -162,8 +154,8 @@ class _PromptBlockState extends State<PromptBlock> {
     final long = widget.text.length > 320;
     return Container(
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF101017),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(
