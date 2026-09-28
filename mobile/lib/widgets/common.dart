@@ -29,10 +29,10 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (status) {
-      'ready' => (const Color(0xFF2A1F4D), const Color(0xFFC4B5FD)),
-      'approved' => (const Color(0xFF0F2E24), const Color(0xFF6EE7B7)),
-      'failed' || 'rejected' => (const Color(0xFF3B1219), const Color(0xFFFDA4AF)),
-      _ => (const Color(0xFF262633), const Color(0xFFB4B4C6)),
+      'ready' => (const Color(0xFFFFF4E0), const Color(0xFFB45309)),
+      'approved' => (const Color(0xFFE6F7EF), const Color(0xFF11774D)),
+      'failed' || 'rejected' => (const Color(0xFFFEECEB), const Color(0xFFB42318)),
+      _ => (const Color(0xFFF2F4F5), const Color(0xFF475467)),
     };
     return Container(
       padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 2 : 4),
@@ -154,8 +154,8 @@ class _PromptBlockState extends State<PromptBlock> {
     final long = widget.text.length > 320;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF101017),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF8FAF9),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Column(

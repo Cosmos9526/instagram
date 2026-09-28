@@ -270,7 +270,7 @@ class _Step extends StatelessWidget {
             width: 24,
             height: 24,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(gradient: PColors.heroGradient, shape: BoxShape.circle),
+            decoration: const BoxDecoration(color: PColors.green, shape: BoxShape.circle),
             child: Text(
               faDigits(n),
               style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, height: 1.3),

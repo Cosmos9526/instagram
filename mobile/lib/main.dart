@@ -42,7 +42,7 @@ class PostyarApp extends StatelessWidget {
       ],
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
       builder: (context, child) => PhoneFrame(child: child!),
       home: startScreen(api),
     );

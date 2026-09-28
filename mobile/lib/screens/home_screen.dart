@@ -34,6 +34,7 @@ class HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _ideas = [];
   String? _error;
   Timer? _poll;
+  DateTime _day = DateUtils.dateOnly(DateTime.now());
 
   @override
   void initState() {
@@ -126,9 +127,10 @@ class HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final now = DateTime.now();
-    final weekday = now.weekday - 1; // Python convention used by the weekly plan: 0 = Monday
+    final isToday = DateUtils.isSameDay(_day, DateTime.now());
+    final weekday = _day.weekday - 1; // Python convention used by the weekly plan: 0 = Monday
     final today = widget.brand.weeklyPlan['$weekday'] ?? const <String>[];
+    final dayLabel = '${_weekdaysFa[weekday]} ${jalaliLabel(_day)}';
     final posts = _posts;
 
     return RefreshIndicator(
@@ -140,11 +142,18 @@ class HomeScreenState extends State<HomeScreen> {
         padding: pagePadding(context, maxWidth: 1100),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          WeekStrip(
+            selected: _day,
+            plan: widget.brand.weeklyPlan,
+            posts: posts ?? const [],
+            onSelect: (d) => setState(() => _day = d),
+          ),
+          const SizedBox(height: 12),
           HeroCard(
-            title: 'امروز چی منتشر کنیم؟',
+            title: isToday ? 'امروز چی منتشر کنیم؟' : 'برنامه‌ی $dayLabel',
             subtitle: today.isEmpty
-                ? '${_weekdaysFa[weekday]} در برنامه‌ی هفتگی خالی است؛ یکی از ایده‌های پایین را بساز.'
-                : '${_weekdaysFa[weekday]} طبق برنامه‌ی هفتگی:',
+                ? '$dayLabel در برنامه‌ی هفتگی خالی است؛ یکی از ایده‌های پایین را بساز.'
+                : '$dayLabel طبق برنامه‌ی هفتگی:',
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -292,7 +301,7 @@ class _HeroButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: Colors.white,
+    color: PColors.green,
     borderRadius: BorderRadius.circular(14),
     child: InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -302,11 +311,11 @@ class _HeroButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: PColors.violet),
+            Icon(icon, size: 18, color: Colors.white),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: Color(0xFF2E1065), fontWeight: FontWeight.w900),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -403,4 +412,179 @@ class _IdeaCard extends StatelessWidget {
       ),
     );
   }
+}
+
+const _dayLetters = ['د', 'س', 'چ', 'پ', 'ج', 'ش', 'ی']; // Monday first, like DateTime.weekday - 1
+const _jalaliMonths = [
+  'فروردین',
+  'اردیبهشت',
+  'خرداد',
+  'تیر',
+  'مرداد',
+  'شهریور',
+  'مهر',
+  'آبان',
+  'آذر',
+  'دی',
+  'بهمن',
+  'اسفند',
+];
+
+/// Gregorian → Jalali (year, month 1-12, day), the standard arithmetic conversion.
+(int, int, int) toJalali(DateTime g) {
+  const gdm = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  var gy = g.year;
+  final gy2 = g.month > 2 ? gy + 1 : gy;
+  var days = 355666 + 365 * gy + (gy2 + 3) ~/ 4 - (gy2 + 99) ~/ 100 + (gy2 + 399) ~/ 400 + g.day + gdm[g.month - 1];
+  var jy = -1595 + 33 * (days ~/ 12053);
+  days %= 12053;
+  jy += 4 * (days ~/ 1461);
+  days %= 1461;
+  if (days > 365) {
+    jy += (days - 1) ~/ 365;
+    days = (days - 1) % 365;
+  }
+  final jm = days < 186 ? 1 + days ~/ 31 : 7 + (days - 186) ~/ 30;
+  final jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+  return (jy, jm, jd);
+}
+
+String jalaliLabel(DateTime d) {
+  final (_, m, day) = toJalali(d);
+  return '${faDigits(day)} ${_jalaliMonths[m - 1]}';
+}
+
+/// This week (Saturday → Friday) as a strip of days: today in the reference's green badge, dots for the
+/// planned posts and a count of content already made for that day.
+class WeekStrip extends StatelessWidget {
+  const WeekStrip({super.key, required this.selected, required this.plan, required this.posts, required this.onSelect});
+  final DateTime selected;
+  final Map<String, List<String>> plan;
+  final List<Post> posts;
+  final ValueChanged<DateTime> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final saturday = today.subtract(Duration(days: (today.weekday + 1) % 7));
+    final days = [for (var i = 0; i < 7; i++) saturday.add(Duration(days: i))];
+    String iso(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final (_, month, _) = toJalali(selected);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: PColors.line),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
+            child: Row(
+              children: [
+                Text('این هفته', style: Theme.of(context).textTheme.titleSmall),
+                const Spacer(),
+                Text(_jalaliMonths[month - 1], style: Theme.of(context).textTheme.labelMedium),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              for (final d in days)
+                Expanded(
+                  child: _DayCell(
+                    letter: _dayLetters[d.weekday - 1],
+                    day: toJalali(d).$3,
+                    planned: (plan['${d.weekday - 1}'] ?? const []).length,
+                    made: posts.where((p) => p.forDate == iso(d)).length,
+                    isToday: d == today,
+                    selected: d == DateUtils.dateOnly(selected),
+                    onTap: () => onSelect(d),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.letter,
+    required this.day,
+    required this.planned,
+    required this.made,
+    required this.isToday,
+    required this.selected,
+    required this.onTap,
+  });
+  final String letter;
+  final int day, planned, made;
+  final bool isToday, selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      margin: const EdgeInsets.symmetric(horizontal: 2),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: selected ? PColors.heroGradient : null,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: selected ? PColors.mintStrong : Colors.transparent),
+      ),
+      child: Column(
+        children: [
+          Text(
+            letter,
+            style: const TextStyle(fontSize: 11.5, color: PColors.muted, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 30,
+            height: 26,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isToday ? PColors.forest : Colors.transparent,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Text(
+              faDigits(day),
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                height: 1.2,
+                color: isToday ? Colors.white : PColors.text,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 6,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < planned.clamp(0, 3); i++)
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i < made ? PColors.green : const Color(0xFFD0D5DD),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
