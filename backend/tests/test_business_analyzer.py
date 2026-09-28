@@ -20,3 +20,15 @@ def test_analyze_business_offline(monkeypatch):
     assert p["colors"]["primary"] == "#0b9488"
     assert p["instagram"] == "aria.hair"
     assert r["plan"] and all(i["idea"] for i in r["plan"])
+
+
+def test_model_cannot_replace_observed_catalog(monkeypatch):
+    monkeypatch.setattr(ba, '_fetch', lambda url, timeout=15: (url, HTML))
+    monkeypatch.setattr(ba, 'analyze_instagram', lambda u: {'username': u, 'posts': [], 'ok': False})
+    monkeypatch.setattr(ba, 'chat_json', lambda *a, **k: {
+        'products': [{'name': 'Invented subscription', 'desc': 'Guaranteed delivery'}],
+        'description': 'Refined description',
+    })
+    result = ba.analyze_business('https://aria.example')
+    assert result['profile']['products'] == [{'name': 'کاشت مو FIT', 'desc': ''}]
+    assert result['profile']['description'] == 'Refined description'

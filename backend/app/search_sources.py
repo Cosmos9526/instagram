@@ -70,20 +70,22 @@ def parse_instagram_result(r: dict) -> dict | None:
 
 def instagram_via_search(keywords: list[str], days: int = 3, target: int = 100, must: list[str] | None = None) -> dict:
     """Recent public Instagram posts for the keywords, found through a search engine.
-    `must`: core topics; a post has to mention one of their words (defaults to the keywords)."""
+    `must`: core topics; a post must match a meaningful topic token (defaults to keywords)."""
     from ddgs import DDGS
+
+    from .research import _relevant
 
     posts: dict[str, dict] = {}
     errors = []
     limit = "w" if days <= 7 else "m"
-    # relevance: a post must mention at least one meaningful word of the keywords
-    words = {w for kw in (must or keywords) for w in re.findall(r"[\w\u200c]{3,}", kw.lower())}
+
+    topics = must or keywords
     for kw in keywords[:12]:
         for q in (f"site:instagram.com {kw}", f"site:instagram.com/reel {kw}", f"instagram {kw}"):
             try:
                 for r in DDGS().text(q, max_results=30, timelimit=limit):
                     p = parse_instagram_result(r)
-                    if p and any(w in (r.get("title", "") + " " + r.get("body", "")).lower() for w in words):
+                    if p and _relevant(r.get("title", "") + " " + r.get("body", ""), topics):
                         p["keyword"] = kw
                         posts.setdefault(p["code"], p)
             except Exception as e:  # noqa: BLE001

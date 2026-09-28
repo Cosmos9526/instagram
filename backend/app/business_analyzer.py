@@ -282,9 +282,8 @@ def _refine_with_model(profile: dict, site: dict, ig: dict) -> dict:
             profile[k] = data[k].strip()
     if data.get("industry") in INDUSTRIES:
         profile["industry"] = data["industry"]
-    if isinstance(data.get("products"), list) and data["products"]:
-        profile["products"] = [{"name": str(p.get("name", ""))[:80], "desc": str(p.get("desc", ""))[:160]}
-                               for p in data["products"] if isinstance(p, dict) and p.get("name")][:8]
+    # The catalog is evidence, not copy: retain names and descriptions extracted
+    # from the website instead of accepting model-generated products or claims.
     if isinstance(data.get("strengths"), list):
         profile["strengths"] = [str(s) for s in data["strengths"]][:5]
     profile["source"] = "model"
