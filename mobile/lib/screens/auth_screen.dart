@@ -180,7 +180,7 @@ class _BrandPanel extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(compact ? 20 : 56),
       decoration: BoxDecoration(
-        gradient: PColors.heroGradient,
+        color: PColors.forest,
         borderRadius: compact ? BorderRadius.circular(24) : null,
       ),
       child: Column(
