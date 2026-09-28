@@ -414,3 +414,17 @@ def test_write_back_handles_marks_verified(client, monkeypatch):
     assert saved[0]["instagram_evidence"] == "https://rival.example"
     assert saved[0]["telegram"] == "example_shop"
     assert saved[0]["telegram_status"] == "verified"
+
+
+def test_variation_encoded_persian_duration():
+    import json
+    from html import escape
+    from urllib.parse import quote
+
+    variations = [{'attributes': {'attribute_duration': quote('سه-ماهه')},
+                   'display_price': 1950000, 'is_in_stock': True}]
+    html = '<h1 class="product_title">Canva Pro</h1><form data-product_variations="' + escape(json.dumps(variations)) + '"></form>'
+    product = comp.extract_products(html)[0]
+    assert product['name'] == 'Canva Pro سه ماهه'
+    assert product['duration'] == '3m'
+    assert product['price'] == 1950000

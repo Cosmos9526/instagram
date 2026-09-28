@@ -39,3 +39,29 @@ def test_sources_off_without_keys(monkeypatch):
     monkeypatch.setattr(settings, "apify_token", "")
     assert research.youtube_top_videos(["x"], "fa") == []
     assert research.instagram_top_posts(["x"]) == []
+
+
+def test_relevance_rejects_shared_sales_and_plan_words():
+    seeds = ['فروش اکانت و اشتراک ابزارهای هوش مصنوعی', 'کلود مکس']
+    for title in ['خرید آیفون پرو مکس', 'فروش اکانت پابجی مکس', 'خرید اشتراک بازی']:
+        assert not research._relevant(title, seeds)
+    assert research._relevant('راهنمای کلود برای برنامه نویسی', seeds)
+    assert research._relevant('ابزارهای هوش مصنوعی برای طراحی', seeds)
+    assert not research._relevant('chair sale', ['hair'])
+    assert research._relevant('hair care', ['hair'])
+
+
+def test_instagram_search_filters_unrelated_max_results(monkeypatch):
+    import ddgs
+    from app import search_sources as ss
+
+    class Search:
+        def text(self, *args, **kwargs):
+            return [
+                {'href': 'https://www.instagram.com/reel/Phone123/', 'title': 'فروش آیفون پرو مکس', 'body': '2 days ago'},
+                {'href': 'https://www.instagram.com/reel/Claude123/', 'title': 'آموزش کلود مکس', 'body': '2 days ago'},
+            ]
+    monkeypatch.setattr(ddgs, 'DDGS', Search)
+    monkeypatch.setattr(ss.time, 'sleep', lambda _: None)
+    result = ss.instagram_via_search(['کلود مکس'], must=['فروش اکانت', 'کلود مکس'])
+    assert [p['code'] for p in result['posts']] == ['Claude123']

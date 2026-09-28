@@ -13,7 +13,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from html import unescape
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from .business_analyzer import _meta, _text
 from .config import settings
@@ -282,7 +282,7 @@ def _woo_variations(html: str) -> list[dict]:
             if not isinstance(v, dict):
                 continue
             attrs = v.get("attributes") or {}
-            attr_text = " ".join(str(x) for x in attrs.values() if x)
+            attr_text = " ".join(unquote(str(x)).replace("-", " ") for x in attrs.values() if x)
             price = v.get("display_price")
             regular = v.get("display_regular_price")
             duration = detect_duration(attr_text) or detect_duration(base_name)

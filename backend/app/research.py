@@ -227,9 +227,14 @@ def seed_keywords(b: Brand, focus: str) -> list[str]:
 
 
 def _relevant(text: str, seeds: list[str]) -> bool:
-    words = {w for s in seeds for w in _tokens(s)}
-    t = (text or "").lower()
-    return not words or any(w in t for w in words)
+    # Sales vocabulary and plan tiers alone do not identify a topic: "account"
+    # matches gaming accounts, and "Max" also matches unrelated phones.
+    generic = {"فروش", "فروشگاه", "اکانت", "اشتراک", "ابزار", "ابزارهای", "مکس", "پرو",
+               "پلاس", "account", "subscription", "shop", "max", "pro", "plus"}
+    words = {w for s in seeds for w in _tokens(s)} - generic
+    if not words:
+        return not seeds
+    return bool(words.intersection(_tokens(text)))
 
 
 def collect_free(b: Brand, focus: str) -> dict:
