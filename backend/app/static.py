@@ -4,10 +4,14 @@
   gzip, so the 3–7 MB engine/app files travel as ~1–3 MB.
 - Caching: engine, fonts and icons are kept by the browser for a week; the app code and index revalidate with
   ETag (a cheap 304 when nothing changed).
+- Versioned assets: the app's `flutter_bootstrap.js` is served with `assetBase = "v/<build>/"`, so the engine loads
+  fonts, icons and images from `/v/<build>/assets/...`. Every deploy gets new URLs, so a browser can never reuse a
+  file cached from an older build (the cause of blank icons), and those files can be cached for a year.
 - Thumbnails: `/thumb/<media path>?w=240` returns a small JPEG instead of the 1080px PNG."""
 
 import mimetypes
 import os
+import re
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -16,6 +20,8 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
 LONG = "public, max-age=604800"
+IMMUTABLE = "public, max-age=31536000, immutable"
+_VERSIONED = re.compile(r"v/[^/]+/(.+)")
 REVALIDATE = "no-cache"
 # Only files whose content never changes under the same URL. Not "assets/": the icon font there is tree-shaken
 # per build, so a cached copy from an older build lacks newly used icons.
@@ -54,6 +60,26 @@ class FastStatic(StaticFiles):
         return await super().__call__(scope, receive, send_wrapper)
 
     async def get_response(self, path: str, scope: Scope):
+        if self.build_id and path == "flutter_bootstrap.js":
+            return self._bootstrap()
+        versioned = self.build_id and _VERSIONED.fullmatch(path)
+        if versioned:
+            resp = await self._file(versioned.group(1), scope)
+            resp.headers["Cache-Control"] = IMMUTABLE
+            return resp
+        return await self._file(path, scope)
+
+    def _bootstrap(self):
+        """The Flutter loader script, pointing the engine at this build's versioned asset URLs."""
+        from starlette.responses import Response
+
+        path, stat = self.lookup_path("flutter_bootstrap.js")
+        if stat is None:
+            raise HTTPException(404, "not found")
+        text = Path(path).read_text(encoding="utf-8").replace("__ASSET_BASE__", f"v/{self.build_id}/")
+        return Response(text, media_type="text/javascript", headers={"Cache-Control": REVALIDATE})
+
+    async def _file(self, path: str, scope: Scope):
         accepts = b"gzip" in dict(scope.get("headers") or []).get(b"accept-encoding", b"")
         if accepts and self.directory and path and not path.endswith("/"):
             # Reuse StaticFiles containment checks, including symlink resolution.

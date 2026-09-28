@@ -67,3 +67,19 @@ def test_precompressed_symlink_cannot_escape_static_root(tmp_path):
     response = TestClient(app).get("/leak.js", headers={"Accept-Encoding": "gzip"})
     assert response.status_code == 404
     assert b"private-data" not in response.content
+
+
+def test_assets_are_served_under_a_per_build_url(tmp_path):
+    (tmp_path / "index.html").write_text("<html></html>")
+    (tmp_path / "flutter_bootstrap.js").write_text('load({config: {assetBase: "__ASSET_BASE__"}})')
+    (tmp_path / "assets" / "fonts").mkdir(parents=True)
+    (tmp_path / "assets" / "fonts" / "MaterialIcons-Regular.otf").write_bytes(b"font")
+    static = FastStatic(directory=tmp_path, html=True)
+    app = FastAPI()
+    app.mount("/", static)
+    c = TestClient(app)
+    boot = c.get("/flutter_bootstrap.js")
+    assert f'assetBase: "v/{static.build_id}/"' in boot.text and boot.headers["cache-control"] == "no-cache"
+    r = c.get(f"/v/{static.build_id}/assets/fonts/MaterialIcons-Regular.otf")
+    assert r.content == b"font" and "immutable" in r.headers["cache-control"]
+    assert c.get("/v/x/../../etc/passwd").status_code == 404

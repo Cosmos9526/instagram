@@ -10,3 +10,11 @@ window.addEventListener('flutter-first-frame', function () {
   document.getElementById('startup')?.remove();
 });
 startupTimer = setTimeout(window.studioLoadFailed, 20000);
+
+// Remove service workers and their caches left by older builds; the app does not use them.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+}
+if (window.caches) {
+  caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }).catch(function () {});
+}
