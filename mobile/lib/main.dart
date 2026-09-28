@@ -42,16 +42,8 @@ class PostyarApp extends StatelessWidget {
       ],
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
-      builder: (context, child) => ColoredBox(
-        color: Theme.of(context).colorScheme.surface,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1440),
-            child: child!,
-          ),
-        ),
-      ),
+      themeMode: ThemeMode.dark,
+      builder: (context, child) => PhoneFrame(child: child!),
       home: startScreen(api),
     );
   }
@@ -62,4 +54,34 @@ Widget startScreen(Api api) {
   if (!api.hasServer) return ServerScreen(api: api);
   if (!api.isLoggedIn) return AuthScreen(api: api);
   return ProjectsScreen(api: api);
+}
+
+/// Mobile-only app: on a wide window the app is shown in a phone-width column, and every screen sees a
+/// phone-sized MediaQuery so no wide layouts kick in.
+class PhoneFrame extends StatelessWidget {
+  const PhoneFrame({super.key, required this.child});
+  final Widget child;
+  static const width = 430.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    if (mq.size.width <= width + 40) return child;
+    return ColoredBox(
+      color: PColors.backdrop,
+      child: Center(
+        child: Container(
+          width: width,
+          height: mq.size.height,
+          decoration: BoxDecoration(
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .5), blurRadius: 60, spreadRadius: 4)],
+          ),
+          child: MediaQuery(
+            data: mq.copyWith(size: Size(width, mq.size.height)),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 }

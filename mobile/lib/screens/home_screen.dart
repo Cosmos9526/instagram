@@ -302,11 +302,11 @@ class _HeroButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: PColors.teal),
+            Icon(icon, size: 18, color: PColors.violet),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: PColors.tealDeep, fontWeight: FontWeight.w800),
+              style: const TextStyle(color: Color(0xFF2E1065), fontWeight: FontWeight.w900),
             ),
           ],
         ),
@@ -323,7 +323,6 @@ class _QuickTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Card(
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -332,12 +331,7 @@ class _QuickTile extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, size: 21, color: scheme.onPrimaryContainer),
-              ),
+              GradientIcon(icon, size: 40),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
