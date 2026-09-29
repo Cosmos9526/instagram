@@ -206,6 +206,17 @@ class Api {
       Post.fromJson(p),
   ];
 
+  Future<void> deletePost(String id) async => _send('DELETE', '/posts/$id');
+
+  Future<CompetitorScan> searchPrices(String brandId, String query) async =>
+      CompetitorScan.fromJson(
+        await _send(
+          'POST',
+          '/brands/$brandId/competitors/prices',
+          body: {'query': query},
+        ),
+      );
+
   Future<Post> post(String id) async =>
       Post.fromJson(await _send('GET', '/posts/$id'));
 

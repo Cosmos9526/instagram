@@ -555,10 +555,6 @@ def rule_based_report(brand, comps: list[dict]) -> dict:
             continue
         signals = website.get("signals", {})
         trust_compare.append({"name": c["name"], "reachable": True, **signals})
-        if signals.get("enamad") is False:
-            gaps.append({"text": f"{c['name']} نماد اعتماد الکترونیکی (اینماد) روی سایتش دیده نمی‌شود", "evidence": [c["name"]]})
-        if signals.get("guarantee") is False:
-            gaps.append({"text": f"{c['name']} گارانتی یا ضمانت را در سایتش اعلام نکرده", "evidence": [c["name"]]})
     for row in price_matrix:
         names = list(row["prices"])
         label = row["product"] + (f" ({DURATION_LABELS.get(row['duration'], row['duration'])})" if row["duration"] else "")

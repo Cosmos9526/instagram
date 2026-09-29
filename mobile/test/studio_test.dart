@@ -59,7 +59,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(FloatingNav), findsOneWidget);
-    expect(find.text('What will you publish today?'), findsOneWidget);
+    expect(find.text('Create video prompt'), findsOneWidget);
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
