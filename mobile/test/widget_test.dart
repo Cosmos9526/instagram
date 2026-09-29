@@ -13,7 +13,9 @@ void main() {
       industry: 'قهوه',
       website: 'https://x.ir',
       products: [Product(name: 'اسپرسو', desc: 'تازه')],
-      weeklyPlan: {'5': ['educational:carousel']},
+      weeklyPlan: {
+        '5': ['educational:carousel'],
+      },
     );
     final back = Brand.fromJson({'id': 'x', ...b.toJson()});
     expect(back.weeklyPlan['5'], ['educational:carousel']);
@@ -23,8 +25,16 @@ void main() {
 
   test('post caption joins hashtags', () {
     final p = Post.fromJson({
-      'id': '1', 'post_type': 'promo', 'mode': 'single', 'status': 'ready', 'error': '',
-      'content': {'caption': 'سلام', 'hashtags': ['کافه نمونه'], 'slots': {'headline': 'تیتر'}},
+      'id': '1',
+      'post_type': 'promo',
+      'mode': 'single',
+      'status': 'ready',
+      'error': '',
+      'content': {
+        'caption': 'سلام',
+        'hashtags': ['کافه نمونه'],
+        'slots': {'headline': 'تیتر'},
+      },
       'slides': ['/media/a.png'],
     });
     expect(p.title, 'تیتر');
@@ -32,19 +42,35 @@ void main() {
   });
 
   test('generate request only sends the options that apply', () {
-    final video = GenerateRequest(postType: 'video_prompt', mode: 'carousel', template: 'faq', videoStyle: 'pov').toJson();
+    final video = GenerateRequest(
+      postType: 'video_prompt',
+      mode: 'carousel',
+      template: 'faq',
+      videoStyle: 'pov',
+    ).toJson();
     expect(video['mode'], 'video');
     expect(video.containsKey('template'), isFalse);
     expect(video['video_style'], 'pov');
-    final single = GenerateRequest(postType: 'educational', template: 'faq', videoStyle: 'pov').toJson();
+    final single = GenerateRequest(
+      postType: 'educational',
+      template: 'faq',
+      videoStyle: 'pov',
+    ).toJson();
     expect(single['template'], 'faq');
     expect(single.containsKey('video_style'), isFalse);
   });
 
   test('research report accessors', () {
     final r = Research.fromJson({
-      'id': 'r', 'status': 'ready',
-      'report': {'keywords': ['a'], 'trends': [{'title': 't'}], 'ran': {'web': 'web'}},
+      'id': 'r',
+      'status': 'ready',
+      'report': {
+        'keywords': ['a'],
+        'trends': [
+          {'title': 't'},
+        ],
+        'ran': {'web': 'web'},
+      },
     });
     expect(r.keywords, ['a']);
     expect(r.trends.single['title'], 't');
@@ -53,13 +79,18 @@ void main() {
 
   test('faDigits', () => expect(faDigits('2/5'), '۲/۵'));
 
-  testWidgets('logged-out app opens the login screen in RTL', (tester) async {
+  testWidgets('logged-out app opens the login screen in English and LTR', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({'base_url': 'https://s'});
     final api = await Api.load();
     await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
-    expect(find.text('ورود'), findsWidgets);
-    expect(find.text('ثبت‌نام'), findsOneWidget);
-    expect(Directionality.of(tester.element(find.text('ثبت‌نام'))), TextDirection.rtl);
+    expect(find.text('Sign in'), findsWidgets);
+    expect(find.text('Sign up'), findsOneWidget);
+    expect(
+      Directionality.of(tester.element(find.text('Sign up'))),
+      TextDirection.ltr,
+    );
   });
 }

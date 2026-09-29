@@ -31,9 +31,9 @@ class PostyarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'استودیوی محتوا',
+      title: 'Content Studio',
       debugShowCheckedModeBanner: false,
-      locale: const Locale('fa'),
+      locale: const Locale('en'),
       supportedLocales: const [Locale('fa'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -74,7 +74,13 @@ class PhoneFrame extends StatelessWidget {
           width: width,
           height: mq.size.height,
           decoration: BoxDecoration(
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .5), blurRadius: 60, spreadRadius: 4)],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .5),
+                blurRadius: 60,
+                spreadRadius: 4,
+              ),
+            ],
           ),
           child: MediaQuery(
             data: mq.copyWith(size: Size(width, mq.size.height)),

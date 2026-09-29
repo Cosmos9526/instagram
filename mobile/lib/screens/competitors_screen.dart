@@ -30,7 +30,13 @@ const _productLabels = <String, String>{
   'office': 'Office',
 };
 
-const _durationLabels = <String, String>{'1m': 'یک ماهه', '3m': 'سه ماهه', '6m': 'شش ماهه', '12m': 'یک ساله', '': ''};
+const _durationLabels = <String, String>{
+  '1m': '1 month',
+  '3m': '3 months',
+  '6m': '6 months',
+  '12m': '1 year',
+  '': '',
+};
 
 String _productRowLabel(Map<String, dynamic> row) {
   final base = _productLabels['${row['product']}'] ?? '${row['product']}';
@@ -41,13 +47,18 @@ String _productRowLabel(Map<String, dynamic> row) {
 String _fmtPrice(dynamic n) {
   if (n == null) return '—';
   final v = n is int ? n : int.tryParse('$n') ?? 0;
-  return '${faDigits(v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ','))} ت';
+  return '${uiDigits(v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ','))} Toman';
 }
 
 /// Competitor intelligence: per-competitor websites and Instagram pages, a price matrix, and
 /// content gaps Postyar can turn into posts.
 class CompetitorsScreen extends StatefulWidget {
-  const CompetitorsScreen({super.key, required this.api, required this.brand, required this.onUse});
+  const CompetitorsScreen({
+    super.key,
+    required this.api,
+    required this.brand,
+    required this.onUse,
+  });
   final Api api;
   final Brand brand;
   final UseIdea onUse;
@@ -107,7 +118,12 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       await widget.api.startCompetitorScan(widget.brand.id!);
       await _load();
     } on ApiException catch (e) {
-      if (mounted) showSnack(context, e.status == 409 ? 'یک اسکن در حال انجام است' : e.message);
+      if (mounted) {
+        showSnack(
+          context,
+          e.status == 409 ? 'A scan is already in progress' : e.message,
+        );
+      }
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -123,43 +139,65 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(existing == null ? 'رقیب جدید' : 'ویرایش رقیب', style: Theme.of(ctx).textTheme.titleMedium),
+              Text(
+                existing == null ? 'New competitor' : 'Edit competitor',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: name,
-                decoration: const InputDecoration(labelText: 'نام'),
+                decoration: const InputDecoration(labelText: 'Name'),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: website,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'سایت', hintText: 'example.com'),
+                decoration: const InputDecoration(
+                  labelText: 'Website',
+                  hintText: 'example.com',
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: ig,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'اینستاگرام', hintText: 'username'),
+                decoration: const InputDecoration(
+                  labelText: 'Instagram',
+                  hintText: 'username',
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: tg,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'تلگرام (اختیاری)', hintText: 'username'),
+                decoration: const InputDecoration(
+                  labelText: 'Telegram (optional)',
+                  hintText: 'username',
+                ),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: notes,
-                decoration: const InputDecoration(labelText: 'یادداشت (اختیاری)'),
+                decoration: const InputDecoration(
+                  labelText: 'Notes (optional)',
+                ),
               ),
               const SizedBox(height: 16),
-              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('ذخیره')),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Save'),
+              ),
               const SizedBox(height: 24),
             ],
           ),
@@ -179,9 +217,13 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       instagram: newIg,
       telegram: newTg,
       notes: notes.text.trim(),
-      instagramStatus: keepIg ? existing.instagramStatus : (newIg.isEmpty ? '' : 'manual'),
+      instagramStatus: keepIg
+          ? existing.instagramStatus
+          : (newIg.isEmpty ? '' : 'manual'),
       instagramEvidence: keepIg ? existing.instagramEvidence : '',
-      telegramStatus: keepTg ? existing.telegramStatus : (newTg.isEmpty ? '' : 'manual'),
+      telegramStatus: keepTg
+          ? existing.telegramStatus
+          : (newTg.isEmpty ? '' : 'manual'),
       telegramEvidence: keepTg ? existing.telegramEvidence : '',
     );
     final items = [...?_items];
@@ -205,54 +247,79 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheet) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16, top: 16),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('افزودن گروهی رقبا', style: Theme.of(ctx).textTheme.titleMedium),
+                Text(
+                  'Add competitors in bulk',
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 6),
-                const Text('هر خط یک آدرس سایت، پیج اینستاگرام یا کانال تلگرام رقیب را وارد کن.'),
+                const Text(
+                  'Enter one website, Instagram profile or Telegram channel per line.',
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: controller,
                   maxLines: 6,
                   textDirection: TextDirection.ltr,
-                  decoration: const InputDecoration(hintText: 'parspremium.ir\ninstagram.com/cafearz\n@dicardo_shop'),
+                  decoration: const InputDecoration(
+                    hintText:
+                        'parspremium.ir\ninstagram.com/cafearz\n@dicardo_shop',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
                   onPressed: () async {
                     try {
-                      final items = await widget.api.parseCompetitorsText(widget.brand.id!, controller.text);
+                      final items = await widget.api.parseCompetitorsText(
+                        widget.brand.id!,
+                        controller.text,
+                      );
                       setSheet(() => preview = items);
                     } on ApiException catch (e) {
                       if (ctx.mounted) showSnack(ctx, e.message);
                     }
                   },
-                  child: const Text('پیش‌نمایش'),
+                  child: const Text('Preview'),
                 ),
                 if (preview != null) ...[
                   const SizedBox(height: 12),
-                  Text('${faDigits(preview!.length)} رقیب پیدا شد:', style: Theme.of(ctx).textTheme.titleSmall),
+                  Text(
+                    '${uiDigits(preview!.length)} competitors found:',
+                    style: Theme.of(ctx).textTheme.titleSmall,
+                  ),
                   for (final c in preview!)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text('• ${c.label}${c.website.isNotEmpty ? ' — ${c.website}' : ''}'),
+                      child: Text(
+                        '• ${c.label}${c.website.isNotEmpty ? ' — ${c.website}' : ''}',
+                      ),
                     ),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () async {
                       final existing = [...?_items];
-                      final known = existing.map((c) => '${c.website}|${c.instagram}').toSet();
+                      final known = existing
+                          .map((c) => '${c.website}|${c.instagram}')
+                          .toSet();
                       for (final c in preview!) {
-                        if (!known.contains('${c.website}|${c.instagram}')) existing.add(c);
+                        if (!known.contains('${c.website}|${c.instagram}')) {
+                          existing.add(c);
+                        }
                       }
                       Navigator.pop(ctx);
                       await _save(existing);
                     },
-                    child: const Text('ذخیره همه'),
+                    child: const Text('Save all'),
                   ),
                 ],
                 const SizedBox(height: 16),
@@ -268,10 +335,14 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   Widget build(BuildContext context) {
     final items = _items;
     final scans = _scans;
-    if (items == null || scans == null) return const Center(child: CircularProgressIndicator());
+    if (items == null || scans == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
     final latest = scans.where((s) => s.status == 'ready').firstOrNull;
     final busy = scans.isNotEmpty && scans.first.isBusy;
-    final failed = scans.isNotEmpty && scans.first.status == 'failed' ? scans.first : null;
+    final failed = scans.isNotEmpty && scans.first.status == 'failed'
+        ? scans.first
+        : null;
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -279,15 +350,20 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
         padding: pagePadding(context, maxWidth: 900),
         children: [
           SectionTitle(
-            'رقبا (${faDigits(items.length)})',
-            subtitle: 'قیمت، اعتمادسازی و محتوای رقبا؛ ایده‌ها در «امروز» هم می‌آیند',
+            'Competitors (${uiDigits(items.length)})',
+            subtitle:
+                'Track products, prices and content from your competitors',
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(icon: const Icon(Icons.content_paste_go), tooltip: 'افزودن گروهی', onPressed: _bulkPaste),
+                IconButton(
+                  icon: const Icon(Icons.content_paste_go),
+                  tooltip: 'Bulk add',
+                  onPressed: _bulkPaste,
+                ),
                 IconButton.filledTonal(
                   icon: const Icon(Icons.add),
-                  tooltip: 'افزودن رقیب',
+                  tooltip: 'Add competitor',
                   onPressed: () => _editCompetitor(),
                 ),
               ],
@@ -296,17 +372,21 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           if (items.isEmpty)
             EmptyState(
               icon: Icons.groups_outlined,
-              title: 'هنوز رقیبی اضافه نشده',
-              body: 'آدرس سایت یا اینستاگرام رقبا را یکجا paste کن؛ قیمت‌ها و صفحه‌هایشان خودکار بررسی می‌شود.',
+              title: 'No competitors yet',
+              body:
+                  'Paste competitor websites or Instagram profiles to review their products and pages.',
               action: Wrap(
                 spacing: 8,
                 children: [
                   FilledButton.icon(
                     onPressed: _bulkPaste,
                     icon: const Icon(Icons.content_paste_go),
-                    label: const Text('افزودن گروهی'),
+                    label: const Text('Bulk add'),
                   ),
-                  OutlinedButton(onPressed: () => _editCompetitor(), child: const Text('افزودن یکی')),
+                  OutlinedButton(
+                    onPressed: () => _editCompetitor(),
+                    child: const Text('Add one'),
+                  ),
                 ],
               ),
             ),
@@ -317,7 +397,11 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
               for (final c in items)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _CompetitorCard(c: c, onTap: () => _editCompetitor(c), onDelete: () => _deleteCompetitor(c)),
+                  child: _CompetitorCard(
+                    c: c,
+                    onTap: () => _editCompetitor(c),
+                    onDelete: () => _deleteCompetitor(c),
+                  ),
                 ),
             ],
           ),
@@ -325,22 +409,26 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           FilledButton.icon(
             onPressed: items.isEmpty || busy || _starting ? null : _startScan,
             icon: busy
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
                 : const Icon(Icons.radar),
-            label: Text(busy ? 'در حال اسکن رقبا…' : 'اسکن رقبا'),
+            label: Text(busy ? 'Scanning competitors…' : 'Scan competitors'),
           ),
           if (failed != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                'آخرین اسکن ناموفق بود: ${failed.error}',
+                'Last scan failed: ${failed.error}',
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
           if (latest == null && !busy && items.isNotEmpty)
             const Padding(
               padding: EdgeInsets.all(24),
-              child: Text('هنوز اسکنی انجام نشده.', textAlign: TextAlign.center),
+              child: Text('No scans yet.', textAlign: TextAlign.center),
             ),
           if (latest != null) ..._report(latest),
         ],
@@ -352,9 +440,11 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
     final theme = Theme.of(context);
     return [
       SectionTitle(
-        'گزارش رقبا',
+        'Competitor report',
         trailing: Text(
-          s.createdAt == null ? '' : faDigits(s.createdAt!.toLocal().toString().substring(0, 16)),
+          s.createdAt == null
+              ? ''
+              : uiDigits(s.createdAt!.toLocal().toString().substring(0, 16)),
           style: theme.textTheme.labelSmall,
         ),
       ),
@@ -363,28 +453,48 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(
             children: [
-              Icon(Icons.info_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 6),
-              const Expanded(child: Text('این اسکن به‌خاطر محدودیت زمانی ناقص است؛ بخشی از رقبا کامل بررسی نشدند.')),
+              const Expanded(
+                child: Text(
+                  'This scan is partial. Some competitors could not be fully reviewed within the time limit.',
+                ),
+              ),
             ],
           ),
         ),
       if (s.priceMatrix.isNotEmpty) ...[
-        const SectionTitle('مقایسه‌ی قیمت', subtitle: 'ارزان‌ترین فروشنده‌ی هر محصول بالای لیست است'),
+        const SectionTitle(
+          'Price comparison',
+          subtitle: 'Lowest price first for each product and duration',
+        ),
         ResponsiveGrid(
           minTile: 280,
           spacing: 10,
           children: [
-            for (final row in s.priceMatrix) _PriceCard(label: _productRowLabel(row), row: row, fmt: _fmtPrice),
+            for (final row in s.priceMatrix)
+              _PriceCard(
+                label: _productRowLabel(row),
+                row: row,
+                fmt: _fmtPrice,
+              ),
           ],
         ),
       ],
       if (s.competitors.isNotEmpty) ...[
-        const SectionTitle('پروفایل رقبا'),
-        for (final c in s.competitors) _CompetitorReportCard(c: c, positioning: '${s.positioning[c['name']] ?? ''}'),
+        const SectionTitle('Competitor profiles'),
+        for (final c in s.competitors)
+          _CompetitorReportCard(
+            c: c,
+            positioning: '${s.positioning[c['name']] ?? ''}',
+          ),
       ],
       if (s.gaps.isNotEmpty) ...[
-        const SectionTitle('خلأهای مبتنی بر داده'),
+        const SectionTitle('Findings with evidence'),
         for (final g in s.gaps)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
@@ -392,19 +502,22 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
               leading: const Icon(Icons.fact_check_outlined),
               title: Text('${g['text'] ?? ''}'),
               subtitle: Text(
-                'شواهد: ${(g['evidence'] as List? ?? const []).join('، ')}',
+                'Evidence: ${(g['evidence'] as List? ?? const []).join('، ')}',
                 style: theme.textTheme.bodySmall,
               ),
               trailing: TextButton.icon(
-                onPressed: () => widget.onUse(postType: 'educational', topic: '${g['text'] ?? ''}'),
+                onPressed: () => widget.onUse(
+                  postType: 'educational',
+                  topic: '${g['text'] ?? ''}',
+                ),
                 icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('بساز'),
+                label: const Text('Create'),
               ),
             ),
           ),
       ],
       if (s.suggestions.isNotEmpty) ...[
-        const SectionTitle('ایده‌های عمومی (بدون شاهد مستقیم)'),
+        const SectionTitle('General suggestions (not verified findings)'),
         for (final sug in s.suggestions)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
@@ -412,29 +525,36 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
               leading: const Icon(Icons.lightbulb_outline),
               title: Text(sug),
               trailing: TextButton.icon(
-                onPressed: () => widget.onUse(postType: 'educational', topic: sug),
+                onPressed: () =>
+                    widget.onUse(postType: 'educational', topic: sug),
                 icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('بساز'),
+                label: const Text('Create'),
               ),
             ),
           ),
       ],
       if (s.postIdeas.isNotEmpty) ...[
-        const SectionTitle('ایده‌های پست آماده'),
+        const SectionTitle('Content ideas'),
         for (final i in s.postIdeas)
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               title: Text('${i['topic'] ?? ''}'),
-              subtitle: Text(postTypes['${i['post_type']}'] ?? '${i['post_type']}'),
+              subtitle: Text(
+                postTypes['${i['post_type']}'] ?? '${i['post_type']}',
+              ),
               trailing: TextButton.icon(
                 onPressed: () => widget.onUse(
-                  postType: postTypes.containsKey(i['post_type']) ? '${i['post_type']}' : 'educational',
+                  postType: postTypes.containsKey(i['post_type'])
+                      ? '${i['post_type']}'
+                      : 'educational',
                   topic: '${i['topic'] ?? ''}',
-                  mode: i['mode'] == 'carousel' ? 'carousel' : (i['mode'] == 'video' ? 'video' : 'single'),
+                  mode: i['mode'] == 'carousel'
+                      ? 'carousel'
+                      : (i['mode'] == 'video' ? 'video' : 'single'),
                 ),
                 icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('بساز'),
+                label: const Text('Create'),
               ),
             ),
           ),
@@ -444,7 +564,11 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
 }
 
 class _CompetitorCard extends StatelessWidget {
-  const _CompetitorCard({required this.c, required this.onTap, required this.onDelete});
+  const _CompetitorCard({
+    required this.c,
+    required this.onTap,
+    required this.onDelete,
+  });
   final Competitor c;
   final VoidCallback onTap, onDelete;
 
@@ -453,21 +577,32 @@ class _CompetitorCard extends StatelessWidget {
     margin: const EdgeInsets.only(bottom: 8),
     child: ListTile(
       onTap: onTap,
-      leading: CircleAvatar(child: Text(c.label.characters.first.toUpperCase())),
+      leading: CircleAvatar(
+        child: Text(c.label.characters.first.toUpperCase()),
+      ),
       title: Text(c.label),
       subtitle: Row(
         children: [
           Expanded(
             child: Text(
-              [if (c.website.isNotEmpty) c.website, if (c.instagram.isNotEmpty) '@${c.instagram}'].join(' · '),
+              [
+                if (c.website.isNotEmpty) c.website,
+                if (c.instagram.isNotEmpty) '@${c.instagram}',
+              ].join(' · '),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           if (c.instagramStatus == 'verified')
-            const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.verified, size: 14)),
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Icon(Icons.verified, size: 14),
+            ),
         ],
       ),
-      trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: onDelete),
+      trailing: IconButton(
+        icon: const Icon(Icons.delete_outline),
+        onPressed: onDelete,
+      ),
     ),
   );
 }
@@ -484,7 +619,9 @@ class _CompetitorReportCard extends StatelessWidget {
     final reachable = website['ok'] == true;
     final signals = Map<String, dynamic>.from(website['signals'] as Map? ?? {});
     final ig = Map<String, dynamic>.from(c['instagram'] as Map? ?? {});
-    final discounts = [for (final d in (website['discounts'] as List? ?? const [])) '$d'];
+    final discounts = [
+      for (final d in (website['discounts'] as List? ?? const [])) '$d',
+    ];
     final igStatus = '${c['instagram_status'] ?? ''}';
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -494,12 +631,16 @@ class _CompetitorReportCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('${c['name']}', style: theme.textTheme.titleSmall),
-            if (positioning.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(positioning)),
+            if (positioning.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(positioning),
+              ),
             if (!reachable)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'سایت این رقیب در دسترس نبود؛ نمادهای اعتماد نامعلوم است',
+                  'Website unavailable. Trust signals are unknown',
                   style: theme.textTheme.bodySmall,
                 ),
               ),
@@ -509,11 +650,20 @@ class _CompetitorReportCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 if (reachable && signals['enamad'] == true)
-                  const Chip(label: Text('اینماد'), visualDensity: VisualDensity.compact),
+                  const Chip(
+                    label: Text('e-Namad'),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 if (reachable && signals['guarantee'] == true)
-                  const Chip(label: Text('گارانتی'), visualDensity: VisualDensity.compact),
+                  const Chip(
+                    label: Text('Warranty'),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 if (reachable && signals['instant_delivery'] == true)
-                  const Chip(label: Text('تحویل فوری'), visualDensity: VisualDensity.compact),
+                  const Chip(
+                    label: Text('Instant delivery'),
+                    visualDensity: VisualDensity.compact,
+                  ),
                 for (final d in discounts.take(2))
                   Chip(
                     label: Text(d, overflow: TextOverflow.ellipsis),
@@ -524,7 +674,9 @@ class _CompetitorReportCard extends StatelessWidget {
                     avatar: const Icon(Icons.camera_alt_outlined, size: 14),
                     label: Text(socialStatusLabels[igStatus] ?? igStatus),
                     visualDensity: VisualDensity.compact,
-                    backgroundColor: igStatus == 'verified' ? theme.colorScheme.primaryContainer : null,
+                    backgroundColor: igStatus == 'verified'
+                        ? theme.colorScheme.primaryContainer
+                        : null,
                   ),
               ],
             ),
@@ -532,15 +684,22 @@ class _CompetitorReportCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.camera_alt_outlined, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.camera_alt_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 6),
-                  Text('${faDigits(ig['post_frequency_30d'] ?? 0)} پست در ۳۰ روز اخیر'),
+                  Text(
+                    '${uiDigits(ig['post_frequency_30d'] ?? 0)} posts in the last 30 days',
+                  ),
                   if (ig['partial'] == true) ...[
                     const SizedBox(width: 8),
                     Chip(
-                      label: const Text('اطلاعات ناقص'),
+                      label: const Text('Partial data'),
                       visualDensity: VisualDensity.compact,
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                     ),
                   ],
                 ],
@@ -587,27 +746,44 @@ class _PriceCard extends StatelessWidget {
                         p.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w400),
+                        style: TextStyle(
+                          fontWeight: i == 0
+                              ? FontWeight.w700
+                              : FontWeight.w400,
+                        ),
                       ),
                     ),
                     if (i == 0 && prices.length > 1)
                       Container(
                         margin: const EdgeInsetsDirectional.only(end: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: scheme.primaryContainer,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text('ارزان‌ترین', style: TextStyle(fontSize: 11, color: scheme.onPrimaryContainer)),
+                        child: Text(
+                          'Lowest price',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
                       ),
                     Text(
                       fmt(p.price),
-                      style: TextStyle(fontWeight: FontWeight.w700, color: i == 0 ? scheme.primary : scheme.onSurface),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: i == 0 ? scheme.primary : scheme.onSurface,
+                      ),
                     ),
                   ],
                 ),
               ),
-            if (prices.isEmpty) Text('قیمتی پیدا نشد', style: theme.textTheme.bodySmall),
+            if (prices.isEmpty)
+              Text('No prices found', style: theme.textTheme.bodySmall),
           ],
         ),
       ),

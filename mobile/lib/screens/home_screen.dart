@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -10,14 +11,24 @@ import '../widgets/post_card.dart';
 import 'post_screen.dart';
 import 'posts_screen.dart';
 
-typedef CreateCallback = void Function({required String postType, String topic, String mode, String videoStyle});
-
-const _weekdaysFa = ['دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه', 'یکشنبه'];
+typedef CreateCallback =
+    void Function({
+      required String postType,
+      String topic,
+      String mode,
+      String videoStyle,
+    });
 
 /// Project home: what to publish today (from the weekly plan), ready ideas from market and competitor
 /// research, one-tap create, and the latest content.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.api, required this.brand, required this.onCreate, required this.onTab});
+  const HomeScreen({
+    super.key,
+    required this.api,
+    required this.brand,
+    required this.onCreate,
+    required this.onTab,
+  });
   final Api api;
   final Brand brand;
   final CreateCallback onCreate;
@@ -58,7 +69,9 @@ class HomeScreenState extends State<HomeScreen> {
         _error = null;
       });
       _poll?.cancel();
-      if (posts.any((p) => p.isBusy)) _poll = Timer(const Duration(seconds: 4), refresh);
+      if (posts.any((p) => p.isBusy)) {
+        _poll = Timer(const Duration(seconds: 4), refresh);
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -68,19 +81,23 @@ class HomeScreenState extends State<HomeScreen> {
   Future<void> _loadIdeas() async {
     final ideas = <Map<String, dynamic>>[];
     try {
-      final scan = (await widget.api.competitorScans(widget.brand.id!)).where((s) => s.status == 'ready').firstOrNull;
+      final scan = (await widget.api.competitorScans(
+        widget.brand.id!,
+      )).where((s) => s.status == 'ready').firstOrNull;
       for (final i in scan?.postIdeas ?? const <Map<String, dynamic>>[]) {
-        ideas.add({...i, 'source': 'رقبا'});
+        ideas.add({...i, 'source': 'Competitors'});
       }
     } on ApiException catch (_) {}
     try {
-      final res = (await widget.api.research(widget.brand.id!)).where((r) => r.status == 'ready').firstOrNull;
+      final res = (await widget.api.research(
+        widget.brand.id!,
+      )).where((r) => r.status == 'ready').firstOrNull;
       for (final t in res?.trends ?? const <Map<String, dynamic>>[]) {
         ideas.add({
           'topic': t['title'],
           'why': t['why_now'] ?? t['angle_for_brand'],
           'post_type': t['post_type'],
-          'source': 'ترند',
+          'source': 'Trend',
         });
       }
       for (final i in res?.ideas ?? const <Map<String, dynamic>>[]) {
@@ -90,7 +107,7 @@ class HomeScreenState extends State<HomeScreen> {
           'why': i['why'] ?? i['hook'],
           'post_type': f == 'video' ? 'video_prompt' : i['post_type'],
           if (f.isNotEmpty) 'mode': f,
-          'source': 'بازار',
+          'source': 'Research',
         });
       }
     } on ApiException catch (_) {}
@@ -116,10 +133,12 @@ class HomeScreenState extends State<HomeScreen> {
   (String, String, String) _planItem(String raw) {
     final parts = raw.split(':');
     final type = parts.first;
-    final mode = type == 'video_prompt' ? 'video' : (parts.length > 1 ? parts[1] : 'single');
+    final mode = type == 'video_prompt'
+        ? 'video'
+        : (parts.length > 1 ? parts[1] : 'single');
     final label = type == 'video_prompt'
-        ? 'پرامپت ویدیو'
-        : '${mode == 'carousel' ? 'کاروسل' : 'پست'} ${postTypes[type] ?? type}';
+        ? 'video brief'
+        : '${postTypes[type] ?? type} ${mode == 'carousel' ? 'carousel' : 'post'}';
     return (type, mode, label);
   }
 
@@ -128,9 +147,11 @@ class HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isToday = DateUtils.isSameDay(_day, DateTime.now());
-    final weekday = _day.weekday - 1; // Python convention used by the weekly plan: 0 = Monday
+    final weekday =
+        _day.weekday -
+        1; // Python convention used by the weekly plan: 0 = Monday
     final today = widget.brand.weeklyPlan['$weekday'] ?? const <String>[];
-    final dayLabel = '${_weekdaysFa[weekday]} ${jalaliLabel(_day)}';
+    final dayLabel = DateFormat('EEEE, MMM d', 'en').format(_day);
     final posts = _posts;
 
     return RefreshIndicator(
@@ -142,6 +163,33 @@ class HomeScreenState extends State<HomeScreen> {
         padding: pagePadding(context, maxWidth: 1100),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          Text('Dashboard', style: theme.textTheme.headlineSmall),
+          Text(
+            'Plan, create and review your content.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          if (posts != null) ...[
+            Row(
+              children: [
+                _SummaryCount(
+                  label: 'Needs review',
+                  value: posts.where((p) => p.status == 'ready').length,
+                ),
+                const SizedBox(width: 8),
+                _SummaryCount(
+                  label: 'Approved',
+                  value: posts.where((p) => p.status == 'approved').length,
+                ),
+                const SizedBox(width: 8),
+                _SummaryCount(
+                  label: 'In progress',
+                  value: posts.where((p) => p.isBusy).length,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
           WeekStrip(
             selected: _day,
             plan: widget.brand.weeklyPlan,
@@ -150,10 +198,12 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
           HeroCard(
-            title: isToday ? 'امروز چی منتشر کنیم؟' : 'برنامه‌ی $dayLabel',
+            title: isToday
+                ? 'What will you publish today?'
+                : 'Plan for $dayLabel',
             subtitle: today.isEmpty
-                ? '$dayLabel در برنامه‌ی هفتگی خالی است؛ یکی از ایده‌های پایین را بساز.'
-                : '$dayLabel طبق برنامه‌ی هفتگی:',
+                ? '$dayLabel has no scheduled content. Choose an idea below.'
+                : '$dayLabel in your weekly plan:',
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -163,67 +213,82 @@ class HomeScreenState extends State<HomeScreen> {
                     builder: (_) {
                       final (type, mode, label) = _planItem(raw);
                       return _HeroButton(
-                        icon: type == 'video_prompt' ? Icons.movie_creation_outlined : Icons.auto_awesome,
-                        label: 'ساخت $label',
-                        onTap: () => widget.onCreate(postType: type, mode: mode),
+                        icon: type == 'video_prompt'
+                            ? Icons.movie_creation_outlined
+                            : Icons.auto_awesome,
+                        label: 'Create $label',
+                        onTap: () =>
+                            widget.onCreate(postType: type, mode: mode),
                       );
                     },
                   ),
                 if (today.isEmpty)
                   _HeroButton(
                     icon: Icons.auto_awesome,
-                    label: 'ساخت محتوای جدید',
+                    label: 'Create content',
                     onTap: () => widget.onCreate(postType: 'educational'),
                   ),
               ],
             ),
           ),
-          const SectionTitle('ساخت سریع'),
+          const SectionTitle('Quick create'),
           ResponsiveGrid(
             minTile: 150,
             spacing: 10,
             children: [
               _QuickTile(
                 icon: Icons.crop_portrait_rounded,
-                title: 'پست تکی',
-                body: 'یک اسلاید',
-                onTap: () => widget.onCreate(postType: 'educational', mode: 'single'),
+                title: 'Single post',
+                body: 'One image',
+                onTap: () =>
+                    widget.onCreate(postType: 'educational', mode: 'single'),
               ),
               _QuickTile(
                 icon: Icons.view_carousel_outlined,
-                title: 'کاروسل',
-                body: 'چند اسلاید پشت هم',
-                onTap: () => widget.onCreate(postType: 'educational', mode: 'carousel'),
+                title: 'Carousel',
+                body: 'A story in slides',
+                onTap: () =>
+                    widget.onCreate(postType: 'educational', mode: 'carousel'),
               ),
               _QuickTile(
                 icon: Icons.movie_creation_outlined,
-                title: 'ویدیو',
-                body: 'سناریو و پرامپت شات‌ها',
-                onTap: () => widget.onCreate(postType: 'video_prompt', mode: 'video'),
+                title: 'Video',
+                body: 'Script and shot prompts',
+                onTap: () =>
+                    widget.onCreate(postType: 'video_prompt', mode: 'video'),
               ),
               _QuickTile(
                 icon: Icons.bolt_outlined,
-                title: 'از یک خبر',
-                body: 'لینک یا متن خبر را بده',
+                title: 'From news',
+                body: 'Use a link or article',
                 onTap: () => widget.onCreate(postType: 'news', mode: 'single'),
               ),
             ],
           ),
           SectionTitle(
-            'ایده‌های آماده',
-            subtitle: 'از تحلیل رقبا و بازار',
-            trailing: TextButton(onPressed: () => widget.onTab(2), child: const Text('بازار')),
+            'Content ideas',
+            subtitle: 'From research and competitors',
+            trailing: TextButton(
+              onPressed: () => widget.onTab(2),
+              child: const Text('Research'),
+            ),
           ),
           if (_ideas.isEmpty)
             EmptyState(
               icon: Icons.lightbulb_outline,
-              title: 'هنوز ایده‌ای جمع نشده',
-              body: 'یک بار «تحلیل بازار» یا «اسکن رقبا» را اجرا کن تا ایده‌های مخصوص این برند اینجا بیاید.',
+              title: 'No ideas yet',
+              body: 'Run market research to collect ideas for your business.',
               action: Wrap(
                 spacing: 8,
                 children: [
-                  OutlinedButton(onPressed: () => widget.onTab(2), child: const Text('تحلیل بازار')),
-                  OutlinedButton(onPressed: () => widget.onTab(3), child: const Text('اسکن رقبا')),
+                  OutlinedButton(
+                    onPressed: () => widget.onTab(2),
+                    child: const Text('Market research'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => widget.onTab(3),
+                    child: const Text('Scan competitors'),
+                  ),
                 ],
               ),
             )
@@ -238,8 +303,11 @@ class HomeScreenState extends State<HomeScreen> {
                     onCreate: () {
                       final type = '${idea['post_type'] ?? 'educational'}';
                       widget.onCreate(
-                        postType: postTypes.containsKey(type) ? type : 'educational',
-                        mode: '${idea['mode'] ?? (type == 'video_prompt' ? 'video' : 'single')}',
+                        postType: postTypes.containsKey(type)
+                            ? type
+                            : 'educational',
+                        mode:
+                            '${idea['mode'] ?? (type == 'video_prompt' ? 'video' : 'single')}',
                         topic: '${idea['topic']}',
                       );
                     },
@@ -247,44 +315,58 @@ class HomeScreenState extends State<HomeScreen> {
               ],
             ),
           SectionTitle(
-            'محتواهای اخیر',
+            'Recent content',
             trailing: posts == null || posts.isEmpty
                 ? null
                 : TextButton(
                     onPressed: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => PostsScreen(api: widget.api, brand: widget.brand, standalone: true),
+                          builder: (_) => PostsScreen(
+                            api: widget.api,
+                            brand: widget.brand,
+                            standalone: true,
+                          ),
                         ),
                       );
                       refresh();
                     },
-                    child: Text('همه (${faDigits(posts.length)})'),
+                    child: Text('View all (${uiDigits(posts.length)})'),
                   ),
           ),
           if (posts == null)
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator()),
+              child: Center(
+                child: _error != null
+                    ? Text(_error!)
+                    : const CircularProgressIndicator(),
+              ),
             )
           else if (posts.isEmpty)
             EmptyState(
               icon: Icons.photo_library_outlined,
-              title: 'هنوز محتوایی ساخته نشده',
-              body: 'اولین پست یا ویدیو را از «ساخت سریع» بساز.',
+              title: 'No content yet',
+              body: 'Start with a post, carousel or video brief.',
               action: FilledButton.icon(
                 onPressed: () => widget.onCreate(postType: 'educational'),
                 icon: const Icon(Icons.auto_awesome),
-                label: const Text('ساخت اولین محتوا'),
+                label: const Text('Create your first post'),
               ),
             )
           else
-            PostGrid(posts: posts.take(10).toList(), api: widget.api, onOpen: _open),
+            PostGrid(
+              posts: posts.take(10).toList(),
+              api: widget.api,
+              onOpen: _open,
+            ),
           const SizedBox(height: 8),
           if (posts != null && posts.isNotEmpty)
             Text(
-              'روی هر کارت بزن تا متن، کپشن و پرامپت‌ها را ببینی، ویرایش کنی و تأیید کنی.',
-              style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              'Open a card to review, edit and approve your content.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
         ],
@@ -294,7 +376,11 @@ class HomeScreenState extends State<HomeScreen> {
 }
 
 class _HeroButton extends StatelessWidget {
-  const _HeroButton({required this.icon, required this.label, required this.onTap});
+  const _HeroButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
   final IconData icon;
   final String label;
   final VoidCallback onTap;
@@ -315,7 +401,10 @@ class _HeroButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -325,7 +414,12 @@ class _HeroButton extends StatelessWidget {
 }
 
 class _QuickTile extends StatelessWidget {
-  const _QuickTile({required this.icon, required this.title, required this.body, required this.onTap});
+  const _QuickTile({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
   final IconData icon;
   final String title, body;
   final VoidCallback onTap;
@@ -383,11 +477,13 @@ class _IdeaCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                TypeBadge(type, label: type == 'video_prompt' ? 'ویدیو' : null),
+                TypeBadge(type, label: type == 'video_prompt' ? 'Video' : null),
                 const SizedBox(width: 6),
                 Text(
-                  'از ${idea['source']}',
-                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  'From ${idea['source']}',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -395,7 +491,12 @@ class _IdeaCard extends StatelessWidget {
             Text('${idea['topic']}', style: theme.textTheme.titleSmall),
             if (why.isNotEmpty && why != 'null') ...[
               const SizedBox(height: 2),
-              Text(why, maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+              Text(
+                why,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall,
+              ),
             ],
             const SizedBox(height: 8),
             Align(
@@ -404,7 +505,7 @@ class _IdeaCard extends StatelessWidget {
                 onPressed: onCreate,
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 38)),
                 icon: const Icon(Icons.auto_awesome, size: 17),
-                label: const Text('بساز'),
+                label: const Text('Create'),
               ),
             ),
           ],
@@ -414,7 +515,15 @@ class _IdeaCard extends StatelessWidget {
   }
 }
 
-const _dayLetters = ['د', 'س', 'چ', 'پ', 'ج', 'ش', 'ی']; // Monday first, like DateTime.weekday - 1
+const _dayLetters = [
+  'M',
+  'T',
+  'W',
+  'T',
+  'F',
+  'S',
+  'S',
+]; // Monday first, like DateTime.weekday - 1
 const _jalaliMonths = [
   'فروردین',
   'اردیبهشت',
@@ -435,7 +544,14 @@ const _jalaliMonths = [
   const gdm = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
   var gy = g.year;
   final gy2 = g.month > 2 ? gy + 1 : gy;
-  var days = 355666 + 365 * gy + (gy2 + 3) ~/ 4 - (gy2 + 99) ~/ 100 + (gy2 + 399) ~/ 400 + g.day + gdm[g.month - 1];
+  var days =
+      355666 +
+      365 * gy +
+      (gy2 + 3) ~/ 4 -
+      (gy2 + 99) ~/ 100 +
+      (gy2 + 399) ~/ 400 +
+      g.day +
+      gdm[g.month - 1];
   var jy = -1595 + 33 * (days ~/ 12053);
   days %= 12053;
   jy += 4 * (days ~/ 1461);
@@ -451,13 +567,19 @@ const _jalaliMonths = [
 
 String jalaliLabel(DateTime d) {
   final (_, m, day) = toJalali(d);
-  return '${faDigits(day)} ${_jalaliMonths[m - 1]}';
+  return '${uiDigits(day)} ${_jalaliMonths[m - 1]}';
 }
 
 /// This week (Saturday → Friday) as a strip of days: today in the reference's green badge, dots for the
 /// planned posts and a count of content already made for that day.
 class WeekStrip extends StatelessWidget {
-  const WeekStrip({super.key, required this.selected, required this.plan, required this.posts, required this.onSelect});
+  const WeekStrip({
+    super.key,
+    required this.selected,
+    required this.plan,
+    required this.posts,
+    required this.onSelect,
+  });
   final DateTime selected;
   final Map<String, List<String>> plan;
   final List<Post> posts;
@@ -468,8 +590,9 @@ class WeekStrip extends StatelessWidget {
     final today = DateUtils.dateOnly(DateTime.now());
     final saturday = today.subtract(Duration(days: (today.weekday + 1) % 7));
     final days = [for (var i = 0; i < 7; i++) saturday.add(Duration(days: i))];
-    String iso(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-    final (_, month, _) = toJalali(selected);
+    String iso(DateTime d) =>
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
       decoration: BoxDecoration(
@@ -483,9 +606,15 @@ class WeekStrip extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(6, 0, 6, 8),
             child: Row(
               children: [
-                Text('این هفته', style: Theme.of(context).textTheme.titleSmall),
+                Text(
+                  'This week',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
                 const Spacer(),
-                Text(_jalaliMonths[month - 1], style: Theme.of(context).textTheme.labelMedium),
+                Text(
+                  DateFormat('MMM yyyy', 'en').format(selected),
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
               ],
             ),
           ),
@@ -495,7 +624,7 @@ class WeekStrip extends StatelessWidget {
                 Expanded(
                   child: _DayCell(
                     letter: _dayLetters[d.weekday - 1],
-                    day: toJalali(d).$3,
+                    day: d.day,
                     planned: (plan['${d.weekday - 1}'] ?? const []).length,
                     made: posts.where((p) => p.forDate == iso(d)).length,
                     isToday: d == today,
@@ -537,13 +666,19 @@ class _DayCell extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: selected ? PColors.heroGradient : null,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: selected ? PColors.mintStrong : Colors.transparent),
+        border: Border.all(
+          color: selected ? PColors.mintStrong : Colors.transparent,
+        ),
       ),
       child: Column(
         children: [
           Text(
             letter,
-            style: const TextStyle(fontSize: 11.5, color: PColors.muted, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              fontSize: 11.5,
+              color: PColors.muted,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 4),
           Container(
@@ -555,7 +690,7 @@ class _DayCell extends StatelessWidget {
               borderRadius: BorderRadius.circular(7),
             ),
             child: Text(
-              faDigits(day),
+              uiDigits(day),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
@@ -582,6 +717,33 @@ class _DayCell extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SummaryCount extends StatelessWidget {
+  const _SummaryCount({required this.label, required this.value});
+  final String label;
+  final int value;
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: PColors.line),
+      ),
+      child: Column(
+        children: [
+          Text('$value', style: Theme.of(context).textTheme.headlineSmall),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall,
           ),
         ],
       ),

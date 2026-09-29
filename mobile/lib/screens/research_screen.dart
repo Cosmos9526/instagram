@@ -8,11 +8,22 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
-typedef UseIdea = void Function({required String postType, String topic, String mode, String videoStyle});
+typedef UseIdea =
+    void Function({
+      required String postType,
+      String topic,
+      String mode,
+      String videoStyle,
+    });
 
 /// Market research: what's said online, trends, keywords, most-viewed videos and working video styles.
 class ResearchScreen extends StatefulWidget {
-  const ResearchScreen({super.key, required this.api, required this.brand, required this.onUse});
+  const ResearchScreen({
+    super.key,
+    required this.api,
+    required this.brand,
+    required this.onUse,
+  });
   final Api api;
   final Brand brand;
   final UseIdea onUse;
@@ -61,7 +72,10 @@ class _ResearchScreenState extends State<ResearchScreen> {
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
-        showSnack(context, e.status == 409 ? 'یک تحقیق در حال انجام است' : e.message);
+        showSnack(
+          context,
+          e.status == 409 ? 'Research is already in progress' : e.message,
+        );
       }
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -74,7 +88,9 @@ class _ResearchScreenState extends State<ResearchScreen> {
     if (items == null) return const Center(child: CircularProgressIndicator());
     final latest = items.where((r) => r.status == 'ready').firstOrNull;
     final busy = items.isNotEmpty && items.first.isBusy;
-    final failed = items.isNotEmpty && items.first.status == 'failed' ? items.first : null;
+    final failed = items.isNotEmpty && items.first.status == 'failed'
+        ? items.first
+        : null;
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -87,27 +103,36 @@ class _ResearchScreenState extends State<ResearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('تحقیق بازار', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Market research',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 6),
                   const Text(
-                    'جست‌وجو در اینترنت درباره‌ی کسب‌وکار و محصولاتت، ترندهای این هفته، کلمات کلیدی، '
-                    'پربازدیدترین ویدیوها و سبک‌هایی که الان جواب می‌دهند. هر سه روز خودکار تکرار می‌شود.',
+                    'Find relevant news, topics, keywords, '
+                    'and content references for your business. Research refreshes with your daily plan.',
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _focus,
                     decoration: const InputDecoration(
-                      labelText: 'تمرکز (اختیاری)',
-                      hintText: 'مثلاً یک محصول خاص یا یک سؤال',
+                      labelText: 'Focus (optional)',
+                      hintText: 'A specific product or question',
                     ),
                   ),
                   const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: busy || _starting ? null : _start,
                     icon: busy
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
                         : const Icon(Icons.travel_explore),
-                    label: Text(busy ? 'در حال تحقیق… (۱ تا ۳ دقیقه)' : 'شروع تحقیق جدید'),
+                    label: Text(
+                      busy ? 'Researching… (1–3 minutes)' : 'Start research',
+                    ),
                   ),
                 ],
               ),
@@ -117,7 +142,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                'آخرین تحقیق ناموفق بود: ${failed.error}',
+                'Last research failed: ${failed.error}',
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
@@ -126,7 +151,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
           if (latest == null && !busy)
             const Padding(
               padding: EdgeInsets.all(24),
-              child: Text('هنوز تحقیقی انجام نشده.', textAlign: TextAlign.center),
+              child: Text('No research yet.', textAlign: TextAlign.center),
             ),
           if (latest != null) ..._report(latest),
         ],
@@ -138,26 +163,29 @@ class _ResearchScreenState extends State<ResearchScreen> {
     final theme = Theme.of(context);
     final ran = r.ran;
     String label(String k, String v) => switch ((k, v)) {
-      ('web', 'web') => 'جست‌وجوی وب (گوگل)',
-      ('web', 'search') => 'جست‌وجوی وب و خبر',
-      ('web', 'search_only') => 'جست‌وجوی وب (بدون خلاصه‌ی هوش مصنوعی)',
-      ('web', 'model_only') => 'بدون دسترسی وب',
-      ('web', 'fake') => 'نمونه',
-      ('instagram_search', _) => 'اینستاگرام: ${v.replaceAll('posts', 'پست')}',
-      ('instagram_pages', _) => 'پیج‌های اینستاگرام: ${v == 'blocked' ? 'مسدود' : v.replaceAll('posts', 'پست')}',
-      ('google_trends', 'ok') => 'ترندهای گوگل',
-      ('google_trends', _) => 'ترندهای گوگل: بی‌نتیجه',
-      ('youtube', 'ok') => 'ویدیوها و یوتیوب',
-      ('youtube_api', _) => 'یوتیوب (API)',
-      (_, 'error') => '$k: خطا',
-      (_, 'off') => '$k: غیرفعال',
+      ('web', 'web') => 'Web search (Google)',
+      ('web', 'search') => 'Web and news search',
+      ('web', 'search_only') => 'Web search (without AI summary)',
+      ('web', 'model_only') => 'No web access',
+      ('web', 'fake') => 'Sample',
+      ('instagram_search', _) => 'Instagram: ${v.replaceAll('posts', 'Post')}',
+      ('instagram_pages', _) =>
+        'Instagram profiles: ${v == 'blocked' ? 'Blocked' : v.replaceAll('posts', 'Post')}',
+      ('google_trends', 'ok') => 'Google Trends',
+      ('google_trends', _) => 'Google Trends: no results',
+      ('youtube', 'ok') => 'YouTube videos',
+      ('youtube_api', _) => 'YouTube (API)',
+      (_, 'error') => '$k: Error',
+      (_, 'off') => '$k: Off',
       _ => '$k: $v',
     };
     return [
       SectionTitle(
-        'خلاصه',
+        'Summary',
         trailing: Text(
-          r.createdAt == null ? '' : faDigits(r.createdAt!.toLocal().toString().substring(0, 16)),
+          r.createdAt == null
+              ? ''
+              : uiDigits(r.createdAt!.toLocal().toString().substring(0, 16)),
           style: theme.textTheme.labelSmall,
         ),
       ),
@@ -169,38 +197,49 @@ class _ResearchScreenState extends State<ResearchScreen> {
             Chip(
               visualDensity: VisualDensity.compact,
               avatar: Icon(
-                e.value == 'ok' || e.value == 'web' ? Icons.check_circle : Icons.remove_circle_outline,
+                e.value == 'ok' || e.value == 'web'
+                    ? Icons.check_circle
+                    : Icons.remove_circle_outline,
                 size: 16,
               ),
-              label: Text(label(e.key, '${e.value}'), style: const TextStyle(fontSize: 12)),
+              label: Text(
+                label(e.key, '${e.value}'),
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
         ],
       ),
       const SizedBox(height: 8),
       SelectableText(r.summary),
       if (r.trends.isNotEmpty) ...[
-        const SectionTitle('ترندهای قابل استفاده'),
+        const SectionTitle('Topics to explore'),
         for (final t in r.trends)
           _IdeaCard(
             title: '${t['title'] ?? ''}',
-            lines: ['${t['why_now'] ?? ''}', 'زاویه‌ی ما: ${t['angle_for_brand'] ?? ''}'],
-            action: 'ساخت پست',
+            lines: [
+              '${t['why_now'] ?? ''}',
+              'Your angle: ${t['angle_for_brand'] ?? ''}',
+            ],
+            action: 'Create post',
             onTap: () => widget.onUse(
-              postType: postTypes.containsKey(t['post_type']) ? '${t['post_type']}' : 'news',
+              postType: postTypes.containsKey(t['post_type'])
+                  ? '${t['post_type']}'
+                  : 'news',
               topic: '${t['title']} — ${t['angle_for_brand'] ?? ''}',
             ),
           ),
       ],
       if (r.videoStyles.isNotEmpty) ...[
-        const SectionTitle('سبک ویدیوهایی که الان جواب می‌دهند'),
+        const SectionTitle('Video style references'),
         for (final s in r.videoStyles)
           _IdeaCard(
             title: '${s['pattern'] ?? ''}',
             lines: [
               '${s['why_it_works'] ?? ''}',
-              if ('${s['hook_example'] ?? ''}'.isNotEmpty) 'قلاب پیشنهادی: ${s['hook_example']}',
+              if ('${s['hook_example'] ?? ''}'.isNotEmpty)
+                'Suggested hook: ${s['hook_example']}',
             ],
-            action: 'پرامپت ویدیو با این سبک',
+            action: 'Use this video style',
             onTap: () => widget.onUse(
               postType: 'video_prompt',
               topic: '${s['hook_example'] ?? s['pattern'] ?? ''}',
@@ -209,95 +248,133 @@ class _ResearchScreenState extends State<ResearchScreen> {
           ),
       ],
       if (r.instagramPosts.isNotEmpty) ...[
-        SectionTitle('پربازدیدترین پست‌های اینستاگرام (۳ روز اخیر، ${faDigits(r.instagramPosts.length)} پست)'),
+        SectionTitle(
+          'Instagram search results (last 3 days, ${uiDigits(r.instagramPosts.length)} Post)',
+        ),
         for (final v in r.instagramPosts.take(20))
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(v['type'] == 'video' ? Icons.movie_outlined : Icons.photo_outlined),
+            leading: Icon(
+              v['type'] == 'video'
+                  ? Icons.movie_outlined
+                  : Icons.photo_outlined,
+            ),
             title: Text(
-              '${v['title']}'.isEmpty ? '(بدون کپشن)' : '${v['title']}',
+              '${v['title']}'.isEmpty ? '(No caption)' : '${v['title']}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
-              '@${v['channel']}، ${faDigits(_compact(v['likes']))} لایک'
-              '${(v['views'] ?? 0) != 0 ? '، ${faDigits(_compact(v['views']))} بازدید' : ''}، ${faDigits(_compact(v['comments']))} کامنت',
+              '@${v['channel']}، ${uiDigits(_compact(v['likes']))} likes'
+              '${(v['views'] ?? 0) != 0 ? '، ${uiDigits(_compact(v['views']))} views' : ''}، ${uiDigits(_compact(v['comments']))} comments',
             ),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () => _open('${v['url']}'),
           ),
       ],
       if (r.topVideos.isNotEmpty) ...[
-        const SectionTitle('پربازدیدترین ویدیوهای اخیر'),
+        const SectionTitle('Recent video references'),
         for (final v in r.topVideos)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Icon(v['platform'] == 'instagram' ? Icons.camera_alt_outlined : Icons.smart_display_outlined),
-            title: Text('${v['title']}', maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text('${v['channel'] ?? ''}، ${faDigits(_compact(v['views']))} بازدید'),
+            leading: Icon(
+              v['platform'] == 'instagram'
+                  ? Icons.camera_alt_outlined
+                  : Icons.smart_display_outlined,
+            ),
+            title: Text(
+              '${v['title']}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              '${v['channel'] ?? ''}، ${uiDigits(_compact(v['views']))} views',
+            ),
             trailing: const Icon(Icons.open_in_new, size: 18),
             onTap: () => _open('${v['url']}'),
           ),
       ],
       if (r.keywords.isNotEmpty)
         SectionTitle(
-          'کلمات کلیدی',
-          trailing: IconButton(icon: const Icon(Icons.copy), onPressed: () => copyText(context, r.keywords.join('، '))),
-        ),
-      Wrap(spacing: 6, runSpacing: 6, children: [for (final k in r.keywords) Chip(label: Text(k))]),
-      if (r.hashtags.isNotEmpty)
-        SectionTitle(
-          'هشتگ‌ها',
+          'Keywords',
           trailing: IconButton(
             icon: const Icon(Icons.copy),
-            onPressed: () => copyText(context, r.hashtags.map((h) => '#$h').join(' ')),
+            onPressed: () => copyText(context, r.keywords.join('، ')),
           ),
         ),
-      Wrap(spacing: 6, runSpacing: 6, children: [for (final h in r.hashtags) Chip(label: Text('#$h'))]),
+      Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [for (final k in r.keywords) Chip(label: Text(k))],
+      ),
+      if (r.hashtags.isNotEmpty)
+        SectionTitle(
+          'Hashtags',
+          trailing: IconButton(
+            icon: const Icon(Icons.copy),
+            onPressed: () =>
+                copyText(context, r.hashtags.map((h) => '#$h').join(' ')),
+          ),
+        ),
+      Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [for (final h in r.hashtags) Chip(label: Text('#$h'))],
+      ),
       if (r.ideas.isNotEmpty) ...[
-        const SectionTitle('ایده‌های محتوا'),
+        const SectionTitle('Content ideas'),
         for (final i in r.ideas)
           _IdeaCard(
             title: '${i['title'] ?? ''}',
             lines: [
               '${postTypes[i['post_type']] ?? ''}، ${i['format'] == 'carousel'
-                  ? 'کاروسل'
+                  ? 'Carousel'
                   : i['format'] == 'video'
-                  ? 'ویدیو'
-                  : 'تک‌اسلاید'}',
+                  ? 'Video'
+                  : 'Single slide'}',
             ],
-            action: 'بساز',
+            action: 'Create',
             onTap: () => widget.onUse(
               postType: i['format'] == 'video'
                   ? 'video_prompt'
-                  : (postTypes.containsKey(i['post_type']) ? '${i['post_type']}' : 'educational'),
+                  : (postTypes.containsKey(i['post_type'])
+                        ? '${i['post_type']}'
+                        : 'educational'),
               topic: '${i['title']}',
               mode: i['format'] == 'carousel' ? 'carousel' : 'single',
             ),
           ),
       ],
       if (r.competitors.isNotEmpty) ...[
-        const SectionTitle('رقبا'),
+        const SectionTitle('Competitors'),
         for (final c in r.competitors)
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text('${c['name']}'),
-            subtitle: Text('${c['what_they_post'] ?? ''}\nفرصت ما: ${c['gap_we_can_fill'] ?? ''}'),
+            subtitle: Text(
+              '${c['what_they_post'] ?? ''}\nYour opportunity: ${c['gap_we_can_fill'] ?? ''}',
+            ),
           ),
       ],
       if (r.facts.isNotEmpty || r.interests.isNotEmpty) ...[
-        const SectionTitle('درباره‌ی کسب‌وکار و مخاطب'),
+        const SectionTitle('Business and audience'),
         for (final f in [...r.facts, ...r.interests])
-          Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('• $f')),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text('• $f'),
+          ),
       ],
       if (r.sources.isNotEmpty) ...[
-        const SectionTitle('منابع'),
+        const SectionTitle('Sources'),
         for (final s in r.sources.take(12))
           InkWell(
             onTap: () => _open('${s['url']}'),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('${s['title']}', style: TextStyle(color: theme.colorScheme.primary)),
+              child: Text(
+                '${s['title']}',
+                style: TextStyle(color: theme.colorScheme.primary),
+              ),
             ),
           ),
       ],
@@ -313,14 +390,20 @@ class _ResearchScreenState extends State<ResearchScreen> {
 
   Future<void> _open(String url) async {
     final uri = Uri.tryParse(url);
-    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) copyText(context, url, label: 'لینک کپی شد');
+    if (uri == null ||
+        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) copyText(context, url, label: 'Link copied');
     }
   }
 }
 
 class _IdeaCard extends StatelessWidget {
-  const _IdeaCard({required this.title, required this.lines, required this.action, required this.onTap});
+  const _IdeaCard({
+    required this.title,
+    required this.lines,
+    required this.action,
+    required this.onTap,
+  });
   final String title, action;
   final List<String> lines;
   final VoidCallback onTap;

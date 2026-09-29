@@ -12,7 +12,12 @@ import 'post_screen.dart';
 /// Content library: every post of the project as a visual grid, filterable by status.
 /// Polls while posts are being built.
 class PostsScreen extends StatefulWidget {
-  const PostsScreen({super.key, required this.api, required this.brand, this.standalone = false});
+  const PostsScreen({
+    super.key,
+    required this.api,
+    required this.brand,
+    this.standalone = false,
+  });
   final Api api;
   final Brand brand;
 
@@ -29,7 +34,12 @@ class PostsScreenState extends State<PostsScreen> {
   Timer? _poll;
   String _filter = 'all';
 
-  static const _filters = {'all': 'همه', 'ready': 'منتظر تأیید', 'approved': 'تأیید شده', 'failed': 'ناموفق'};
+  static const _filters = {
+    'all': 'View all',
+    'ready': 'Needs review',
+    'approved': 'Approved',
+    'failed': 'Failed',
+  };
 
   @override
   void initState() {
@@ -81,15 +91,29 @@ class PostsScreenState extends State<PostsScreen> {
   Widget _body() {
     final posts = _posts;
     if (posts == null) {
-      return Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator());
+      return Center(
+        child: _error != null
+            ? Text(_error!)
+            : const CircularProgressIndicator(),
+      );
     }
     final shown = _filter == 'all'
         ? posts
-        : posts.where((p) => p.status == _filter || (_filter == 'failed' && p.status == 'rejected')).toList();
+        : posts
+              .where(
+                (p) =>
+                    p.status == _filter ||
+                    (_filter == 'failed' && p.status == 'rejected'),
+              )
+              .toList();
     return RefreshIndicator(
       onRefresh: refresh,
       child: ListView(
-        padding: pagePadding(context, maxWidth: 1100, bottom: widget.standalone ? 32 : 110),
+        padding: pagePadding(
+          context,
+          maxWidth: 1100,
+          bottom: widget.standalone ? 32 : 110,
+        ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SingleChildScrollView(
@@ -101,7 +125,7 @@ class PostsScreenState extends State<PostsScreen> {
                     padding: const EdgeInsetsDirectional.only(end: 8),
                     child: ChoiceChip(
                       label: Text(
-                        '${e.value} ${faDigits(e.key == 'all' ? posts.length : posts.where((p) => p.status == e.key).length)}',
+                        '${e.value} ${uiDigits(e.key == 'all' ? posts.length : posts.where((p) => p.status == e.key).length)}',
                       ),
                       selected: _filter == e.key,
                       showCheckmark: false,
@@ -115,8 +139,9 @@ class PostsScreenState extends State<PostsScreen> {
           if (shown.isEmpty)
             const EmptyState(
               icon: Icons.photo_library_outlined,
-              title: 'چیزی اینجا نیست',
-              body: 'از «ساخت» یک محتوا بساز؛ برنامه‌ی هفتگی هم هر صبح محتوای جدید آماده می‌کند.',
+              title: 'No content here yet',
+              body:
+                  'Create your first post or set a weekly plan to prepare content each morning.',
             )
           else
             PostGrid(posts: shown, api: widget.api, onOpen: _open),
@@ -128,7 +153,7 @@ class PostsScreenState extends State<PostsScreen> {
   @override
   Widget build(BuildContext context) => widget.standalone
       ? Scaffold(
-          appBar: AppBar(title: const Text('همه‌ی محتواها')),
+          appBar: AppBar(title: const Text('Content library')),
           body: _body(),
         )
       : _body();

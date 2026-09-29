@@ -21,7 +21,9 @@ class ChoiceField extends StatelessWidget {
 
   void _toggle(String v) {
     if (multi) {
-      onChanged(values.contains(v) ? (values.toList()..remove(v)) : [...values, v]);
+      onChanged(
+        values.contains(v) ? (values.toList()..remove(v)) : [...values, v],
+      );
     } else {
       onChanged(values.contains(v) ? [] : [v]);
     }
@@ -36,12 +38,18 @@ class ChoiceField extends StatelessWidget {
         content: TextField(
           controller: ctrl,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'بنویسید…'),
+          decoration: const InputDecoration(hintText: 'Type here…'),
           onSubmitted: (v) => Navigator.pop(ctx, v),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, ctrl.text), child: const Text('افزودن')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text),
+            child: const Text('Add'),
+          ),
         ],
       ),
     );
@@ -72,14 +80,14 @@ class ChoiceField extends StatelessWidget {
             children: [
               for (final o in [...options, ...custom])
                 FilterChip(
-                  label: Text(o),
+                  label: Text(choiceLabel(o)),
                   selected: values.contains(o),
                   showCheckmark: multi,
                   onSelected: (_) => _toggle(o),
                 ),
               ActionChip(
                 avatar: const Icon(Icons.add, size: 18),
-                label: const Text('مورد دیگر'),
+                label: const Text('Other'),
                 onPressed: () => _addCustom(context),
               ),
             ],
@@ -125,7 +133,17 @@ const audienceOptions = [
   'مشتری‌های لوکس',
   'مشتری‌های اقتصادی',
 ];
-const toneOptions = ['صمیمی', 'رسمی', 'شوخ‌طبع', 'الهام‌بخش', 'تخصصی', 'لوکس', 'پرانرژی', 'آرام', 'آموزشی'];
+const toneOptions = [
+  'صمیمی',
+  'رسمی',
+  'شوخ‌طبع',
+  'الهام‌بخش',
+  'تخصصی',
+  'لوکس',
+  'پرانرژی',
+  'آرام',
+  'آموزشی',
+];
 const ctaOptions = [
   'برای سفارش دایرکت بدید',
   'لینک خرید در بیو',
@@ -147,4 +165,69 @@ const forbiddenOptions = [
   'قمار',
 ];
 
-List<String> splitList(String s) => s.split(RegExp('[،,]')).map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+List<String> splitList(String s) => s
+    .split(RegExp('[،,]'))
+    .map((e) => e.trim())
+    .where((e) => e.isNotEmpty)
+    .toList();
+
+// Translate option labels without rewriting stored brand values or Persian CTAs.
+const _choiceLabels = <String, String>{
+  "کافه و رستوران": "Cafe and restaurant",
+  "فروشگاه آنلاین": "Online store",
+  "زیبایی و آرایشی": "Beauty",
+  "مد و پوشاک": "Fashion",
+  "آموزش و دوره": "Education",
+  "سلامت و پزشکی": "Health and wellness",
+  "املاک": "Real estate",
+  "فناوری و نرم‌افزار": "Technology and software",
+  "هوش مصنوعی": "Artificial intelligence",
+  "گردشگری": "Travel",
+  "ورزش و تناسب اندام": "Fitness",
+  "خدمات مالی": "Financial services",
+  "هنر و صنایع دستی": "Arts and crafts",
+  "خودرو": "Automotive",
+  "خدمات حقوقی": "Legal services",
+  "مواد غذایی": "Food",
+  "نوجوان‌ها (۱۳ تا ۱۷)": "Teens (13\u201317)",
+  "جوان‌ها (۱۸ تا ۲۴)": "Young adults (18\u201324)",
+  "۲۵ تا ۳۴ ساله‌ها": "Ages 25\u201334",
+  "۳۵ تا ۴۴ ساله‌ها": "Ages 35\u201344",
+  "۴۵ سال به بالا": "Ages 45+",
+  "خانم‌ها": "Women",
+  "آقایان": "Men",
+  "دانشجوها": "Students",
+  "کارمندها": "Employees",
+  "صاحبان کسب‌وکار": "Business owners",
+  "والدین": "Parents",
+  "برنامه‌نویس‌ها": "Developers",
+  "علاقه‌مندان تکنولوژی": "Tech enthusiasts",
+  "مشتری‌های لوکس": "Premium customers",
+  "مشتری‌های اقتصادی": "Budget-conscious customers",
+  "صمیمی": "Friendly",
+  "رسمی": "Formal",
+  "شوخ‌طبع": "Humorous",
+  "الهام‌بخش": "Inspiring",
+  "تخصصی": "Expert",
+  "لوکس": "Premium",
+  "پرانرژی": "Energetic",
+  "آرام": "Calm",
+  "آموزشی": "Educational",
+  "برای سفارش دایرکت بدید": "Message us to order",
+  "لینک خرید در بیو": "Shop through the link in bio",
+  "همین حالا تماس بگیرید": "Call us today",
+  "برای مشاوره‌ی رایگان پیام بدید": "Message us for a free consultation",
+  "پست رو ذخیره کن": "Save this post",
+  "برای دوستت بفرست": "Share with a friend",
+  "نظرت رو کامنت کن": "Leave a comment",
+  "سیاست": "Politics",
+  "مذهب": "Religion",
+  "رقبا": "Competitors",
+  "اعلام قیمت": "Prices",
+  "شایعات": "Rumors",
+  "ادعای پزشکی": "Medical claims",
+  "محتوای بزرگسال": "Adult content",
+  "الکل و دخانیات": "Alcohol and tobacco",
+  "قمار": "Gambling",
+};
+String choiceLabel(String value) => _choiceLabels[value] ?? value;
