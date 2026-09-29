@@ -91,6 +91,9 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
         full_prompt = package.visual_style + '\n\n' + frame.prompt
         if video and i == 0:
             full_prompt = ('REFERENCE LOCK: Use the supplied adult male and female references. Do not invent or change their identities, clothes or voices. References are required before production.\n\n' + full_prompt)
+        full_prompt += '\n\nFINAL PRODUCTION RULE: Any typography or logo placement mentioned above describes empty reserved layout only. Do not synthesize letters, numbers, logos or watermarks. Add the exact separate on-screen copy and supplied logo in editing.'
+        if video:
+            full_prompt += ('\nDuration: exactly 8 seconds. Speak ONLY this dialogue in natural Persian with speaker turn-taking and matching lip-sync: ' + frame.dialogue) if i == 0 else '\nHold this static end card for exactly 2 seconds in the edit, from 8 to 10 seconds. No speech.'
         blocks.append({'label': label + ' — prompt', 'text': norm(full_prompt)})
         if frame.dialogue:
             blocks.append({'label': label + ' — Persian dialogue', 'text': norm(frame.dialogue)})
