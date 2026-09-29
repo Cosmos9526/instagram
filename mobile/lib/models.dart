@@ -400,7 +400,7 @@ class GenerateRequest {
     this.template = '',
     this.videoStyle = '',
     this.nBody = 4,
-    this.targetSeconds = 24,
+    this.targetSeconds = 10,
   });
 
   String postType, mode, topicHint, template, videoStyle;

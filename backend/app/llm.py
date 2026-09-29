@@ -28,7 +28,10 @@ def _post(url: str, headers: dict, body: dict) -> dict:
     resp = httpx.post(url, headers=headers, json=body, timeout=120)
     if resp.status_code >= 400:
         raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:300]}")
-    return extract_json(resp.json()["choices"][0]["message"]["content"])
+    choice = resp.json()["choices"][0]
+    if choice.get("finish_reason") == "length":
+        raise LLMError("Model response was truncated; no incomplete package was saved")
+    return extract_json(choice["message"]["content"])
 
 
 def chat_json(system: str, user: str, temperature: float = 0.8) -> dict:
@@ -44,14 +47,15 @@ def chat_json(system: str, user: str, temperature: float = 0.8) -> dict:
             return _post(
                 settings.llm_base_url.rstrip("/") + "/chat/completions",
                 {"Authorization": f"Bearer {settings.llm_api_key}"},
-                {"model": settings.llm_model, "temperature": temperature,
+                {"model": settings.llm_model, "temperature": temperature, "max_tokens": 6000,
                  "response_format": {"type": "json_object"}, "messages": messages},
             )
         except Exception as e:  # noqa: BLE001
             errors.append(f"primary: {e}")
     if settings.llm_fallback_url:
         try:
-            return _post(settings.llm_fallback_url, {}, {"model": settings.llm_fallback_model, "messages": messages})
+            return _post(settings.llm_fallback_url, {}, {"model": settings.llm_fallback_model, "messages": messages, "temperature": temperature,
+                         "max_tokens": 6000, "reasoning_effort": "low", "response_format": {"type": "json_object"}})
         except Exception as e:  # noqa: BLE001
             errors.append(f"fallback: {e}")
     raise LLMError(" | ".join(errors) or "no text model configured")

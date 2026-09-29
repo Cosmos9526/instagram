@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     secret_key: str = "dev-secret-change-me"  # signs login tokens
     allow_signup: bool = True
 
+    prompt_only: bool = True  # Never generate images or render slides for new posts.
+
     # Text model: any OpenAI-compatible chat endpoint (your gateway, or Gemini's
     # https://generativelanguage.googleapis.com/v1beta/openai/).
     llm_provider: str = "openai_compat"  # openai_compat | fake

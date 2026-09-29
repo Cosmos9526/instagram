@@ -86,6 +86,11 @@ def _image(post: Post, prompt: str) -> str | None:
 
 def run_post(db: Session, post: Post) -> None:
     brand = db.get(Brand, post.brand_id)
+    if settings.prompt_only:
+        from .prompt_package import generate_package
+        post.content = generate_package(brand, post)
+        post.slides = []
+        return
     sys = prompts.system_prompt(brand)
     recent = recent_headlines(db, brand.id)
     res = latest_research(db, brand.id)
@@ -174,6 +179,9 @@ def _keep_inputs(opts: dict, data: dict) -> None:
 
 def rerender(db: Session, post: Post) -> None:
     """After the user edits text in the panel: re-render only, no model calls."""
+    if post.content.get("output_kind") == "prompt_package":
+        post.slides = []
+        return
     brand = db.get(Brand, post.brand_id)
     c = post.content
     img = _media(post) / "image.png"

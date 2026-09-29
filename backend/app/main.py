@@ -300,7 +300,7 @@ class GenerateIn(BaseModel):
     template: str = ""  # single mode: a template code from /catalog; empty = automatic rotation
     video_style: str = ""  # video_prompt: a style id from /catalog
     n_body: int = Field(4, ge=2, le=8)
-    target_seconds: int = Field(24, ge=10, le=40)
+    target_seconds: int = Field(10, ge=10, le=40)
 
 
 class PostEdit(BaseModel):
@@ -367,7 +367,7 @@ def edit_post(post_id: str, body: PostEdit, user: User = Depends(current_user), 
     if p.status not in ("ready", "approved"):
         raise HTTPException(409, "post is not ready yet")
     p.content = body.content
-    if p.mode != "video":
+    if p.mode != "video" and p.content.get("output_kind") != "prompt_package":
         p.status = "queued"
         enqueue(db, p, kind="rerender")
     db.commit()
