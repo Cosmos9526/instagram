@@ -42,7 +42,7 @@ class _ServerScreenState extends State<ServerScreen> {
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text('Enter your Content Studio server address.'),
+        const Text('Enter your Postyar server address.'),
         const SizedBox(height: 16),
         TextField(
           controller: _url,

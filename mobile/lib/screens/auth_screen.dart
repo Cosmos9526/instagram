@@ -245,7 +245,7 @@ class _BrandPanel extends StatelessWidget {
           ),
           SizedBox(height: compact ? 14 : 28),
           Text(
-            'Content Studio',
+            'Postyar',
             style: TextStyle(
               color: Colors.white,
               fontSize: compact ? 22 : 38,
@@ -255,7 +255,7 @@ class _BrandPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Your daily content workspace',
+            'Your creative partner for ad scripts and prompts',
             style: TextStyle(
               color: Colors.white.withValues(alpha: .85),
               fontSize: compact ? 14 : 18,

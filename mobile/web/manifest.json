@@ -1,20 +1,38 @@
 {
-    "name": "Content Studio",
-    "short_name": "Content Studio",
+    "name": "Postyar \u2014 Content & Prompt Studio",
+    "short_name": "Postyar",
     "lang": "en",
     "dir": "ltr",
     "start_url": ".",
     "scope": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
-    "theme_color": "#0E7C66",
-    "description": "Your daily content workspace",
+    "theme_color": "#FF6900",
+    "description": "Your creative partner for ad scripts and prompts",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
-        {"src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png"},
-        {"src": "icons/Icon-512.png", "sizes": "512x512", "type": "image/png"},
-        {"src": "icons/Icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-        {"src": "icons/Icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+        {
+            "src": "icons/postyar-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/postyar-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/postyar-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/postyar-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
     ]
 }
