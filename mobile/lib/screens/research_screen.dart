@@ -210,7 +210,21 @@ class _ResearchScreenState extends State<ResearchScreen> {
         ],
       ),
       const SizedBox(height: 8),
-      SelectableText(r.summary),
+      Card(
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            child: SelectableText(
+              r.summary,
+              textDirection: contentDirection(r.summary),
+              textAlign: TextAlign.start,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.8),
+            ),
+          ),
+        ),
+      ),
       if (r.trends.isNotEmpty) ...[
         const SectionTitle('Topics to explore'),
         for (final t in r.trends)
@@ -416,11 +430,27 @@ class _IdeaCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              title,
+              textDirection: contentDirection(title),
+              textAlign: TextAlign.start,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
           for (final l in lines.where((l) => l.trim().isNotEmpty))
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(l, style: Theme.of(context).textTheme.bodySmall),
+              child: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  l,
+                  textDirection: contentDirection(l),
+                  textAlign: TextAlign.start,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             ),
           Align(
             alignment: AlignmentDirectional.centerEnd,
