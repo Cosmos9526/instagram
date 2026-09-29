@@ -51,7 +51,8 @@ negative space for typography, continuity and negative constraints. Each frame p
 and repeat relevant continuity details. Include no fabricated features, urgency, discounts, endorsements or prices.
 Persian copy: natural Iranian Persian, concise sentences, correct نیم‌فاصله and punctuation; proofread before output.
 Never ask the visual model to draw Persian text: provide exact Persian copy separately for typesetting.
-Keep handles, URLs and product identifiers unchanged. Output only JSON matching this schema:
+Keep handles, URLs and product identifiers unchanged. Caption: three short lines naming the chosen product, then a grounded message, then the exact ordering contact supplied by the brand. Never call a personal plan a team plan or promise performance unless documented.
+Output only JSON matching this schema:
 {"title":"...","visual_style":"...","caption":"...","hashtags":["..."],
  "frames":[{"prompt":"detailed English production prompt","on_screen_text":"...","dialogue":"..."}]}
 '''
@@ -61,7 +62,7 @@ Total editing duration exactly 10 seconds. First frame: one adult man and one ad
 existing character reference. References are NOT available yet: explicitly require supplied reference images;
 do NOT invent their faces, outfits, voices or claim a visual match. Lock both identities to references.
 Give timed action/camera beats for 0–2, 2–5, 5–8 seconds, and speaker-labelled Persian dialogue (at most 20 words total).
-Embed that exact dialogue in the first English prompt with natural Persian delivery, turn-taking and lip-sync instructions.
+Embed that exact dialogue in the first English prompt with natural Persian delivery, turn-taking and lip-sync instructions. The characters SPEAK the dialogue in the generated clip; never say dialogue will be added later. Use explicit speaker labels.
 Second frame: no dialogue, no new characters; 8–10 seconds static end card, supplied brand logo,
 product name and ONE short CTA. Keep exact text separately in on_screen_text. No fake logo generation.
 '''
@@ -87,7 +88,10 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
         blocks.insert(0, {'label': 'Character references required', 'text': 'Attach the existing male and female character references to your generation tool. Their appearance and voices have not been verified yet.'})
     for i, frame in enumerate(package.frames):
         label = ('Scene · 0–8 seconds' if i == 0 else 'End card · 8–10 seconds') if video else f'Image {i + 1}'
-        blocks.append({'label': label + ' — prompt', 'text': frame.prompt})
+        full_prompt = package.visual_style + '\n\n' + frame.prompt
+        if video and i == 0:
+            full_prompt = ('REFERENCE LOCK: Use the supplied adult male and female references. Do not invent or change their identities, clothes or voices. References are required before production.\n\n' + full_prompt)
+        blocks.append({'label': label + ' — prompt', 'text': norm(full_prompt)})
         if frame.dialogue:
             blocks.append({'label': label + ' — Persian dialogue', 'text': norm(frame.dialogue)})
         blocks.append({'label': label + ' — on-screen text', 'text': norm(frame.on_screen_text)})

@@ -34,7 +34,10 @@ class PromptPackageView extends StatelessWidget {
             ),
             SelectableText(
               text,
-              textDirection: contentDirection(text),
+              textDirection:
+                  label.endsWith('— prompt') || label == 'Visual style'
+                  ? TextDirection.ltr
+                  : contentDirection(text),
               textAlign: TextAlign.start,
               style: Theme.of(
                 context,

@@ -55,7 +55,7 @@ def chat_json(system: str, user: str, temperature: float = 0.8) -> dict:
     if settings.llm_fallback_url:
         try:
             return _post(settings.llm_fallback_url, {}, {"model": settings.llm_fallback_model, "messages": messages, "temperature": temperature,
-                         "max_tokens": 6000, "response_format": {"type": "json_object"}})
+                         "max_tokens": 6000, "reasoning_effort": "low", "response_format": {"type": "json_object"}})
         except Exception as e:  # noqa: BLE001
             errors.append(f"fallback: {e}")
     raise LLMError(" | ".join(errors) or "no text model configured")
