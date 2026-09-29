@@ -31,7 +31,7 @@ class PostyarApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Content Studio',
+      title: 'Postyar',
       debugShowCheckedModeBanner: false,
       locale: const Locale('en'),
       supportedLocales: const [Locale('fa'), Locale('en')],
