@@ -10,6 +10,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'edit_screen.dart';
 import 'video_prompt_view.dart';
+import 'prompt_package_view.dart';
 
 /// One piece of content as a production package: preview, texts, caption, English prompts, review actions.
 class PostScreen extends StatefulWidget {
@@ -150,6 +151,8 @@ class _PostScreenState extends State<PostScreen> {
             )
           : p.status == 'failed'
           ? _failed(p)
+          : p.content['output_kind'] == 'prompt_package'
+          ? PromptPackageView(post: p)
           : p.isVideo
           ? VideoPromptView(post: p)
           : _slides(p),
@@ -325,7 +328,11 @@ class _PostScreenState extends State<PostScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        Text(p.title, textDirection: contentDirection(p.title), style: theme.textTheme.titleLarge),
+        Text(
+          p.title,
+          textDirection: contentDirection(p.title),
+          style: theme.textTheme.titleLarge,
+        ),
         if (p.content['source'] == 'offline') ...[
           const SizedBox(height: 12),
           _OfflineNote(),
@@ -349,7 +356,10 @@ class _PostScreenState extends State<PostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(p.caption, textDirection: contentDirection(p.caption)),
+                SelectableText(
+                  p.caption,
+                  textDirection: contentDirection(p.caption),
+                ),
                 if (p.hashtags.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Wrap(
@@ -450,7 +460,9 @@ class _PostScreenState extends State<PostScreen> {
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               child: Row(
                 children: [
-                  if (!p.isVideo && p.status != 'failed') ...[
+                  if (!p.isVideo &&
+                      p.status != 'failed' &&
+                      p.content['output_kind'] != 'prompt_package') ...[
                     IconButton.filledTonal(
                       tooltip: 'Edit text',
                       onPressed: _busy ? null : () => _edit(p),

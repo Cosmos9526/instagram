@@ -52,7 +52,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   String _template = '';
   String _videoStyle = '';
   int _nBody = 4;
-  int _seconds = 16;
+  int _seconds = 10;
   final _topic = TextEditingController();
   bool _busy = false;
   Catalog? _catalog;
@@ -267,7 +267,7 @@ class GenerateScreenState extends State<GenerateScreen> {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('Length:', style: theme.textTheme.titleSmall),
-              for (final s in const [10, 16, 24, 32, 40])
+              for (final s in const [10])
                 ChoiceChip(
                   label: Text('${uiDigits(s)} seconds'),
                   selected: _seconds == s,
@@ -278,7 +278,7 @@ class GenerateScreenState extends State<GenerateScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            '≈ ${uiDigits((_seconds / 8).round().clamp(1, 4))} continuous shots, with an English prompt for each shot in Google Flow / Veo',
+            '8-second scene with Persian dialogue + 2-second end card. Prompts only; no media generation.',
             style: theme.textTheme.bodySmall,
           ),
         ],
