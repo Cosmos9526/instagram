@@ -1,3 +1,4 @@
+import '../widgets/common.dart';
 import 'package:flutter/material.dart';
 
 import '../models.dart';
@@ -12,7 +13,8 @@ class EditScreen extends StatefulWidget {
 }
 
 class _Field {
-  _Field(this.label, String value, this.write, {this.lines = 1}) : controller = TextEditingController(text: value);
+  _Field(this.label, String value, this.write, {this.lines = 1})
+    : controller = TextEditingController(text: value);
   final String label;
   final TextEditingController controller;
   final void Function(Map<String, dynamic> content, String value) write;
@@ -20,11 +22,11 @@ class _Field {
 }
 
 const _slotLabels = {
-  'kicker': 'برچسب بالا',
-  'headline': 'تیتر',
-  'body': 'متن',
-  'cta': 'دکمه‌ی دعوت به اقدام',
-  'badge': 'نشان (مثلاً ٪۲۰)',
+  'kicker': 'Top label',
+  'headline': 'Headline',
+  'body': 'Body',
+  'cta': 'Call to action',
+  'badge': 'Badge (e.g. 20%)',
 };
 
 class _EditScreenState extends State<EditScreen> {
@@ -40,10 +42,19 @@ class _EditScreenState extends State<EditScreen> {
       },
   };
 
-  List<_Field> _slotFields(String prefix, Map slots, void Function(String k, String v) set) => [
+  List<_Field> _slotFields(
+    String prefix,
+    Map slots,
+    void Function(String k, String v) set,
+  ) => [
     for (final key in _slotLabels.keys)
       if (slots[key] is String)
-        _Field('$prefix${_slotLabels[key]}', slots[key] as String, (_, v) => set(key, v), lines: key == 'body' ? 4 : 2),
+        _Field(
+          '$prefix${_slotLabels[key]}',
+          slots[key] as String,
+          (_, v) => set(key, v),
+          lines: key == 'body' ? 4 : 2,
+        ),
   ];
 
   List<_Field> _buildFields() {
@@ -51,29 +62,40 @@ class _EditScreenState extends State<EditScreen> {
     final fields = <_Field>[];
     if (widget.post.mode == 'carousel') {
       final cover = c['cover'] as Map;
-      fields.addAll(_slotFields('کاور: ', cover, (k, v) => cover[k] = v));
+      fields.addAll(_slotFields('Cover: ', cover, (k, v) => cover[k] = v));
       final bodies = c['body'] as List;
       for (var i = 0; i < bodies.length; i++) {
         final b = bodies[i] as Map;
-        fields.addAll(_slotFields('اسلاید ${i + 2}: ', b, (k, v) => b[k] = v));
+        fields.addAll(_slotFields('Slide ${i + 2}: ', b, (k, v) => b[k] = v));
       }
       final cta = c['cta'] as Map;
-      fields.addAll(_slotFields('اسلاید آخر: ', cta, (k, v) => cta[k] = v));
+      fields.addAll(_slotFields('Final slide: ', cta, (k, v) => cta[k] = v));
     } else {
       final slots = c['slots'] as Map;
       fields.addAll(_slotFields('', slots, (k, v) => slots[k] = v));
       if (slots['items'] is List) {
         fields.add(
           _Field(
-            'موارد لیست (هر خط یک مورد)',
+            'List items (one per line)',
             (slots['items'] as List).join('\n'),
-            (_, v) => slots['items'] = v.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
+            (_, v) => slots['items'] = v
+                .split('\n')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
             lines: 5,
           ),
         );
       }
     }
-    fields.add(_Field('کپشن', '${c['caption'] ?? ''}', (m, v) => m['caption'] = v, lines: 6));
+    fields.add(
+      _Field(
+        'Caption',
+        '${c['caption'] ?? ''}',
+        (m, v) => m['caption'] = v,
+        lines: 6,
+      ),
+    );
     return fields;
   }
 
@@ -87,8 +109,8 @@ class _EditScreenState extends State<EditScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('ویرایش متن'),
-      actions: [TextButton(onPressed: _save, child: const Text('ذخیره'))],
+      title: const Text('Edit text'),
+      actions: [TextButton(onPressed: _save, child: const Text('Save'))],
     ),
     body: ListView.separated(
       padding: const EdgeInsets.all(16),
@@ -96,6 +118,7 @@ class _EditScreenState extends State<EditScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (_, i) => TextField(
         controller: _fields[i].controller,
+        textDirection: contentDirection(_fields[i].controller.text),
         minLines: 1,
         maxLines: _fields[i].lines,
         decoration: InputDecoration(labelText: _fields[i].label),

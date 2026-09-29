@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,7 +18,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="پست‌های روزانه‌ی اینستاگرام برای کسب‌وکار شما">
+  <meta name="description" content="Your daily content workspace">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0E7C66">
 
@@ -26,13 +26,13 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="استودیوی محتوا">
+  <meta name="apple-mobile-web-app-title" content="Content Studio">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>استودیوی محتوا</title>
+  <title>Content Studio</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -59,10 +59,10 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
   </style>
-  <div id="startup" role="status" aria-live="polite">
-    <section><span class="pulse" aria-hidden="true"></span><h1>استودیوی محتوا</h1>
-      <p id="startup-message">در حال آماده‌کردن فضای کاری شما… بارگذاری نخست ممکن است کمی زمان ببرد.</p>
-      <button id="retry" hidden onclick="location.reload()">تلاش دوباره</button>
+  <div id="startup" role="status" aria-label="Loading" aria-live="polite">
+    <section><span class="pulse" aria-hidden="true"></span>
+      <p id="startup-message"></p>
+      <button id="retry" hidden onclick="location.reload()">Retry</button>
     </section>
   </div>
   <script src="startup.js"></script>

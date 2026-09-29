@@ -81,37 +81,59 @@ class _PostScreenState extends State<PostScreen> {
       final files = <XFile>[
         for (var i = 0; i < p.slides.length; i++)
           XFile.fromData(
-            (await http.get(Uri.parse(widget.api.mediaUrl(p.slides[i])))).bodyBytes,
+            (await http.get(
+              Uri.parse(widget.api.mediaUrl(p.slides[i])),
+            )).bodyBytes,
             name: 'slide_${i + 1}.png',
             mimeType: 'image/png',
           ),
       ];
       if (!mounted) return;
-      await copyText(context, p.captionWithTags, label: 'کپشن کپی شد؛ بعد از انتخاب اینستاگرام Paste کن');
+      await copyText(
+        context,
+        p.captionWithTags,
+        label: 'Caption copied. After opening Instagram, Paste it',
+      );
       await SharePlus.instance.share(ShareParams(files: files));
     } catch (_) {
-      if (mounted) showSnack(context, 'اشتراک‌گذاری ناموفق بود');
+      if (mounted) showSnack(context, 'Could not share');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _edit(Post p) async {
-    final content = await Navigator.of(
-      context,
-    ).push<Map<String, dynamic>>(MaterialPageRoute(builder: (_) => EditScreen(post: p)));
-    if (content != null) await _act(() => widget.api.editPost(p.id, content), 'در حال رندر دوباره…');
+    final content = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(builder: (_) => EditScreen(post: p)),
+    );
+    if (content != null) {
+      await _act(() => widget.api.editPost(p.id, content), 'Rendering again…');
+    }
   }
 
-  void _goTo(int i) => _pager.animateToPage(i, duration: const Duration(milliseconds: 220), curve: Curves.easeOut);
+  void _goTo(int i) => _pager.animateToPage(
+    i,
+    duration: const Duration(milliseconds: 220),
+    curve: Curves.easeOut,
+  );
 
   @override
   Widget build(BuildContext context) {
     final p = _post;
     return Scaffold(
       appBar: AppBar(
-        title: Text(p == null ? '' : (p.isVideo ? 'بسته‌ی تولید ویدیو' : 'بسته‌ی انتشار')),
-        actions: [if (p != null) Padding(padding: const EdgeInsets.all(12), child: StatusChip(p.status))],
+        title: Text(
+          p == null
+              ? ''
+              : (p.isVideo ? 'Video production brief' : 'Publishing package'),
+        ),
+        actions: [
+          if (p != null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: StatusChip(p.status),
+            ),
+        ],
       ),
       body: p == null
           ? const Center(child: CircularProgressIndicator())
@@ -119,7 +141,11 @@ class _PostScreenState extends State<PostScreen> {
           ? const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [CircularProgressIndicator(), SizedBox(height: 16), Text('در حال ساخت…')],
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Creating…'),
+                ],
               ),
             )
           : p.status == 'failed'
@@ -138,12 +164,17 @@ class _PostScreenState extends State<PostScreen> {
         constraints: const BoxConstraints(maxWidth: 480),
         child: EmptyState(
           icon: Icons.error_outline,
-          title: 'ساخت این محتوا ناموفق بود',
-          body: p.error.isEmpty ? 'دوباره امتحان کن.' : p.error,
+          title: 'Content generation failed',
+          body: p.error.isEmpty ? 'Please try again.' : p.error,
           action: FilledButton.icon(
-            onPressed: _busy ? null : () => _act(() => widget.api.review(p.id, 'regenerate'), 'دوباره ساخته می‌شود'),
+            onPressed: _busy
+                ? null
+                : () => _act(
+                    () => widget.api.review(p.id, 'regenerate'),
+                    'Regeneration queued',
+                  ),
             icon: const Icon(Icons.refresh),
-            label: const Text('ساخت دوباره'),
+            label: const Text('Regenerate'),
           ),
         ),
       ),
@@ -172,8 +203,9 @@ class _PostScreenState extends State<PostScreen> {
                         '${widget.api.thumbUrl(p.slides[i], 1080)}&v=$_version',
                         fit: BoxFit.contain,
                         gaplessPlayback: true,
-                        loadingBuilder: (_, child, progress) =>
-                            progress == null ? child : const Center(child: CircularProgressIndicator()),
+                        loadingBuilder: (_, child, progress) => progress == null
+                            ? child
+                            : const Center(child: CircularProgressIndicator()),
                       ),
                     ),
                   ),
@@ -185,7 +217,10 @@ class _PostScreenState extends State<PostScreen> {
                       top: 0,
                       bottom: 0,
                       child: Center(
-                        child: _ArrowButton(icon: Icons.chevron_left, onTap: () => _goTo(_page - 1)),
+                        child: _ArrowButton(
+                          icon: Icons.chevron_left,
+                          onTap: () => _goTo(_page - 1),
+                        ),
                       ),
                     ),
                   if (_page < p.slides.length - 1)
@@ -194,7 +229,10 @@ class _PostScreenState extends State<PostScreen> {
                       top: 0,
                       bottom: 0,
                       child: Center(
-                        child: _ArrowButton(icon: Icons.chevron_right, onTap: () => _goTo(_page + 1)),
+                        child: _ArrowButton(
+                          icon: Icons.chevron_right,
+                          onTap: () => _goTo(_page + 1),
+                        ),
                       ),
                     ),
                 ],
@@ -217,7 +255,9 @@ class _PostScreenState extends State<PostScreen> {
                       width: i == _page ? 18 : 7,
                       height: 7,
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: i == _page ? 1 : .3),
+                        color: scheme.primary.withValues(
+                          alpha: i == _page ? 1 : .3,
+                        ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -248,12 +288,14 @@ class _PostScreenState extends State<PostScreen> {
       ])
         if ('${m?[k] ?? ''}'.trim().isNotEmpty) '${m![k]}',
     ].join('\n');
-    if (c['cover'] is Map) out.add(('کاور', join(c['cover'] as Map)));
+    if (c['cover'] is Map) out.add(('Cover', join(c['cover'] as Map)));
     for (final (i, b) in ((c['body'] as List?) ?? const []).indexed) {
-      if (b is Map) out.add(('اسلاید ${faDigits(i + 2)}', join(b)));
+      if (b is Map) out.add(('Slide ${uiDigits(i + 2)}', join(b)));
     }
-    if (c['cta'] is Map) out.add(('دعوت به اقدام', join(c['cta'] as Map)));
-    if (out.isEmpty && c['slots'] is Map) out.add(('متن اسلاید', join(c['slots'] as Map)));
+    if (c['cta'] is Map) out.add(('Call to action', join(c['cta'] as Map)));
+    if (out.isEmpty && c['slots'] is Map) {
+      out.add(('Slide text', join(c['slots'] as Map)));
+    }
     return [
       for (final t in out)
         if (t.$2.trim().isNotEmpty) t,
@@ -264,7 +306,9 @@ class _PostScreenState extends State<PostScreen> {
     final theme = Theme.of(context);
     final texts = _slideTexts(p);
     final imagePrompt = '${p.content['image_prompt'] ?? ''}'.trim();
-    final format = p.mode == 'carousel' ? 'کاروسل ${faDigits(p.slides.length)} اسلاید' : 'تک‌اسلاید';
+    final format = p.mode == 'carousel'
+        ? 'Carousel ${uiDigits(p.slides.length)} Slide'
+        : 'Single slide';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -272,18 +316,30 @@ class _PostScreenState extends State<PostScreen> {
           children: [
             TypeBadge(p.postType),
             const SizedBox(width: 8),
-            Text(format, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            Text(
+              format,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 8),
-        Text(p.title, style: theme.textTheme.titleLarge),
-        if (p.content['source'] == 'offline') ...[const SizedBox(height: 12), _OfflineNote()],
+        Text(p.title, textDirection: contentDirection(p.title), style: theme.textTheme.titleLarge),
+        if (p.content['source'] == 'offline') ...[
+          const SizedBox(height: 12),
+          _OfflineNote(),
+        ],
         SectionTitle(
-          'کپشن',
+          'Caption',
           trailing: TextButton.icon(
-            onPressed: () => copyText(context, p.captionWithTags, label: 'کپشن و هشتگ‌ها کپی شد'),
+            onPressed: () => copyText(
+              context,
+              p.captionWithTags,
+              label: 'Caption and hashtags copied',
+            ),
             icon: const Icon(Icons.copy_rounded, size: 18),
-            label: const Text('کپی'),
+            label: const Text('Copy'),
           ),
         ),
         Card(
@@ -293,7 +349,7 @@ class _PostScreenState extends State<PostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SelectableText(p.caption),
+                SelectableText(p.caption, textDirection: contentDirection(p.caption)),
                 if (p.hashtags.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Wrap(
@@ -303,7 +359,10 @@ class _PostScreenState extends State<PostScreen> {
                       for (final h in p.hashtags)
                         Text(
                           '#${h.replaceAll(' ', '_')}',
-                          style: TextStyle(color: theme.colorScheme.primary, fontSize: 13),
+                          style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontSize: 13,
+                          ),
                         ),
                     ],
                   ),
@@ -314,11 +373,11 @@ class _PostScreenState extends State<PostScreen> {
         ),
         if (texts.isNotEmpty) ...[
           SectionTitle(
-            'متن اسلایدها',
+            'Slide text',
             trailing: TextButton.icon(
               onPressed: () => _edit(p),
               icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('ویرایش'),
+              label: const Text('Edit'),
             ),
           ),
           Card(
@@ -338,8 +397,9 @@ class _PostScreenState extends State<PostScreen> {
         ],
         if (imagePrompt.isNotEmpty) ...[
           const SectionTitle(
-            'پرامپت تصویر پس‌زمینه',
-            subtitle: 'برای ساخت تصویر با ابزار دیگر؛ متن فارسی روی تصویر نمی‌آید',
+            'Background image prompt',
+            subtitle:
+                'Generate a background in another tool. Add text separately',
           ),
           PromptBlock(text: imagePrompt, label: 'Image prompt'),
         ],
@@ -392,21 +452,24 @@ class _PostScreenState extends State<PostScreen> {
                 children: [
                   if (!p.isVideo && p.status != 'failed') ...[
                     IconButton.filledTonal(
-                      tooltip: 'ویرایش متن',
+                      tooltip: 'Edit text',
                       onPressed: _busy ? null : () => _edit(p),
                       icon: const Icon(Icons.edit_outlined),
                     ),
                     IconButton.filledTonal(
-                      tooltip: 'دانلود / اشتراک تصاویر',
+                      tooltip: 'Download or share images',
                       onPressed: _busy ? null : () => _share(p),
                       icon: const Icon(Icons.ios_share),
                     ),
                   ],
                   IconButton.filledTonal(
-                    tooltip: 'ساخت دوباره',
+                    tooltip: 'Regenerate',
                     onPressed: _busy
                         ? null
-                        : () => _act(() => widget.api.review(p.id, 'regenerate'), 'دوباره ساخته می‌شود'),
+                        : () => _act(
+                            () => widget.api.review(p.id, 'regenerate'),
+                            'Regeneration queued',
+                          ),
                     icon: const Icon(Icons.refresh),
                   ),
                   const Spacer(),
@@ -414,16 +477,24 @@ class _PostScreenState extends State<PostScreen> {
                     TextButton(
                       onPressed: _busy || p.status == 'rejected'
                           ? null
-                          : () => _act(() => widget.api.review(p.id, 'reject'), 'رد شد'),
-                      child: const Text('رد'),
+                          : () => _act(
+                              () => widget.api.review(p.id, 'reject'),
+                              'Rejected',
+                            ),
+                      child: const Text('Reject'),
                     ),
                     const SizedBox(width: 6),
                     FilledButton.icon(
                       onPressed: _busy || p.status == 'approved'
                           ? null
-                          : () => _act(() => widget.api.review(p.id, 'approve'), 'تأیید شد'),
+                          : () => _act(
+                              () => widget.api.review(p.id, 'approve'),
+                              'Approved',
+                            ),
                       icon: const Icon(Icons.check),
-                      label: Text(p.status == 'approved' ? 'تأیید شده' : 'تأیید'),
+                      label: Text(
+                        p.status == 'approved' ? 'Approved' : 'Approve',
+                      ),
                     ),
                   ],
                 ],
@@ -459,13 +530,19 @@ class _ArrowButton extends StatelessWidget {
 class _OfflineNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final (bg, fg) = PColors.objective('promo', Theme.of(context).brightness == Brightness.dark);
+    final (bg, fg) = PColors.objective(
+      'promo',
+      Theme.of(context).brightness == Brightness.dark,
+    );
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Text(
-        'این محتوا بدون مدل هوش مصنوعی و از روی قالب آماده ساخته شد (مدل در دسترس نبود). '
-        'متن را ویرایش کن یا وقتی مدل فعال شد «ساخت دوباره» را بزن.',
+        'Created from a fallback template (AI was unavailable). '
+        'Edit the text or regenerate when the model is available.',
         style: TextStyle(color: fg),
       ),
     );

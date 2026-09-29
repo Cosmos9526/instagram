@@ -47,7 +47,7 @@ void main() {
     );
     await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
-    final context = tester.element(find.text('ثبت‌نام'));
+    final context = tester.element(find.text('Sign up'));
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ProjectScreen(
@@ -59,7 +59,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(FloatingNav), findsOneWidget);
-    expect(find.text('امروز چی منتشر کنیم؟'), findsOneWidget);
+    expect(find.text('What will you publish today?'), findsOneWidget);
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();

@@ -7,7 +7,12 @@ import '../widgets/common.dart';
 /// Gallery of every slide template and video style. With [pickPostType] or [pickVideoStyle] it works as a
 /// picker and pops the chosen template code / style id ('' = automatic).
 class TemplatesScreen extends StatefulWidget {
-  const TemplatesScreen({super.key, required this.api, this.pickPostType, this.pickVideoStyle = false});
+  const TemplatesScreen({
+    super.key,
+    required this.api,
+    this.pickPostType,
+    this.pickVideoStyle = false,
+  });
   final Api api;
   final String? pickPostType;
   final bool pickVideoStyle;
@@ -26,9 +31,12 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
   void initState() {
     super.initState();
     _filter = widget.pickPostType ?? '';
-    widget.api.catalog().then((c) => mounted ? setState(() => _catalog = c) : null).catchError((Object e) {
-      if (mounted) showSnack(context, '$e');
-    });
+    widget.api
+        .catalog()
+        .then((c) => mounted ? setState(() => _catalog = c) : null)
+        .catchError((Object e) {
+          if (mounted) showSnack(context, '$e');
+        });
   }
 
   @override
@@ -44,7 +52,11 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
     final videos = _VideoTab(catalog: c, picking: widget.pickVideoStyle);
     if (widget.picking) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.pickVideoStyle ? 'انتخاب سبک ویدیو' : 'انتخاب قالب')),
+        appBar: AppBar(
+          title: Text(
+            widget.pickVideoStyle ? 'Choose video style' : 'Choose template',
+          ),
+        ),
         body: widget.pickVideoStyle ? videos : slides,
       );
     }
@@ -52,11 +64,11 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('قالب‌ها'),
+          title: const Text('Templates'),
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'قالب‌های اسلاید'),
-              Tab(text: 'سبک‌های ویدیو'),
+              Tab(text: 'Slide templates'),
+              Tab(text: 'Video styles'),
             ],
           ),
         ),
@@ -95,12 +107,18 @@ class _SlidesTab extends StatelessWidget {
               child: Row(
                 children: [
                   for (final (k, v) in [
-                    ('', 'همه'),
-                    ...postTypes.entries.where((e) => e.key != 'video_prompt').map((e) => (e.key, e.value)),
+                    ('', 'View all'),
+                    ...postTypes.entries
+                        .where((e) => e.key != 'video_prompt')
+                        .map((e) => (e.key, e.value)),
                   ])
                     Padding(
                       padding: const EdgeInsetsDirectional.only(end: 6),
-                      child: ChoiceChip(label: Text(v), selected: filter == k, onSelected: (_) => onFilter(k)),
+                      child: ChoiceChip(
+                        label: Text(v),
+                        selected: filter == k,
+                        onSelected: (_) => onFilter(k),
+                      ),
                     ),
                 ],
               ),
@@ -113,7 +131,7 @@ class _SlidesTab extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).pop(''),
                 icon: const Icon(Icons.shuffle),
-                label: const Text('خودکار (هر بار قالب متفاوت)'),
+                label: const Text('Automatic (rotate templates)'),
               ),
             ),
           ),
@@ -131,7 +149,9 @@ class _SlidesTab extends StatelessWidget {
               final t = list[i];
               return InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: picking && !t.carousel ? () => Navigator.of(context).pop(t.code) : null,
+                onTap: picking && !t.carousel
+                    ? () => Navigator.of(context).pop(t.code)
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -140,12 +160,19 @@ class _SlidesTab extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: t.preview == null
-                            ? Container(color: Theme.of(context).colorScheme.surfaceContainerHighest)
+                            ? Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                              )
                             : Image.network(
                                 api.mediaUrl(t.preview!),
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                                errorBuilder: (_, _, _) => Container(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                ),
                               ),
                       ),
                     ),
@@ -157,7 +184,7 @@ class _SlidesTab extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      t.carousel ? 'بخشی از کاروسل' : t.description,
+                      t.carousel ? 'Carousel slide' : t.description,
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -190,7 +217,7 @@ class _VideoTab extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: () => Navigator.of(context).pop(''),
             icon: const Icon(Icons.auto_awesome),
-            label: const Text('بدون سبک مشخص (انتخاب با هوش مصنوعی)'),
+            label: const Text('Automatic (let AI choose a style)'),
           ),
         for (final s in c.videoStyles)
           Card(
@@ -205,13 +232,24 @@ class _VideoTab extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.movie_filter_outlined, color: theme.colorScheme.primary),
+                        Icon(
+                          Icons.movie_filter_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(s.name, style: theme.textTheme.titleSmall)),
+                        Expanded(
+                          child: Text(
+                            s.name,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                        ),
                         for (final t in s.bestFor.take(2))
                           Padding(
                             padding: const EdgeInsetsDirectional.only(start: 4),
-                            child: Text(postTypes[t] ?? t, style: theme.textTheme.labelSmall),
+                            child: Text(
+                              postTypes[t] ?? t,
+                              style: theme.textTheme.labelSmall,
+                            ),
                           ),
                       ],
                     ),
@@ -219,9 +257,12 @@ class _VideoTab extends StatelessWidget {
                     Text(s.description),
                     const SizedBox(height: 8),
                     Text(
-                      [for (var i = 0; i < s.beats.length; i++) 'کلیپ ${faDigits(i + 1)}: ${s.beats[i]}'].join('\n'),
+                      [
+                        for (var i = 0; i < s.beats.length; i++)
+                          'Clip ${uiDigits(i + 1)}: ${s.beats[i]}',
+                      ].join('\n'),
                       style: theme.textTheme.bodySmall,
-                      textDirection: TextDirection.rtl,
+                      textDirection: TextDirection.ltr,
                     ),
                   ],
                 ),

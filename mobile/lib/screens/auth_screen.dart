@@ -35,9 +35,10 @@ class _AuthScreenState extends State<AuthScreen> {
         await widget.api.login(email, _password.text);
       }
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)), (_) => false);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)),
+        (_) => false,
+      );
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {
@@ -61,27 +62,37 @@ class _AuthScreenState extends State<AuthScreen> {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
         children: [
-          Text(_signup ? 'ساخت حساب' : 'ورود به استودیو', style: theme.textTheme.headlineSmall),
+          Text(
+            _signup ? 'Create account' : 'Welcome back',
+            style: theme.textTheme.headlineSmall,
+          ),
           const SizedBox(height: 4),
           Text(
-            _signup ? 'چند ثانیه طول می‌کشد.' : 'خوش برگشتی؛ محتوای امروز منتظر توست.',
+            _signup
+                ? 'Set up your account to get started.'
+                : 'Sign in to your content workspace.',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 24),
           SegmentedButton<bool>(
             segments: const [
-              ButtonSegment(value: false, label: Text('ورود')),
-              ButtonSegment(value: true, label: Text('ثبت‌نام')),
+              ButtonSegment(value: false, label: Text('Sign in')),
+              ButtonSegment(value: true, label: Text('Sign up')),
             ],
             selected: {_signup},
-            onSelectionChanged: _busy ? null : (s) => setState(() => _signup = s.first),
+            onSelectionChanged: _busy
+                ? null
+                : (s) => setState(() => _signup = s.first),
           ),
           const SizedBox(height: 20),
           if (_signup) ...[
             TextFormField(
               controller: _name,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'نام شما', prefixIcon: Icon(Icons.person_outline)),
+              decoration: const InputDecoration(
+                labelText: 'Your name',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
             ),
             const SizedBox(height: 12),
           ],
@@ -91,40 +102,60 @@ class _AuthScreenState extends State<AuthScreen> {
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'ایمیل', prefixIcon: Icon(Icons.alternate_email)),
-            validator: (v) => (v ?? '').contains('@') ? null : 'ایمیل معتبر وارد کنید',
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              prefixIcon: Icon(Icons.alternate_email),
+            ),
+            validator: (v) =>
+                (v ?? '').contains('@') ? null : 'Enter a valid email',
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _password,
             textDirection: TextDirection.ltr,
             obscureText: _hide,
-            autofillHints: [_signup ? AutofillHints.newPassword : AutofillHints.password],
+            autofillHints: [
+              _signup ? AutofillHints.newPassword : AutofillHints.password,
+            ],
             onFieldSubmitted: (_) => _submit(),
             decoration: InputDecoration(
-              labelText: 'رمز عبور',
+              labelText: 'Password',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_hide ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                icon: Icon(
+                  _hide
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
                 onPressed: () => setState(() => _hide = !_hide),
               ),
             ),
-            validator: (v) =>
-                _signup && (v ?? '').length < 8 ? 'حداقل ۸ حرف' : ((v ?? '').isEmpty ? 'الزامی است' : null),
+            validator: (v) => _signup && (v ?? '').length < 8
+                ? 'At least 8 characters'
+                : ((v ?? '').isEmpty ? 'Required' : null),
           ),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _busy ? null : _submit,
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
             child: _busy
-                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(_signup ? 'ساخت حساب' : 'ورود'),
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(_signup ? 'Create account' : 'Sign in'),
           ),
           if (!kIsWeb)
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ServerScreen(api: widget.api))),
-              child: const Text('تغییر آدرس سرور'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ServerScreen(api: widget.api),
+                ),
+              ),
+              child: const Text('Change server'),
             ),
         ],
       ),
@@ -142,7 +173,10 @@ class _AuthScreenState extends State<AuthScreen> {
             SizedBox(
               width: 520,
               child: Center(
-                child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: _form_(context)),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: _form_(context),
+                ),
               ),
             ),
           ],
@@ -154,9 +188,15 @@ class _AuthScreenState extends State<AuthScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 0), child: _BrandPanel(compact: true)),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: _BrandPanel(compact: true),
+            ),
             Center(
-              child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: _form_(context)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _form_(context),
+              ),
             ),
           ],
         ),
@@ -173,9 +213,12 @@ class _BrandPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const points = [
-      (Icons.today_outlined, 'هر روز می‌گوید چه چیزی منتشر کنی و چرا'),
-      (Icons.insights_outlined, 'ترندها، بازار و قیمت رقبا را برایت رصد می‌کند'),
-      (Icons.movie_creation_outlined, 'پست، کاروسل و پرامپت انگلیسی ویدیو آماده‌ی کپی می‌دهد'),
+      (Icons.today_outlined, 'Plan what to publish each day'),
+      (Icons.insights_outlined, 'Research your market and competitors'),
+      (
+        Icons.movie_creation_outlined,
+        'Create posts, carousels and video briefs',
+      ),
     ];
     return Container(
       padding: EdgeInsets.all(compact ? 20 : 56),
@@ -194,11 +237,15 @@ class _BrandPanel extends StatelessWidget {
               color: Colors.white.withValues(alpha: .14),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.auto_awesome, color: Colors.white, size: compact ? 22 : 30),
+            child: Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+              size: compact ? 22 : 30,
+            ),
           ),
           SizedBox(height: compact ? 14 : 28),
           Text(
-            'استودیوی محتوا',
+            'Content Studio',
             style: TextStyle(
               color: Colors.white,
               fontSize: compact ? 22 : 38,
@@ -208,8 +255,12 @@ class _BrandPanel extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'دستیار روزانه‌ی محتوای اینستاگرام برای کسب‌وکار خودت',
-            style: TextStyle(color: Colors.white.withValues(alpha: .85), fontSize: compact ? 14 : 18, height: 1.6),
+            'Your daily content workspace',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: .85),
+              fontSize: compact ? 14 : 18,
+              height: 1.6,
+            ),
           ),
           if (!compact) ...[
             const SizedBox(height: 36),
@@ -221,7 +272,14 @@ class _BrandPanel extends StatelessWidget {
                     Icon(icon, color: PColors.tealBright),
                     const SizedBox(width: 12),
                     Flexible(
-                      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.6)),
+                      child: Text(
+                        text,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          height: 1.6,
+                        ),
+                      ),
                     ),
                   ],
                 ),

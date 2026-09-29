@@ -34,7 +34,16 @@ class Api {
   Future<void> saveServer(String url) =>
       _prefs.setString('base_url', url.trim().replaceAll(RegExp(r'/+$'), ''));
 
-  Future<void> logout() => _prefs.remove('token');
+  String? get activeBrandId => _prefs.getString('active_brand_id');
+
+  Future<void> selectBrand(String id) async {
+    await _prefs.setString('active_brand_id', id);
+  }
+
+  Future<void> logout() async {
+    await _prefs.remove('token');
+    await _prefs.remove('active_brand_id');
+  }
 
   String mediaUrl(String path) => '$baseUrl$path';
 
@@ -49,10 +58,10 @@ class Api {
   };
 
   static const _messages = {
-    401: 'دوباره وارد شوید',
-    403: 'ثبت‌نام بسته است',
-    404: 'پیدا نشد',
-    409: 'این کار الان ممکن نیست',
+    401: 'Please sign in again',
+    403: 'Registration is closed',
+    404: 'Not found',
+    409: 'This action is currently unavailable',
   };
 
   Future<dynamic> _send(
@@ -71,19 +80,19 @@ class Api {
           .then(http.Response.fromStream)
           .timeout(const Duration(seconds: 30));
     } catch (_) {
-      throw ApiException('ارتباط با سرور برقرار نشد');
+      throw ApiException('Could not connect. Please try again.');
     }
     final text = utf8.decode(res.bodyBytes);
     if (res.statusCode >= 400) {
       throw ApiException(
-        _messages[res.statusCode] ?? 'خطای سرور (${res.statusCode})',
+        _messages[res.statusCode] ?? 'Server error (${res.statusCode})',
         res.statusCode,
       );
     }
     try {
       return text.isEmpty ? null : jsonDecode(text);
     } on FormatException {
-      throw ApiException('پاسخ سرور قابل خواندن نیست؛ دوباره تلاش کنید');
+      throw ApiException('Unexpected response. Please try again.');
     }
   }
 
@@ -100,7 +109,7 @@ class Api {
       return await _auth('/auth/login', {'email': email, 'password': password});
     } on ApiException catch (e) {
       throw e.status == 401
-          ? ApiException('ایمیل یا رمز عبور اشتباه است', 401)
+          ? ApiException('Incorrect email or password', 401)
           : e;
     }
   }
@@ -114,10 +123,16 @@ class Api {
       });
     } on ApiException catch (e) {
       if (e.status == 409) {
-        throw ApiException('این ایمیل قبلاً ثبت شده؛ وارد شوید', 409);
+        throw ApiException(
+          'This email is already registered. Please sign in.',
+          409,
+        );
       }
       if (e.status == 422) {
-        throw ApiException('ایمیل معتبر و رمز حداقل ۸ حرفی لازم است', 422);
+        throw ApiException(
+          'Enter a valid email and a password of at least 8 characters',
+          422,
+        );
       }
       rethrow;
     }

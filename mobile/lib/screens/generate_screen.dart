@@ -9,7 +9,12 @@ import 'templates_screen.dart';
 /// Guided create: objective → format → style → topic → one button. Objective and format are chosen
 /// separately; for a video the objective is passed to the model with the topic.
 class GenerateScreen extends StatefulWidget {
-  const GenerateScreen({super.key, required this.api, required this.brand, required this.onCreated});
+  const GenerateScreen({
+    super.key,
+    required this.api,
+    required this.brand,
+    required this.onCreated,
+  });
   final Api api;
   final Brand brand;
   final VoidCallback onCreated;
@@ -19,16 +24,26 @@ class GenerateScreen extends StatefulWidget {
 }
 
 const _objectives = [
-  ('educational', Icons.school_outlined, 'آموزشی', 'نکته، راهنما، پاسخ به سؤال'),
-  ('news', Icons.bolt_outlined, 'خبری', 'خبر یا ترند روز'),
-  ('promo', Icons.campaign_outlined, 'تبلیغاتی', 'معرفی برند و محصول'),
-  ('sales', Icons.sell_outlined, 'فروش محصول', 'پیشنهاد، تخفیف، دعوت به خرید'),
+  (
+    'educational',
+    Icons.school_outlined,
+    'Educational',
+    'Tips, guides and answers',
+  ),
+  ('news', Icons.bolt_outlined, 'News', 'News and timely topics'),
+  (
+    'promo',
+    Icons.campaign_outlined,
+    'Promotional',
+    'Introduce your brand or product',
+  ),
+  ('sales', Icons.sell_outlined, 'Sales', 'Offers and purchase decisions'),
 ];
 
 const _formats = [
-  ('single', Icons.crop_portrait_rounded, 'تک‌اسلاید'),
-  ('carousel', Icons.view_carousel_outlined, 'کاروسل'),
-  ('video', Icons.movie_creation_outlined, 'ویدیو'),
+  ('single', Icons.crop_portrait_rounded, 'Single slide'),
+  ('carousel', Icons.view_carousel_outlined, 'Carousel'),
+  ('video', Icons.movie_creation_outlined, 'Video'),
 ];
 
 class GenerateScreenState extends State<GenerateScreen> {
@@ -47,7 +62,10 @@ class GenerateScreenState extends State<GenerateScreen> {
   @override
   void initState() {
     super.initState();
-    widget.api.catalog().then((c) => mounted ? setState(() => _catalog = c) : null).catchError((_) => null);
+    widget.api
+        .catalog()
+        .then((c) => mounted ? setState(() => _catalog = c) : null)
+        .catchError((_) => null);
   }
 
   @override
@@ -57,13 +75,20 @@ class GenerateScreenState extends State<GenerateScreen> {
   }
 
   /// Called from home, market and competitors: "make content from this".
-  void prefill({required String postType, String topic = '', String mode = 'single', String videoStyle = ''}) {
+  void prefill({
+    required String postType,
+    String topic = '',
+    String mode = 'single',
+    String videoStyle = '',
+  }) {
     setState(() {
       if (postType == 'video_prompt') {
         _format = 'video';
       } else {
         _objective = postType;
-        _format = mode == 'carousel' ? 'carousel' : (mode == 'video' ? 'video' : 'single');
+        _format = mode == 'carousel'
+            ? 'carousel'
+            : (mode == 'video' ? 'video' : 'single');
       }
       _template = '';
       _videoStyle = videoStyle;
@@ -74,16 +99,19 @@ class GenerateScreenState extends State<GenerateScreen> {
   Future<void> _pickTemplate() async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(
-        builder: (_) => TemplatesScreen(api: widget.api, pickPostType: _objective),
+        builder: (_) =>
+            TemplatesScreen(api: widget.api, pickPostType: _objective),
       ),
     );
     if (code != null) setState(() => _template = code);
   }
 
   Future<void> _pickStyle() async {
-    final id = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true)));
+    final id = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => TemplatesScreen(api: widget.api, pickVideoStyle: true),
+      ),
+    );
     if (id != null) setState(() => _videoStyle = id);
   }
 
@@ -91,11 +119,15 @@ class GenerateScreenState extends State<GenerateScreen> {
     setState(() => _busy = true);
     try {
       final topic = _topic.text.trim();
-      final objectiveLabel = _objectives.firstWhere((o) => o.$1 == _objective).$3;
+      final objectiveLabel = _objectives
+          .firstWhere((o) => o.$1 == _objective)
+          .$3;
       final req = GenerateRequest(
         postType: _isVideo ? 'video_prompt' : _objective,
         mode: _isVideo ? 'video' : _format,
-        topicHint: _isVideo ? 'هدف ویدیو: $objectiveLabel.${topic.isEmpty ? '' : ' $topic'}' : topic,
+        topicHint: _isVideo
+            ? 'Video objective: $objectiveLabel.${topic.isEmpty ? '' : ' $topic'}'
+            : topic,
         template: _template,
         videoStyle: _videoStyle,
         nBody: _nBody,
@@ -104,7 +136,7 @@ class GenerateScreenState extends State<GenerateScreen> {
       await widget.api.generate(widget.brand.id!, req);
       _topic.clear();
       if (!mounted) return;
-      showSnack(context, 'در حال ساخت… چند ثانیه‌ی دیگر در «امروز» آماده است');
+      showSnack(context, 'Creation queued. Follow progress on your dashboard');
       widget.onCreated();
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
@@ -116,24 +148,29 @@ class GenerateScreenState extends State<GenerateScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final template = _catalog?.templates.where((t) => t.code == _template).firstOrNull;
+    final template = _catalog?.templates
+        .where((t) => t.code == _template)
+        .firstOrNull;
     final style = _catalog?.style(_videoStyle);
     final topicHint = switch ((_objective, _isVideo)) {
-      (_, true) => 'ایده یا سناریو، مثلاً «کاربری که بعد از ۱۰ دقیقه جواب درست از ChatGPT می‌گیرد…» (اختیاری)',
-      ('news', _) => 'متن یا لینک خبر را اینجا بگذار (اختیاری؛ بدون آن از ترندهای بازار استفاده می‌شود)',
-      ('sales', _) => 'پیشنهاد یا تخفیف واقعی، مثلاً «۱۰٪ تخفیف ChatGPT Plus تا جمعه» (اختیاری)',
-      _ => 'موضوع، سؤال مشتری یا ایده (اختیاری)',
+      (_, true) =>
+        'An idea or scenario, e.g. a customer using ChatGPT to solve a problem (optional)',
+      ('news', _) =>
+        'Paste a news link or text (optional; otherwise use market research)',
+      ('sales', _) =>
+        'A verified offer, e.g. a discount on ChatGPT Plus with an expiry date (optional)',
+      _ => 'Topic, customer question or idea (optional)',
     };
 
     return ListView(
       padding: pagePadding(context, maxWidth: 720),
       children: [
-        Text('ساخت محتوا', style: theme.textTheme.headlineSmall),
+        Text('Create content', style: theme.textTheme.headlineSmall),
         Text(
-          'چهار انتخاب ساده؛ بقیه را هوش مصنوعی با اطلاعات برند و رقبا کامل می‌کند.',
+          'Choose your objective and format, then add a topic.',
           style: theme.textTheme.bodySmall,
         ),
-        const _Step(n: 1, title: 'هدف این محتوا چیست؟'),
+        const _Step(n: 1, title: 'Choose an objective'),
         ResponsiveGrid(
           minTile: 160,
           spacing: 8,
@@ -144,7 +181,10 @@ class GenerateScreenState extends State<GenerateScreen> {
                 title: o.$3,
                 body: o.$4,
                 selected: _objective == o.$1,
-                color: PColors.objective(o.$1, theme.brightness == Brightness.dark),
+                color: PColors.objective(
+                  o.$1,
+                  theme.brightness == Brightness.dark,
+                ),
                 onTap: () => setState(() {
                   _objective = o.$1;
                   _template = '';
@@ -152,7 +192,7 @@ class GenerateScreenState extends State<GenerateScreen> {
               ),
           ],
         ),
-        const _Step(n: 2, title: 'در چه قالبی؟'),
+        const _Step(n: 2, title: 'Choose a format'),
         Row(
           children: [
             for (final f in _formats) ...[
@@ -169,13 +209,22 @@ class GenerateScreenState extends State<GenerateScreen> {
             ],
           ],
         ),
-        _Step(n: 3, title: _isVideo ? 'سبک و مدت ویدیو' : (_format == 'carousel' ? 'تعداد اسلاید' : 'ظاهر اسلاید')),
+        _Step(
+          n: 3,
+          title: _isVideo
+              ? 'Video style and length'
+              : (_format == 'carousel' ? 'Number of slides' : 'Slide design'),
+        ),
         if (_format == 'single')
           _PickerTile(
             icon: Icons.dashboard_customize_outlined,
-            title: template?.name ?? 'انتخاب خودکار قالب',
-            subtitle: _template.isEmpty ? 'هر بار قالبی متفاوت و مناسب هدف' : 'برای عوض کردن بزن',
-            preview: template?.preview == null ? null : widget.api.mediaUrl(template!.preview!),
+            title: template?.name ?? 'Automatic template',
+            subtitle: _template.isEmpty
+                ? 'Rotate templates to match your objective'
+                : 'Tap to change',
+            preview: template?.preview == null
+                ? null
+                : widget.api.mediaUrl(template!.preview!),
             onTap: _pickTemplate,
           ),
         if (_format == 'carousel')
@@ -187,7 +236,7 @@ class GenerateScreenState extends State<GenerateScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${faDigits(_nBody + 2)} اسلاید: کاور + ${faDigits(_nBody)} اسلاید محتوا + دعوت به اقدام',
+                    '${uiDigits(_nBody + 2)} slides: cover + ${uiDigits(_nBody)} content slides + Call to action',
                     style: theme.textTheme.titleSmall,
                   ),
                   Slider(
@@ -195,7 +244,7 @@ class GenerateScreenState extends State<GenerateScreen> {
                     min: 2,
                     max: 8,
                     divisions: 6,
-                    label: faDigits(_nBody + 2),
+                    label: uiDigits(_nBody + 2),
                     onChanged: (v) => setState(() => _nBody = v.round()),
                   ),
                 ],
@@ -205,8 +254,10 @@ class GenerateScreenState extends State<GenerateScreen> {
         if (_isVideo) ...[
           _PickerTile(
             icon: Icons.movie_filter_outlined,
-            title: style?.name ?? 'سبک را هوش مصنوعی انتخاب کند',
-            subtitle: style?.description ?? 'POV، قبل و بعد، آموزش قدم‌به‌قدم، آنباکسینگ و …',
+            title: style?.name ?? 'Automatic video style',
+            subtitle:
+                style?.description ??
+                'POV, before and after, tutorials, unboxing and more …',
             onTap: _pickStyle,
           ),
           const SizedBox(height: 10),
@@ -215,10 +266,10 @@ class GenerateScreenState extends State<GenerateScreen> {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text('مدت:', style: theme.textTheme.titleSmall),
+              Text('Length:', style: theme.textTheme.titleSmall),
               for (final s in const [10, 16, 24, 32, 40])
                 ChoiceChip(
-                  label: Text('${faDigits(s)} ثانیه'),
+                  label: Text('${uiDigits(s)} seconds'),
                   selected: _seconds == s,
                   showCheckmark: false,
                   onSelected: (_) => setState(() => _seconds = s),
@@ -227,11 +278,11 @@ class GenerateScreenState extends State<GenerateScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            '≈ ${faDigits((_seconds / 8).round().clamp(1, 4))} شات پیوسته؛ هر شات یک پرامپت انگلیسی جدا برای Google Flow / Veo',
+            '≈ ${uiDigits((_seconds / 8).round().clamp(1, 4))} continuous shots, with an English prompt for each shot in Google Flow / Veo',
             style: theme.textTheme.bodySmall,
           ),
         ],
-        const _Step(n: 4, title: 'موضوع یا منبع'),
+        const _Step(n: 4, title: 'Topic or source'),
         TextField(
           controller: _topic,
           minLines: 3,
@@ -242,12 +293,16 @@ class GenerateScreenState extends State<GenerateScreen> {
         FilledButton.icon(
           onPressed: _busy ? null : _submit,
           icon: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Icon(Icons.auto_awesome),
           label: Text(
             _isVideo
-                ? 'ساخت سناریو و پرامپت ویدیو'
-                : 'ساخت ${_format == 'carousel' ? 'کاروسل' : 'پست'} ${_objectives.firstWhere((o) => o.$1 == _objective).$3}',
+                ? 'Create video brief'
+                : 'Create ${_format == 'carousel' ? 'carousel' : 'post'}',
           ),
         ),
       ],
@@ -270,10 +325,18 @@ class _Step extends StatelessWidget {
             width: 24,
             height: 24,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: PColors.green, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: PColors.green,
+              shape: BoxShape.circle,
+            ),
             child: Text(
-              faDigits(n),
-              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, height: 1.3),
+              uiDigits(n),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                height: 1.3,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -304,7 +367,8 @@ class _ChoiceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final (bg, fg) = color ?? (scheme.primaryContainer, scheme.onPrimaryContainer);
+    final (bg, fg) =
+        color ?? (scheme.primaryContainer, scheme.onPrimaryContainer);
     return Material(
       color: selected ? bg : scheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(16),
@@ -316,7 +380,10 @@ class _ChoiceCard extends StatelessWidget {
           padding: EdgeInsets.all(compact ? 12 : 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: selected ? fg : scheme.outlineVariant, width: selected ? 1.6 : 1),
+            border: Border.all(
+              color: selected ? fg : scheme.outlineVariant,
+              width: selected ? 1.6 : 1,
+            ),
           ),
           child: compact
               ? Column(
@@ -325,7 +392,10 @@ class _ChoiceCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       title,
-                      style: TextStyle(fontWeight: FontWeight.w700, color: selected ? fg : scheme.onSurface),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: selected ? fg : scheme.onSurface,
+                      ),
                     ),
                   ],
                 )
@@ -339,7 +409,10 @@ class _ChoiceCard extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: TextStyle(fontWeight: FontWeight.w800, color: selected ? fg : scheme.onSurface),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: selected ? fg : scheme.onSurface,
+                            ),
                           ),
                           if (body != null)
                             Text(
@@ -418,8 +491,11 @@ class _PickerTile extends StatelessWidget {
                 ),
               ),
               Text(
-                'تغییر',
-                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
+                'Change',
+                style: TextStyle(
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),

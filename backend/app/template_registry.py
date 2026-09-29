@@ -43,6 +43,30 @@ TEMPLATES: dict[str, dict] = {
                 "name_fa": "اسلاید پایانی کاروسل", "desc_fa": "دعوت به اقدام", "types": []},
 }
 
+# English catalog labels are UI metadata; Persian generation templates remain unchanged.
+_TEMPLATE_EN = {
+    "edu_tip": ("Quick tip", "One useful tip with a headline and explanation"),
+    "edu_list": ("Numbered list", "Three to five concise points"),
+    "checklist": ("Checklist", "Actionable steps with check marks"),
+    "step_guide": ("Step-by-step guide", "Walk through a process"),
+    "myth_fact": ("Myth vs. fact", "A common belief and the evidence"),
+    "faq": ("Question and answer", "Answer a customer question"),
+    "big_stat": ("Key statistic", "Highlight a verified number"),
+    "news_flash": ("News flash", "An image with a short news update"),
+    "event_announce": ("Event announcement", "An event with a date and location"),
+    "promo_hero": ("Product showcase", "A product image with a short message"),
+    "before_after": ("Before and after", "Compare two states"),
+    "testimonial": ("Customer testimonial", "An approved customer quote"),
+    "quote_card": ("Quote", "A memorable statement"),
+    "question_poll": ("Question or poll", "Start a conversation"),
+    "sales_offer": ("Sales offer", "A verified offer and call to action"),
+    "car_cover": ("Carousel cover", "An opening slide with a hook"),
+    "car_body": ("Carousel body", "One idea per slide"),
+    "car_cta": ("Carousel closing slide", "Finish with a call to action"),
+}
+for _code, (_name, _description) in _TEMPLATE_EN.items():
+    TEMPLATES[_code].update(name_en=_name, desc_en=_description)
+
 # Default template per post type; the daily batch rotates through templates_for() for variety.
 SINGLE_TEMPLATE = {
     "educational": "edu_list",

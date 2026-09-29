@@ -1,3 +1,4 @@
+import '../widgets/choice_field.dart';
 import 'package:flutter/material.dart';
 
 import '../api.dart';
@@ -8,6 +9,9 @@ import 'competitors_screen.dart';
 import 'generate_screen.dart';
 import 'home_screen.dart';
 import 'research_screen.dart';
+import 'projects_screen.dart';
+import 'profile_screen.dart';
+import 'auth_screen.dart';
 
 /// One project: today, create, market, competitors, brand profile. The same bottom navigation on every
 /// screen size; content is centered on wide screens.
@@ -26,9 +30,19 @@ class _ProjectScreenState extends State<ProjectScreen> {
   final _homeKey = GlobalKey<HomeScreenState>();
   final _generateKey = GlobalKey<GenerateScreenState>();
 
-  void _goGenerate({required String postType, String topic = '', String mode = 'single', String videoStyle = ''}) {
+  void _goGenerate({
+    required String postType,
+    String topic = '',
+    String mode = 'single',
+    String videoStyle = '',
+  }) {
     setState(() => _tab = 1);
-    _generateKey.currentState?.prefill(postType: postType, topic: topic, mode: mode, videoStyle: videoStyle);
+    _generateKey.currentState?.prefill(
+      postType: postType,
+      topic: topic,
+      mode: mode,
+      videoStyle: videoStyle,
+    );
   }
 
   void _selectTab(int i) {
@@ -48,15 +62,38 @@ class _ProjectScreenState extends State<ProjectScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Text('پروژه‌ها', style: Theme.of(ctx).textTheme.titleMedium),
+              child: Text(
+                'Switch business',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_business_outlined),
+              title: const Text('Manage businesses'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        ProjectsScreen(api: widget.api, selectOnly: true),
+                  ),
+                );
+              },
             ),
             for (final b in brands)
               ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 leading: ProjectAvatar(brand: b),
-                title: Text(b.name.isEmpty ? 'بدون نام' : b.name),
-                subtitle: Text(b.industry),
-                trailing: b.id == _brand.id ? Icon(Icons.check_circle, color: Theme.of(ctx).colorScheme.primary) : null,
+                title: Text(b.name.isEmpty ? 'Untitled business' : b.name),
+                subtitle: Text(choiceLabel(b.industry)),
+                trailing: b.id == _brand.id
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      )
+                    : null,
                 onTap: () => Navigator.pop(ctx, b),
               ),
           ],
@@ -64,6 +101,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
       ),
     );
     if (picked == null || picked.id == _brand.id || !mounted) return;
+    await widget.api.selectBrand(picked.id!);
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => ProjectScreen(api: widget.api, brand: picked),
@@ -74,7 +113,13 @@ class _ProjectScreenState extends State<ProjectScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(key: _homeKey, api: widget.api, brand: _brand, onCreate: _goGenerate, onTab: _selectTab),
+      HomeScreen(
+        key: _homeKey,
+        api: widget.api,
+        brand: _brand,
+        onCreate: _goGenerate,
+        onTab: _selectTab,
+      ),
       GenerateScreen(
         key: _generateKey,
         api: widget.api,
@@ -91,15 +136,44 @@ class _ProjectScreenState extends State<ProjectScreen> {
         brand: _brand,
         embedded: true,
         onSaved: (_) async {
-          final fresh = (await widget.api.brands()).where((b) => b.id == _brand.id).firstOrNull;
+          final fresh = (await widget.api.brands())
+              .where((b) => b.id == _brand.id)
+              .firstOrNull;
           if (fresh != null && mounted) setState(() => _brand = fresh);
         },
-        onDeleted: () => Navigator.of(context).pop(),
+        onDeleted: () => Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => ProjectsScreen(api: widget.api)),
+          (_) => false,
+        ),
       ),
     ];
     return Scaffold(
       appBar: AppBar(
-        titleSpacing: 4,
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            tooltip: 'Account',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ProfileScreen(
+                  api: widget.api,
+                  onLogout: () async {
+                    await widget.api.logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => AuthScreen(api: widget.api),
+                      ),
+                      (_) => false,
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+        titleSpacing: 8,
         title: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: _switchProject,
@@ -114,11 +188,17 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_brand.name, maxLines: 1, overflow: TextOverflow.ellipsis),
                       Text(
-                        _brand.industry,
+                        _brand.name,
                         maxLines: 1,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.2),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        choiceLabel(_brand.industry),
+                        maxLines: 1,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(height: 1.2),
                       ),
                     ],
                   ),
@@ -135,11 +215,11 @@ class _ProjectScreenState extends State<ProjectScreen> {
         index: _tab,
         onTap: _selectTab,
         items: const [
-          (Icons.today_outlined, Icons.today, 'امروز'),
-          (Icons.add_circle_outline, Icons.add_circle, 'ساخت'),
-          (Icons.insights_outlined, Icons.insights, 'بازار'),
-          (Icons.groups_outlined, Icons.groups, 'رقبا'),
-          (Icons.storefront_outlined, Icons.storefront, 'برند'),
+          (Icons.today_outlined, Icons.today, 'Home'),
+          (Icons.add_circle_outline, Icons.add_circle, 'Create'),
+          (Icons.insights_outlined, Icons.insights, 'Research'),
+          (Icons.groups_outlined, Icons.groups, 'Rivals'),
+          (Icons.storefront_outlined, Icons.storefront, 'Brand'),
         ],
       ),
     );
@@ -172,12 +252,20 @@ class ProjectAvatar extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [_hex(brand.colors['primary'], scheme.primary), _hex(brand.colors['secondary'], PColors.tealDeep)],
+          colors: [
+            _hex(brand.colors['primary'], scheme.primary),
+            _hex(brand.colors['secondary'], PColors.tealDeep),
+          ],
         ),
       ),
       child: Text(
-        brand.name.isEmpty ? '؟' : brand.name.characters.first,
-        style: TextStyle(color: Colors.white, fontSize: size * .42, fontWeight: FontWeight.w900, height: 1.2),
+        brand.name.isEmpty ? '?' : brand.name.characters.first,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * .42,
+          fontWeight: FontWeight.w900,
+          height: 1.2,
+        ),
       ),
     );
   }

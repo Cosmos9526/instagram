@@ -2,7 +2,7 @@ let startupTimer;
 window.studioLoadFailed = function () {
   const message = document.getElementById('startup-message');
   const retry = document.getElementById('retry');
-  if (message) message.textContent = 'بارگذاری بیشتر از معمول طول کشیده است. اتصال اینترنت را بررسی کنید یا دوباره تلاش کنید.';
+  if (message) message.textContent = 'Loading is taking longer than expected. Check your connection and try again.';
   if (retry) retry.hidden = false;
 };
 window.addEventListener('flutter-first-frame', function () {

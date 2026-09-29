@@ -1,3 +1,4 @@
+import '../widgets/choice_field.dart';
 import 'package:flutter/material.dart';
 
 import '../api.dart';
@@ -12,7 +13,8 @@ import 'templates_screen.dart';
 
 /// The user's projects (one per business/brand).
 class ProjectsScreen extends StatefulWidget {
-  const ProjectsScreen({super.key, required this.api});
+  const ProjectsScreen({super.key, required this.api, this.selectOnly = false});
+  final bool selectOnly;
   final Api api;
 
   @override
@@ -34,6 +36,20 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     try {
       final (user, brands) = (await widget.api.me(), await widget.api.brands());
       if (!mounted) return;
+      if (!widget.selectOnly && brands.isNotEmpty) {
+        final selected =
+            brands.where((b) => b.id == widget.api.activeBrandId).firstOrNull ??
+            brands.where((b) => b.name.trim().isNotEmpty).firstOrNull ??
+            brands.first;
+        await widget.api.selectBrand(selected.id!);
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => ProjectScreen(api: widget.api, brand: selected),
+          ),
+        );
+        return;
+      }
       setState(() {
         _user = user;
         _brands = brands;
@@ -48,28 +64,33 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   Future<void> _logout() async {
     await widget.api.logout();
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)), (_) => false);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => AuthScreen(api: widget.api)),
+      (_) => false,
+    );
   }
 
   Future<void> _newProject() async {
-    final id = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => ProjectWizard(api: widget.api)));
+    final id = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => ProjectWizard(api: widget.api)),
+    );
     if (id == null) return;
-    await _load();
-    final b = _brands?.where((b) => b.id == id).firstOrNull;
+    final brands = await widget.api.brands();
+    if (!mounted) return;
+    setState(() => _brands = brands);
+    final b = brands.where((b) => b.id == id).firstOrNull;
     if (b != null && mounted) _open(b);
   }
 
   Future<void> _open(Brand b) async {
-    await Navigator.of(context).push(
+    await widget.api.selectBrand(b.id!);
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (_) => ProjectScreen(api: widget.api, brand: b),
       ),
+      (_) => false,
     );
-    _load();
   }
 
   @override
@@ -78,21 +99,25 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('استودیوی محتوا'),
+        title: const Text('Businesses'),
         actions: [
           IconButton(
-            tooltip: 'قالب‌ها و سبک‌های ویدیو',
+            tooltip: 'Templates and video styles',
             icon: const Icon(Icons.dashboard_customize_outlined),
-            onPressed: () =>
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => TemplatesScreen(api: widget.api))),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => TemplatesScreen(api: widget.api),
+              ),
+            ),
           ),
           IconButton(
-            tooltip: 'حساب کاربری',
+            tooltip: 'Account',
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => ProfileScreen(api: widget.api, onLogout: _logout),
+                  builder: (_) =>
+                      ProfileScreen(api: widget.api, onLogout: _logout),
                 ),
               );
               _load();
@@ -109,7 +134,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(_error!),
-                        TextButton(onPressed: _load, child: const Text('تلاش دوباره')),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Try again'),
+                        ),
                       ],
                     ),
             )
@@ -119,21 +147,29 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                 padding: pagePadding(context, maxWidth: 1000, bottom: 40),
                 children: [
                   Text(
-                    _user == null || _user!.name.trim().isEmpty ? 'سلام' : 'سلام ${_user!.name.trim()}',
+                    _user == null || _user!.name.trim().isEmpty
+                        ? 'Hello'
+                        : 'Hello ${_user!.name.trim()}',
                     style: theme.textTheme.headlineSmall,
                   ),
                   Text(
                     brands.isEmpty
-                        ? 'اولین کسب‌وکارت را اضافه کن تا هر روز بدانی چه چیزی منتشر کنی.'
-                        : 'یک کسب‌وکار را باز کن تا محتوای امروزش را ببینی یا بسازی.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ? 'Add your first business to start planning content.'
+                        : 'Manage your businesses and their content.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 18),
                   ResponsiveGrid(
                     minTile: 300,
                     children: [
-                      for (final b in brands) _ProjectCard(brand: b, onTap: () => _open(b)),
-                      _NewProjectCard(onTap: _newProject, first: brands.isEmpty),
+                      for (final b in brands)
+                        _ProjectCard(brand: b, onTap: () => _open(b)),
+                      _NewProjectCard(
+                        onTap: _newProject,
+                        first: brands.isEmpty,
+                      ),
                     ],
                   ),
                 ],
@@ -151,10 +187,14 @@ class _ProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final perWeek = brand.weeklyPlan.values.fold<int>(0, (n, l) => n + l.length);
+    final perWeek = brand.weeklyPlan.values.fold<int>(
+      0,
+      (n, l) => n + l.length,
+    );
     final details = [
       if (brand.instagram.isNotEmpty) '@${brand.instagram}',
-      if (brand.website.isNotEmpty) brand.website.replaceFirst(RegExp(r'^https?://(www\.)?'), ''),
+      if (brand.website.isNotEmpty)
+        brand.website.replaceFirst(RegExp(r'^https?://(www\.)?'), ''),
     ].join(' · ');
     return Card(
       margin: EdgeInsets.zero,
@@ -170,11 +210,14 @@ class _ProjectCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(brand.name.isEmpty ? 'بدون نام' : brand.name, style: theme.textTheme.titleMedium),
+                    Text(
+                      brand.name.isEmpty ? 'Untitled business' : brand.name,
+                      style: theme.textTheme.titleMedium,
+                    ),
                     Text(
                       [
-                        brand.industry,
-                        if (perWeek > 0) '${faDigits(perWeek)} محتوا در هفته',
+                        choiceLabel(brand.industry),
+                        if (perWeek > 0) '${uiDigits(perWeek)} posts per week',
                       ].where((s) => s.isNotEmpty).join(' · '),
                       style: theme.textTheme.bodySmall,
                     ),
@@ -184,12 +227,17 @@ class _ProjectCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         textDirection: TextDirection.ltr,
-                        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_left, color: theme.colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ],
           ),
         ),
@@ -215,7 +263,10 @@ class _NewProjectCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: scheme.primary.withValues(alpha: .5), width: 1.4),
+            border: Border.all(
+              color: scheme.primary.withValues(alpha: .5),
+              width: 1.4,
+            ),
             color: scheme.primaryContainer.withValues(alpha: .35),
           ),
           child: Row(
@@ -223,7 +274,10 @@ class _NewProjectCard extends StatelessWidget {
               Container(
                 width: 52,
                 height: 52,
-                decoration: BoxDecoration(color: scheme.primary, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Icon(Icons.add, color: scheme.onPrimary, size: 28),
               ),
               const SizedBox(width: 14),
@@ -232,11 +286,11 @@ class _NewProjectCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      first ? 'افزودن اولین کسب‌وکار' : 'کسب‌وکار جدید',
+                      first ? 'Add your first business' : 'New business',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
-                      'با آدرس سایت یا اینستاگرام، بقیه خودکار پر می‌شود',
+                      'Start with your website or Instagram profile',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],

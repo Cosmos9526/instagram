@@ -8,13 +8,13 @@ import '../widgets/common.dart';
 
 /// Plan entries a user can put on a weekday.
 const planOptions = <String, String>{
-  'educational': 'آموزشی',
-  'educational:carousel': 'آموزشی (کاروسل)',
-  'news': 'خبری',
-  'promo': 'تبلیغاتی',
-  'promo:carousel': 'تبلیغاتی (کاروسل)',
-  'sales': 'فروش',
-  'video_prompt': 'پرامپت ویدیو',
+  'educational': 'Educational',
+  'educational:carousel': 'Educational (carousel)',
+  'news': 'News',
+  'promo': 'Promotional',
+  'promo:carousel': 'Promotional (carousel)',
+  'sales': 'Sales',
+  'video_prompt': 'Video brief',
 };
 
 const brandPalettes = <List<String>>[
@@ -26,10 +26,18 @@ const brandPalettes = <List<String>>[
   ['#2A9D8F', '#E76F51', '#FDFBF7', '#1D3557'],
 ];
 
-Color hexColor(String s) => Color(int.parse('FF${s.replaceFirst('#', '')}', radix: 16));
+Color hexColor(String s) =>
+    Color(int.parse('FF${s.replaceFirst('#', '')}', radix: 16));
 
 class BrandScreen extends StatefulWidget {
-  const BrandScreen({super.key, required this.api, this.brand, this.embedded = false, this.onSaved, this.onDeleted});
+  const BrandScreen({
+    super.key,
+    required this.api,
+    this.brand,
+    this.embedded = false,
+    this.onSaved,
+    this.onDeleted,
+  });
   final Api api;
   final Brand? brand;
 
@@ -48,7 +56,11 @@ class _BrandScreenState extends State<BrandScreen> {
   late Map<String, TextEditingController> _c;
   late List<(TextEditingController, TextEditingController)> _products;
   bool _busy = false;
-  List<String> _industry = [], _audience = [], _tone = [], _cta = [], _forbidden = [];
+  List<String> _industry = [],
+      _audience = [],
+      _tone = [],
+      _cta = [],
+      _forbidden = [];
 
   @override
   void initState() {
@@ -63,7 +75,9 @@ class _BrandScreenState extends State<BrandScreen> {
   }
 
   void _reset() {
-    _b = widget.brand == null ? Brand() : Brand.fromJson({'id': widget.brand!.id, ...widget.brand!.toJson()});
+    _b = widget.brand == null
+        ? Brand()
+        : Brand.fromJson({'id': widget.brand!.id, ...widget.brand!.toJson()});
     if (_b.weeklyPlan.isEmpty) {
       _b.weeklyPlan = {
         '5': ['educational:carousel'],
@@ -91,13 +105,16 @@ class _BrandScreenState extends State<BrandScreen> {
     if (_products.isEmpty) _products.add((t(''), t('')));
   }
 
-  List<String> _split(String s, RegExp by) =>
-      s.split(by).map((e) => e.trim().replaceFirst('#', '')).where((e) => e.isNotEmpty).toList();
+  List<String> _split(String s, RegExp by) => s
+      .split(by)
+      .map((e) => e.trim().replaceFirst('#', ''))
+      .where((e) => e.isNotEmpty)
+      .toList();
 
   Future<void> _save() async {
     if (!_form.currentState!.validate()) return;
     if (_industry.isEmpty) {
-      showSnack(context, 'حوزه‌ی کاری را انتخاب کنید');
+      showSnack(context, 'Choose an industry');
       return;
     }
     _b
@@ -113,14 +130,15 @@ class _BrandScreenState extends State<BrandScreen> {
       ..hashtags = _split(_c['hashtags']!.text, RegExp(r'[\s،,]+'))
       ..products = [
         for (final (n, d) in _products)
-          if (n.text.trim().isNotEmpty) Product(name: n.text.trim(), desc: d.text.trim()),
+          if (n.text.trim().isNotEmpty)
+            Product(name: n.text.trim(), desc: d.text.trim()),
       ];
     setState(() => _busy = true);
     try {
       final id = await widget.api.saveBrand(_b);
       _b.id = id;
       if (!mounted) return;
-      showSnack(context, 'ذخیره شد');
+      showSnack(context, 'Saved');
       widget.onSaved?.call(id);
       if (!widget.embedded) Navigator.of(context).pop(id);
     } on ApiException catch (e) {
@@ -130,18 +148,26 @@ class _BrandScreenState extends State<BrandScreen> {
     }
   }
 
-  Widget _field(String key, String label, {String? hint, int lines = 1, bool required = false, bool ltr = false}) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: TextFormField(
-          controller: _c[key],
-          textDirection: ltr ? TextDirection.ltr : null,
-          minLines: 1,
-          maxLines: lines,
-          decoration: InputDecoration(labelText: label, hintText: hint),
-          validator: required ? (v) => (v ?? '').trim().isEmpty ? 'الزامی است' : null : null,
-        ),
-      );
+  Widget _field(
+    String key,
+    String label, {
+    String? hint,
+    int lines = 1,
+    bool required = false,
+    bool ltr = false,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextFormField(
+      controller: _c[key],
+      textDirection: ltr ? TextDirection.ltr : null,
+      minLines: 1,
+      maxLines: lines,
+      decoration: InputDecoration(labelText: label, hintText: hint),
+      validator: required
+          ? (v) => (v ?? '').trim().isEmpty ? 'Required' : null
+          : null,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -150,31 +176,46 @@ class _BrandScreenState extends State<BrandScreen> {
       child: ListView(
         padding: pagePadding(context, maxWidth: 760),
         children: [
-          const SectionTitle('مشخصات'),
-          _field('name', 'نام کسب‌وکار', required: true),
+          const SectionTitle('Business profile'),
+          _field('name', 'Business name', required: true),
           ChoiceField(
-            label: 'حوزه‌ی کاری',
+            label: 'Industry',
             options: industryOptions,
             values: _industry,
             multi: false,
             onChanged: (v) => setState(() => _industry = v),
           ),
-          _field('description', 'درباره‌ی کسب‌وکار', hint: 'چه کار می‌کنید و چه چیزی شما را متمایز می‌کند', lines: 4),
-          _field('website', 'وب‌سایت (برای تحقیق بازار)', hint: 'https://…', ltr: true),
-          _field('instagram', 'آیدی اینستاگرام', hint: 'mybrand', ltr: true),
+          _field(
+            'description',
+            'About your business',
+            hint: 'What you do and what makes your business different',
+            lines: 4,
+          ),
+          _field(
+            'website',
+            'Website (for research)',
+            hint: 'https://…',
+            ltr: true,
+          ),
+          _field('instagram', 'Instagram handle', hint: 'mybrand', ltr: true),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: 'fa', label: Text('محتوای فارسی')),
+              ButtonSegment(value: 'fa', label: Text('Persian content')),
               ButtonSegment(value: 'en', label: Text('English')),
             ],
             selected: {_b.language},
             onSelectionChanged: (s) => setState(() => _b.language = s.first),
           ),
           SectionTitle(
-            'محصولات و خدمات',
+            'Products and services',
             trailing: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => setState(() => _products.add((TextEditingController(), TextEditingController()))),
+              onPressed: () => setState(
+                () => _products.add((
+                  TextEditingController(),
+                  TextEditingController(),
+                )),
+              ),
             ),
           ),
           for (var i = 0; i < _products.length; i++)
@@ -189,14 +230,18 @@ class _BrandScreenState extends State<BrandScreen> {
                         children: [
                           TextField(
                             controller: _products[i].$1,
-                            decoration: const InputDecoration(labelText: 'نام'),
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                            ),
                           ),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _products[i].$2,
                             minLines: 1,
                             maxLines: 3,
-                            decoration: const InputDecoration(labelText: 'توضیح، مزیت، قیمت'),
+                            decoration: const InputDecoration(
+                              labelText: 'Description, benefits, price',
+                            ),
                           ),
                         ],
                       ),
@@ -209,32 +254,41 @@ class _BrandScreenState extends State<BrandScreen> {
                 ),
               ),
             ),
-          const SectionTitle('مخاطب و لحن'),
+          const SectionTitle('Audience and tone'),
           ChoiceField(
-            label: 'مخاطب',
-            help: 'هر چند مورد که به مشتری‌هایت می‌خورد',
+            label: 'Audience',
+            help: 'Choose all that fit your customers',
             options: audienceOptions,
             values: _audience,
             onChanged: (v) => setState(() => _audience = v),
           ),
-          ChoiceField(label: 'لحن', options: toneOptions, values: _tone, onChanged: (v) => setState(() => _tone = v)),
           ChoiceField(
-            label: 'دعوت به اقدام',
-            help: 'جمله‌ی آخر هر پست',
+            label: 'Tone',
+            options: toneOptions,
+            values: _tone,
+            onChanged: (v) => setState(() => _tone = v),
+          ),
+          ChoiceField(
+            label: 'Call to action',
+            help: 'The closing line of each post',
             options: ctaOptions,
             values: _cta,
             multi: false,
             onChanged: (v) => setState(() => _cta = v),
           ),
           ChoiceField(
-            label: 'موضوعات ممنوع',
-            help: 'درباره‌ی این‌ها هیچ‌وقت پست ساخته نمی‌شود',
+            label: 'Excluded topics',
+            help: 'Topics to avoid in generated content',
             options: forbiddenOptions,
             values: _forbidden,
             onChanged: (v) => setState(() => _forbidden = v),
           ),
-          _field('hashtags', 'هشتگ‌های ثابت', hint: 'کافه_نمونه قهوه_تخصصی'),
-          const SectionTitle('رنگ‌های برند'),
+          _field(
+            'hashtags',
+            'Brand hashtags',
+            hint: 'cafe_example coffee_Expert',
+          ),
+          const SectionTitle('Brand colors'),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -242,15 +296,23 @@ class _BrandScreenState extends State<BrandScreen> {
               for (final p in brandPalettes)
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () =>
-                      setState(() => _b.colors = {'primary': p[0], 'secondary': p[1], 'bg': p[2], 'text': p[3]}),
+                  onTap: () => setState(
+                    () => _b.colors = {
+                      'primary': p[0],
+                      'secondary': p[1],
+                      'bg': p[2],
+                      'text': p[3],
+                    },
+                  ),
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         width: 2,
-                        color: _b.colors['primary'] == p[0] && _b.colors['secondary'] == p[1]
+                        color:
+                            _b.colors['primary'] == p[0] &&
+                                _b.colors['secondary'] == p[1]
                             ? Theme.of(context).colorScheme.primary
                             : Colors.transparent,
                       ),
@@ -273,15 +335,20 @@ class _BrandScreenState extends State<BrandScreen> {
                 ),
             ],
           ),
-          const SectionTitle('برنامه‌ی هفتگی'),
-          const Text('هر روز صبح پست‌های این برنامه خودکار ساخته می‌شوند.'),
+          const SectionTitle('Weekly plan'),
+          const Text(
+            'Posts in this plan are prepared automatically each morning.',
+          ),
           const SizedBox(height: 8),
           for (final (day, label) in weekDays)
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(label),
               subtitle: Text(
-                (_b.weeklyPlan[day] ?? const []).map((e) => planOptions[e] ?? e).join('، ').ifEmpty('بدون پست'),
+                (_b.weeklyPlan[day] ?? const [])
+                    .map((e) => planOptions[e] ?? e)
+                    .join('، ')
+                    .ifEmpty('No posts'),
               ),
               trailing: const Icon(Icons.edit_calendar_outlined),
               onTap: () => _editDay(day, label),
@@ -290,16 +357,22 @@ class _BrandScreenState extends State<BrandScreen> {
           FilledButton(
             onPressed: _busy ? null : _save,
             child: _busy
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator())
-                : const Text('ذخیره'),
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(),
+                  )
+                : const Text('Save'),
           ),
           if (widget.embedded && _b.id != null) ...[
             const SizedBox(height: 32),
             TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
               onPressed: _confirmDelete,
               icon: const Icon(Icons.delete_outline),
-              label: const Text('حذف این پروژه'),
+              label: const Text('Delete business'),
             ),
           ],
         ],
@@ -307,7 +380,9 @@ class _BrandScreenState extends State<BrandScreen> {
     );
     if (widget.embedded) return form;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.brand == null ? 'کسب‌وکار جدید' : 'ویرایش کسب‌وکار')),
+      appBar: AppBar(
+        title: Text(widget.brand == null ? 'New business' : 'Edit business'),
+      ),
       body: form,
     );
   }
@@ -316,11 +391,19 @@ class _BrandScreenState extends State<BrandScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('حذف پروژه'),
-        content: Text('«${_b.name}» و همه‌ی پست‌ها و تحقیق‌هایش حذف می‌شود. این کار برگشت‌پذیر نیست.'),
+        title: const Text('Delete business'),
+        content: Text(
+          '«${_b.name}» and all its posts and research will be permanently deleted.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('حذف')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
@@ -346,7 +429,10 @@ class _BrandScreenState extends State<BrandScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('پست‌های $label', style: Theme.of(ctx).textTheme.titleMedium),
+                Text(
+                  'Posts for $label',
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -356,7 +442,10 @@ class _BrandScreenState extends State<BrandScreen> {
                       FilterChip(
                         label: Text(e.value),
                         selected: selected.contains(e.key),
-                        onSelected: (on) => setSheet(() => on ? selected.add(e.key) : selected.remove(e.key)),
+                        onSelected: (on) => setSheet(
+                          () =>
+                              on ? selected.add(e.key) : selected.remove(e.key),
+                        ),
                       ),
                   ],
                 ),

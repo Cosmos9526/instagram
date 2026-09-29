@@ -7,7 +7,12 @@ import 'common.dart';
 
 /// Visual tile for one piece of content: 4:5 preview, objective badge, status and title.
 class PostCard extends StatelessWidget {
-  const PostCard({super.key, required this.post, required this.api, required this.onTap});
+  const PostCard({
+    super.key,
+    required this.post,
+    required this.api,
+    required this.onTap,
+  });
   final Post post;
   final Api api;
   final VoidCallback? onTap;
@@ -18,10 +23,10 @@ class PostCard extends StatelessWidget {
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;
     final format = post.isVideo
-        ? 'ویدیو ${faDigits(post.content['total_seconds'] ?? post.content['target_seconds'] ?? '')} ثانیه'
+        ? 'Video ${uiDigits(post.content['total_seconds'] ?? post.content['target_seconds'] ?? '')} seconds'
         : post.mode == 'carousel'
-        ? 'کاروسل ${faDigits(post.slides.length)} اسلاید'
-        : 'تک‌اسلاید';
+        ? 'Carousel ${uiDigits(post.slides.length)} Slide'
+        : 'Single slide';
 
     Widget preview;
     if (post.slides.isNotEmpty) {
@@ -32,12 +37,19 @@ class PostCard extends StatelessWidget {
         errorBuilder: (_, _, _) => const SizedBox.shrink(),
       );
     } else {
-      final (bg, fg) = PColors.objective(post.isVideo ? 'video_prompt' : post.postType, dark);
+      final (bg, fg) = PColors.objective(
+        post.isVideo ? 'video_prompt' : post.postType,
+        dark,
+      );
       preview = Container(
         color: bg,
         alignment: Alignment.center,
         child: post.isBusy
-            ? SizedBox(width: 26, height: 26, child: CircularProgressIndicator(strokeWidth: 2.5, color: fg))
+            ? SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: fg),
+              )
             : Icon(
                 post.status == 'failed'
                     ? Icons.error_outline
@@ -62,7 +74,10 @@ class PostCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  ColoredBox(color: scheme.surfaceContainerHigh, child: preview),
+                  ColoredBox(
+                    color: scheme.surfaceContainerHigh,
+                    child: preview,
+                  ),
                   if (post.mode == 'carousel' && post.slides.length > 1)
                     PositionedDirectional(
                       top: 8,
@@ -73,7 +88,11 @@ class PostCard extends StatelessWidget {
                           color: Colors.black.withValues(alpha: .45),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.collections_outlined, size: 14, color: Colors.white),
+                        child: const Icon(
+                          Icons.collections_outlined,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                 ],
@@ -86,23 +105,31 @@ class PostCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      TypeBadge(post.isVideo ? 'video_prompt' : post.postType, label: post.isVideo ? 'ویدیو' : null),
+                      TypeBadge(
+                        post.isVideo ? 'video_prompt' : post.postType,
+                        label: post.isVideo ? 'Video' : null,
+                      ),
                       const Spacer(),
                       StatusChip(post.status, dense: true),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    post.isBusy ? 'در حال ساخت…' : post.title,
+                    post.isBusy ? 'Creating…' : post.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, height: 1.55),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.55,
+                    ),
                   ),
                   Text(
                     format,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -116,7 +143,12 @@ class PostCard extends StatelessWidget {
 
 /// Grid of [PostCard]s: 2 columns on phones, up to 5 on wide screens.
 class PostGrid extends StatelessWidget {
-  const PostGrid({super.key, required this.posts, required this.api, required this.onOpen});
+  const PostGrid({
+    super.key,
+    required this.posts,
+    required this.api,
+    required this.onOpen,
+  });
   final List<Post> posts;
   final Api api;
   final ValueChanged<Post> onOpen;
@@ -134,7 +166,11 @@ class PostGrid extends StatelessWidget {
           for (final p in posts)
             SizedBox(
               width: w,
-              child: PostCard(post: p, api: api, onTap: p.isBusy ? null : () => onOpen(p)),
+              child: PostCard(
+                post: p,
+                api: api,
+                onTap: p.isBusy ? null : () => onOpen(p),
+              ),
             ),
         ],
       );

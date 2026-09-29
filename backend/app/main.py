@@ -219,13 +219,14 @@ def catalog():
         "templates": [
             {
                 "code": code, "name": spec["name_fa"], "description": spec["desc_fa"], "post_types": spec["types"],
+                "name_en": spec["name_en"], "description_en": spec["desc_en"],
                 "carousel": spec.get("carousel", False), "has_image": spec["image"],
                 "preview": f"/previews/{code}.png" if (PREVIEW_DIR / f"{code}.png").exists() else None,
             }
             for code, spec in TEMPLATES.items()
         ],
         "video_styles": [
-            {k: s[k] for k in ("id", "name_fa", "description_fa", "best_for", "pacing")} | {"beats": s["beats"]}
+            {k: s[k] for k in ("id", "name_fa", "description_fa", "name_en", "description_en", "best_for", "pacing")} | {"beats": s["beats"]}
             for s in VIDEO_STYLES
         ],
     }

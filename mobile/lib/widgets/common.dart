@@ -10,7 +10,18 @@ void showSnack(BuildContext context, String text) {
     ..showSnackBar(SnackBar(content: Text(text)));
 }
 
-Future<void> copyText(BuildContext context, String text, {String label = 'کپی شد'}) async {
+String uiDigits(Object? value) => value?.toString() ?? '';
+
+/// Content keeps its own writing direction inside the English interface.
+TextDirection contentDirection(String text) => RegExp(r'[؀-ۿ]').hasMatch(text)
+    ? TextDirection.rtl
+    : TextDirection.ltr;
+
+Future<void> copyText(
+  BuildContext context,
+  String text, {
+  String label = 'Copied',
+}) async {
   await Clipboard.setData(ClipboardData(text: text));
   if (context.mounted) showSnack(context, label);
 }
@@ -31,22 +42,37 @@ class StatusChip extends StatelessWidget {
     final (bg, fg) = switch (status) {
       'ready' => (const Color(0xFFFFF4E0), const Color(0xFFB45309)),
       'approved' => (const Color(0xFFE6F7EF), const Color(0xFF11774D)),
-      'failed' || 'rejected' => (const Color(0xFFFEECEB), const Color(0xFFB42318)),
+      'failed' ||
+      'rejected' => (const Color(0xFFFEECEB), const Color(0xFFB42318)),
       _ => (const Color(0xFFF2F4F5), const Color(0xFF475467)),
     };
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 2 : 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      padding: EdgeInsets.symmetric(
+        horizontal: dense ? 8 : 10,
+        vertical: dense ? 2 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (status == 'queued' || status == 'running') ...[
-            SizedBox(width: 11, height: 11, child: CircularProgressIndicator(strokeWidth: 2, color: fg)),
+            SizedBox(
+              width: 11,
+              height: 11,
+              child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+            ),
             const SizedBox(width: 6),
           ],
           Text(
             statusLabels[status] ?? status,
-            style: TextStyle(color: fg, fontSize: dense ? 11 : 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: fg,
+              fontSize: dense ? 11 : 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
@@ -62,13 +88,23 @@ class TypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg) = PColors.objective(postType, Theme.of(context).brightness == Brightness.dark);
+    final (bg, fg) = PColors.objective(
+      postType,
+      Theme.of(context).brightness == Brightness.dark,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(
         label ?? postTypes[postType] ?? postType,
-        style: TextStyle(color: fg, fontSize: 11.5, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          color: fg,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -90,7 +126,8 @@ class SectionTitle extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(text, style: Theme.of(context).textTheme.titleMedium),
-              if (subtitle != null) Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+              if (subtitle != null)
+                Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
         ),
@@ -102,7 +139,13 @@ class SectionTitle extends StatelessWidget {
 
 /// Friendly empty/placeholder state with an optional action.
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.icon, required this.title, this.body, this.action});
+  const EmptyState({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.body,
+    this.action,
+  });
   final IconData icon;
   final String title;
   final String? body;
@@ -122,10 +165,18 @@ class EmptyState extends StatelessWidget {
         children: [
           GradientIcon(icon, size: 52),
           const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.titleSmall, textAlign: TextAlign.center),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleSmall,
+            textAlign: TextAlign.center,
+          ),
           if (body != null) ...[
             const SizedBox(height: 4),
-            Text(body!, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            Text(
+              body!,
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
           ],
           if (action != null) ...[const SizedBox(height: 14), action!],
         ],
@@ -136,7 +187,12 @@ class EmptyState extends StatelessWidget {
 
 /// An English generation prompt: left-to-right, selectable, with a one-tap copy button.
 class PromptBlock extends StatefulWidget {
-  const PromptBlock({super.key, required this.text, this.label = 'پرامپت انگلیسی', this.collapsedLines = 5});
+  const PromptBlock({
+    super.key,
+    required this.text,
+    this.label = 'English prompt',
+    this.collapsedLines = 5,
+  });
   final String text;
   final String label;
   final int collapsedLines;
@@ -167,11 +223,17 @@ class _PromptBlockState extends State<PromptBlock> {
               children: [
                 Icon(Icons.translate, size: 15, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 6),
-                Expanded(child: Text(widget.label, style: Theme.of(context).textTheme.labelMedium)),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
                 TextButton.icon(
-                  onPressed: () => copyText(context, widget.text, label: 'پرامپت کپی شد'),
+                  onPressed: () =>
+                      copyText(context, widget.text, label: 'Prompt copied'),
                   icon: const Icon(Icons.copy_rounded, size: 16),
-                  label: const Text('کپی'),
+                  label: const Text('Copy'),
                 ),
               ],
             ),
@@ -195,14 +257,23 @@ class _PromptBlockState extends State<PromptBlock> {
           if (long)
             InkWell(
               onTap: () => setState(() => _open = !_open),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(14),
+              ),
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(_open ? 'بستن' : 'نمایش کامل', style: TextStyle(color: scheme.primary, fontSize: 12)),
-                    Icon(_open ? Icons.expand_less : Icons.expand_more, size: 18, color: scheme.primary),
+                    Text(
+                      _open ? 'Collapse' : 'Expand',
+                      style: TextStyle(color: scheme.primary, fontSize: 12),
+                    ),
+                    Icon(
+                      _open ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: scheme.primary,
+                    ),
                   ],
                 ),
               ),
@@ -215,7 +286,12 @@ class _PromptBlockState extends State<PromptBlock> {
 
 /// Lays children out in a responsive grid (1 column on phones, more on wide screens) inside a ListView.
 class ResponsiveGrid extends StatelessWidget {
-  const ResponsiveGrid({super.key, required this.children, this.minTile = 300, this.spacing = 12});
+  const ResponsiveGrid({
+    super.key,
+    required this.children,
+    this.minTile = 300,
+    this.spacing = 12,
+  });
   final List<Widget> children;
   final double minTile, spacing;
 
@@ -226,7 +302,10 @@ class ResponsiveGrid extends StatelessWidget {
       if (cols == 1) {
         return Column(
           children: [
-            for (var i = 0; i < children.length; i++) ...[if (i > 0) SizedBox(height: spacing), children[i]],
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0) SizedBox(height: spacing),
+              children[i],
+            ],
           ],
         );
       }

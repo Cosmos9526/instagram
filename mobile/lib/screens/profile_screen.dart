@@ -34,13 +34,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final pw = _password.text;
       if (pw.isNotEmpty && pw.length < 8) {
-        throw ApiException('رمز جدید حداقل ۸ حرف');
+        throw ApiException('New password must have at least 8 characters');
       }
-      final u = await widget.api.updateMe(name: _name.text.trim(), password: pw.isEmpty ? null : pw);
+      final u = await widget.api.updateMe(
+        name: _name.text.trim(),
+        password: pw.isEmpty ? null : pw,
+      );
       _password.clear();
       if (!mounted) return;
       setState(() => _user = u);
-      showSnack(context, 'ذخیره شد');
+      showSnack(context, 'Saved');
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
     } finally {
@@ -50,7 +53,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('حساب کاربری')),
+    appBar: AppBar(title: const Text('Account')),
     body: _user == null
         ? const Center(child: CircularProgressIndicator())
         : ListView(
@@ -59,28 +62,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.alternate_email),
-                title: Text(_user!.email, textDirection: TextDirection.ltr, textAlign: TextAlign.right),
-                subtitle: const Text('ایمیل'),
+                title: Text(
+                  _user!.email,
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.right,
+                ),
+                subtitle: const Text('Email'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _name,
-                decoration: const InputDecoration(labelText: 'نام'),
+                decoration: const InputDecoration(labelText: 'Name'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _password,
                 obscureText: true,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'رمز جدید (اختیاری)'),
+                decoration: const InputDecoration(
+                  labelText: 'New password (optional)',
+                ),
               ),
               const SizedBox(height: 20),
-              FilledButton(onPressed: _busy ? null : _save, child: const Text('ذخیره')),
+              FilledButton(
+                onPressed: _busy ? null : _save,
+                child: const Text('Save'),
+              ),
               const SizedBox(height: 32),
               OutlinedButton.icon(
                 onPressed: widget.onLogout,
                 icon: const Icon(Icons.logout),
-                label: const Text('خروج از حساب'),
+                label: const Text('Sign out'),
               ),
             ],
           ),
