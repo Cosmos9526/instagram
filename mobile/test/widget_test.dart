@@ -99,10 +99,12 @@ void main() {
       'source': 'Anthropic',
       'importance': 5,
       'category': 'pricing',
+      'verification': 'official',
       'published_at': '2026-09-30T12:00:00Z',
     });
     expect(alert.importance, 5);
     expect(alert.category, 'pricing');
+    expect(alert.verification, 'official');
     expect(alert.publishedAt?.isUtc, isTrue);
   });
 

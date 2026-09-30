@@ -18,13 +18,13 @@ log = logging.getLogger("market_alerts")
 
 FEEDS = {
     "OpenAI": "https://openai.com/news/rss.xml",
-    "Anthropic": "https://www.anthropic.com/rss.xml",
     "Google AI": "https://blog.google/technology/ai/rss/",
     "GitHub": "https://github.blog/changelog/feed/",
 }
 
 QUERIES = (
     'Claude Pro price plan tier $500 $200',
+    'site:anthropic.com/news Claude launch plan pricing',
     'Anthropic Claude pricing plan update',
     'OpenAI ChatGPT pricing plan update',
     'Google Gemini Flow pricing plan update',
@@ -34,7 +34,7 @@ QUERIES = (
 
 MATERIAL = (
     "price", "pricing", "plan", "tier", "subscription", "upgrade", "limit",
-    "launch", "launched", "release", "released", "available", "new model",
+    "launch", "launched", "release", "released", "introducing", "available", "new model",
     "قیمت", "پلن", "اشتراک", "تعرفه", "عرضه", "رونمایی", "مدل جدید",
 )
 VENDORS = (
@@ -44,6 +44,8 @@ VENDORS = (
 )
 URGENT = ("price", "pricing", "plan", "tier", "subscription", "launch", "new model",
           "قیمت", "پلن", "اشتراک", "مدل جدید")
+AI_PRODUCT = ("ai", "model", "claude", "chatgpt", "openai", "gemini", "flow", "copilot",
+              "agent", "grok", "cursor", "هوش مصنوعی", "کلاد", "مدل")
 
 
 def _text(node: ET.Element, names: tuple[str, ...]) -> str:
@@ -75,8 +77,14 @@ def _date(value: str) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
-def _score(title: str, summary: str, official: bool = False) -> int:
+def _score(title: str, summary: str, official: bool = False, source: str = "") -> int:
     text = f"{title} {summary}".casefold()
+    title_text = title.casefold()
+    title_has_ai_product = bool(re.search(r"\bai\b", title_text)) or any(
+        k in title_text for k in AI_PRODUCT if k != "ai"
+    )
+    if source == "GitHub" and not title_has_ai_product:
+        return 0
     if not any(v in text for v in VENDORS) or not any(k in text for k in MATERIAL):
         return 0
     score = 2 + (2 if official else 0)
@@ -84,7 +92,12 @@ def _score(title: str, summary: str, official: bool = False) -> int:
         score += 2
     if re.search(r"(?:\$|usd|دلار)\s?\d|\d+\s?(?:usd|دلار)", text):
         score += 1
-    return min(score, 5)
+    uncertain = not official and any(
+        k in text for k in ("reportedly", "rumor", "leak", "testing", "گزارش", "شایعه")
+    )
+    if uncertain:
+        score -= 1
+    return max(0, min(score, 5 if official else 3 if uncertain else 4))
 
 
 def _feed(source: str, url: str) -> list[dict]:
@@ -101,7 +114,7 @@ def _feed(source: str, url: str) -> list[dict]:
     for item in entries[:20]:
         title = _text(item, ("title",))
         summary = re.sub(r"<[^>]+>", " ", _text(item, ("description", "summary", "content")))
-        importance = _score(title, summary, official=True)
+        importance = _score(title, summary, official=True, source=source)
         if importance:
             out.append({"title": title, "summary": " ".join(summary.split())[:500],
                         "source": source, "url": _link(item), "importance": importance,
@@ -150,7 +163,12 @@ def refresh(db) -> int:
 
 
 def out(alert: MarketAlert) -> dict:
+    verification = (
+        "in_product" if alert.source.endswith("in-product screen")
+        else "official" if alert.source in FEEDS
+        else "reported"
+    )
     return {"id": alert.id, "title": alert.title, "summary": alert.summary,
             "source": alert.source, "url": alert.url, "category": alert.category,
             "importance": alert.importance, "published_at": alert.published_at,
-            "discovered_at": alert.discovered_at}
+            "discovered_at": alert.discovered_at, "verification": verification}
