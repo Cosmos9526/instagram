@@ -35,6 +35,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
     String topic = '',
     String mode = 'single',
     String videoStyle = '',
+    String contentLabel = '',
   }) {
     setState(() => _tab = 1);
     _generateKey.currentState?.prefill(
@@ -42,6 +43,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
       topic: topic,
       mode: mode,
       videoStyle: videoStyle,
+      contentLabel: contentLabel,
     );
   }
 

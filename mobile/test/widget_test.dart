@@ -7,6 +7,21 @@ import 'package:postyar/widgets/common.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('video posts expose their editorial label', () {
+    final news = Post.fromJson({
+      'id': 'n',
+      'post_type': 'video_prompt',
+      'content': {'content_label': 'news', 'title': 'خبر امروز'},
+    });
+    final trend = Post.fromJson({
+      'id': 't',
+      'post_type': 'video_prompt',
+      'content': {'content_label': 'trending', 'title': 'ترند امروز'},
+    });
+    expect(news.contentLabel, 'News');
+    expect(trend.contentLabel, 'Trending');
+  });
+
   test('brand json round-trip keeps weekly plan, products and links', () {
     final b = Brand(
       name: 'کافه',

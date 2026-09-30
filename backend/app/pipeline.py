@@ -173,7 +173,7 @@ def run_post(db: Session, post: Post) -> None:
 
 def _keep_inputs(opts: dict, data: dict) -> None:
     """Generation inputs stay in the content so "regenerate" repeats the same request."""
-    for key in ("n_body", "target_seconds", "video_style"):
+    for key in ("n_body", "target_seconds", "video_style", "content_label"):
         if key in opts:
             data.setdefault(key, opts[key])
 

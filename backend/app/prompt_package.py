@@ -100,6 +100,7 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
         blocks.append({'label': label + ' — on-screen text', 'text': norm(frame.on_screen_text)})
     full_prompt = '\n\n'.join(b['label'] + '\n' + b['text'] for b in blocks if b['label'] != 'Character references required')
     return {'output_kind': 'prompt_package', 'full_prompt': full_prompt, 'source': 'fake' if settings.llm_provider == 'fake' else 'model',
+            'content_label': (post.content or {}).get('content_label', ''),
             'title': norm(package.title), 'caption': norm(package.caption),
             'hashtags': list(dict.fromkeys(norm(h).lstrip('#') for h in package.hashtags + (brand.hashtags or []))),
             'blocks': blocks, 'target_seconds': 10 if video else None,

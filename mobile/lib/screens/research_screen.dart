@@ -14,6 +14,7 @@ typedef UseIdea =
       String topic,
       String mode,
       String videoStyle,
+      String contentLabel,
     });
 
 /// Market research: what's said online, trends, keywords, most-viewed videos and working video styles.
@@ -152,7 +153,9 @@ class _ResearchScreenState extends State<ResearchScreen> {
                   const SizedBox(height: 8),
                   const Text('Every day · News + Fast trend + Promotion'),
                   const Text('Every other day · Educational video'),
-                  const Text('Every video · 8-second scene + 2-second end card'),
+                  const Text(
+                    'Every video · 8-second scene + 2-second end card',
+                  ),
                 ],
               ),
             ),
@@ -270,11 +273,13 @@ class _ResearchScreenState extends State<ResearchScreen> {
           for (final n in radarNews.take(8))
             _SignalCard(
               title: '${n['title'] ?? ''}',
-              detail: '${n['source'] ?? 'News'} · ${n['date'] ?? 'last 24 hours'}',
+              detail:
+                  '${n['source'] ?? 'News'} · ${n['date'] ?? 'last 24 hours'}',
               sourceUrl: '${n['url'] ?? ''}',
               onCreate: () => widget.onUse(
                 postType: 'video_prompt',
                 mode: 'video',
+                contentLabel: 'news',
                 topic:
                     'NEWS VIDEO — Use only this source and verify its date before writing: ${n['title']} | ${n['url']}',
               ),
@@ -291,6 +296,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
               onCreate: () => widget.onUse(
                 postType: 'video_prompt',
                 mode: 'video',
+                contentLabel: 'trending',
                 topic:
                     'TREND VIDEO — Search signal: ${s['query']}. Explain why it matters now without inventing statistics.',
               ),
@@ -308,6 +314,7 @@ class _ResearchScreenState extends State<ResearchScreen> {
               onCreate: () => widget.onUse(
                 postType: 'video_prompt',
                 mode: 'video',
+                contentLabel: 'trending',
                 topic:
                     'TREND RESPONSE VIDEO — Reference this YouTube topic, do not copy it: ${v['title']} | ${v['url']}',
               ),

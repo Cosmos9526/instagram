@@ -220,4 +220,18 @@ def test_delete_restore_and_price_search_ownership(client, monkeypatch):
     assert stopped.json()['error']=='Stopped by user'
     assert client.post(f"/competitor-scans/{second.json()['id']}/cancel",headers=b).status_code==404
 
+
+def test_video_content_label_is_saved(client):
+    h = _user(client)
+    bid = client.post('/brands', headers=h, json=BRAND).json()['id']
+    post = client.post(f'/brands/{bid}/generate', headers=h, json={
+        'post_type': 'video_prompt', 'mode': 'video',
+        'topic_hint': 'A sourced AI news story', 'content_label': 'news',
+    })
+    assert post.status_code == 200
+    assert post.json()['content']['content_label'] == 'news'
+    assert client.post(f'/brands/{bid}/generate', headers=h, json={
+        'post_type': 'video_prompt', 'content_label': 'unknown',
+    }).status_code == 422
+
     _drain()
