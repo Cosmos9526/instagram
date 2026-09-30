@@ -118,6 +118,23 @@ class Research {
       Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }
 
+class MarketAlert {
+  MarketAlert.fromJson(Map<String, dynamic> j)
+    : id = '${j['id']}',
+      title = '${j['title'] ?? ''}',
+      summary = '${j['summary'] ?? ''}',
+      source = '${j['source'] ?? ''}',
+      url = '${j['url'] ?? ''}',
+      category = '${j['category'] ?? 'news'}',
+      importance = (j['importance'] as num?)?.toInt() ?? 1,
+      publishedAt = DateTime.tryParse('${j['published_at']}'),
+      discoveredAt = DateTime.tryParse('${j['discovered_at']}');
+
+  final String id, title, summary, source, url, category;
+  final int importance;
+  final DateTime? publishedAt, discoveredAt;
+}
+
 /// Status of a competitor's discovered social handle: verified (linked from their own site), manual
 /// (typed in by the user), or not found / their site was unreachable.
 const socialStatusLabels = <String, String>{

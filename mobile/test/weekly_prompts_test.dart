@@ -128,11 +128,12 @@ void main() {
         'EEEE, MMMM d',
         'en',
       ).format(start.add(Duration(days: i)));
-      await tester.tap(
-        find.byWidgetPredicate(
-          (w) => w is Semantics && w.properties.label == label,
-        ),
+      final day = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == label,
       );
+      await tester.ensureVisible(day);
+      await tester.pumpAndSettle();
+      await tester.tap(day);
       await tester.pump();
       final ready = find.ancestor(
         of: find.text('10 seconds · Google Flow · Ready to copy'),
@@ -142,7 +143,10 @@ void main() {
         find.descendant(of: ready, matching: find.text('موضوع روز $i')),
         findsOneWidget,
       );
-      await tester.tap(find.widgetWithText(ActionChip, 'Promotion'));
+      final promotion = find.widgetWithText(ActionChip, 'Promotion');
+      await tester.ensureVisible(promotion);
+      await tester.pumpAndSettle();
+      await tester.tap(promotion);
       await tester.pump();
       expect(tester.takeException(), isNull);
     }

@@ -92,6 +92,20 @@ void main() {
     expect(r.isBusy, isFalse);
   });
 
+  test('market alert parses urgency and source timestamps', () {
+    final alert = MarketAlert.fromJson({
+      'id': 'a',
+      'title': 'Claude Pro pricing changed',
+      'source': 'Anthropic',
+      'importance': 5,
+      'category': 'pricing',
+      'published_at': '2026-09-30T12:00:00Z',
+    });
+    expect(alert.importance, 5);
+    expect(alert.category, 'pricing');
+    expect(alert.publishedAt?.isUtc, isTrue);
+  });
+
   test('faDigits', () => expect(faDigits('2/5'), '۲/۵'));
 
   testWidgets('logged-out app opens the login screen in English and LTR', (

@@ -199,6 +199,16 @@ class Api {
         ),
       );
 
+  Future<List<MarketAlert>> alerts(String brandId) async => [
+    for (final a in await _send('GET', '/brands/$brandId/alerts') as List)
+      MarketAlert.fromJson(a),
+  ];
+
+  Future<int> refreshAlerts(String brandId) async {
+    final result = await _send('POST', '/brands/$brandId/alerts/refresh');
+    return (result['added'] as num?)?.toInt() ?? 0;
+  }
+
   // ---- posts ----
 
   Future<List<Post>> posts(String brandId) async => [

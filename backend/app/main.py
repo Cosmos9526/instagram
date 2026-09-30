@@ -15,7 +15,7 @@ from . import auth as authlib
 from .competitors import normalize_competitors, parse_competitors_text
 from .config import settings
 from .db import SessionLocal, init_db
-from .models import POST_TYPES, Brand, CompetitorScan, Job, Post, Research, User
+from .models import POST_TYPES, Brand, CompetitorScan, Job, MarketAlert, Post, Research, User
 from .static import FastStatic, thumbnail
 from .scheduler import create_daily_posts
 from .template_registry import TEMPLATES
@@ -289,6 +289,24 @@ def list_research(brand_id: str, user: User = Depends(current_user), db: Session
     own_brand(brand_id, user, db)
     rows = db.scalars(select(Research).where(Research.brand_id == brand_id).order_by(Research.created_at.desc()).limit(20))
     return [research_out(r) for r in rows]
+
+
+@app.get("/brands/{brand_id}/alerts")
+def list_alerts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    own_brand(brand_id, user, db)
+    rows = db.scalars(select(MarketAlert).order_by(
+        MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(),
+        MarketAlert.discovered_at.desc()).limit(30))
+    from .market_alerts import out
+    return [out(row) for row in rows]
+
+
+@app.post("/brands/{brand_id}/alerts/refresh")
+def refresh_alerts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    own_brand(brand_id, user, db)
+    from .market_alerts import refresh
+    added = refresh(db)
+    return {"ok": True, "added": added}
 
 
 # ---------- posts ----------

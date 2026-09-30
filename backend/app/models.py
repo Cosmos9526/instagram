@@ -85,6 +85,22 @@ class Research(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
 
+class MarketAlert(Base):
+    """A high-priority, source-backed AI market change shown above the content plan."""
+
+    __tablename__ = "market_alerts"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_id)
+    fingerprint: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    title: Mapped[str] = mapped_column(Text)
+    summary: Mapped[str] = mapped_column(Text, default="")
+    source: Mapped[str] = mapped_column(String(120), default="")
+    url: Mapped[str] = mapped_column(Text, default="")
+    category: Mapped[str] = mapped_column(String(30), default="news")
+    importance: Mapped[int] = mapped_column(Integer, default=1)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    discovered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class CompetitorScan(Base):
     """One scan of a project's competitor list: website + Instagram analysis and the synthesized report."""
 

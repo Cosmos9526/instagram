@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../api.dart';
 import '../models.dart';
 import '../theme.dart';
@@ -36,9 +37,11 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   List<Post>? _posts;
+  List<MarketAlert>? _alerts;
   String? _error;
   Timer? _poll;
   bool _preparingWeek = false;
+  bool _checkingAlerts = false;
   DateTime _selectedDay = DateUtils.dateOnly(DateTime.now());
   @override
   void initState() {
@@ -54,10 +57,16 @@ class HomeScreenState extends State<HomeScreen> {
 
   Future<void> refresh() async {
     try {
-      final posts = await widget.api.posts(widget.brand.id!);
+      final results = await Future.wait([
+        widget.api.posts(widget.brand.id!),
+        widget.api.alerts(widget.brand.id!),
+      ]);
+      final posts = results[0] as List<Post>;
+      final alerts = results[1] as List<MarketAlert>;
       if (!mounted) return;
       setState(() {
         _posts = posts;
+        _alerts = alerts;
         _error = null;
       });
       _poll?.cancel();
@@ -66,6 +75,26 @@ class HomeScreenState extends State<HomeScreen> {
       }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  Future<void> _refreshAlerts() async {
+    setState(() => _checkingAlerts = true);
+    try {
+      final added = await widget.api.refreshAlerts(widget.brand.id!);
+      final alerts = await widget.api.alerts(widget.brand.id!);
+      if (!mounted) return;
+      setState(() => _alerts = alerts);
+      showSnack(
+        context,
+        added == 0
+            ? 'No new important alerts'
+            : '$added new important alert${added == 1 ? '' : 's'}',
+      );
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _checkingAlerts = false);
     }
   }
 
@@ -120,6 +149,8 @@ class HomeScreenState extends State<HomeScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         Text('Your content', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 12),
+        _breakingAlerts(context),
         const SizedBox(height: 12),
         _weeklyPlan(context),
         const SizedBox(height: 12),
@@ -208,6 +239,114 @@ class HomeScreenState extends State<HomeScreen> {
       ],
     ),
   );
+
+  Widget _breakingAlerts(BuildContext context) {
+    final alerts = _alerts ?? const <MarketAlert>[];
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: const Color(0xFFFFF4ED),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.notifications_active_outlined,
+                  color: Color(0xFFB54708),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Urgent AI alerts',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _checkingAlerts ? null : _refreshAlerts,
+                  icon: _checkingAlerts
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh, size: 18),
+                  label: const Text('Check now'),
+                ),
+              ],
+            ),
+            const Text(
+              'Important launches, pricing and plan changes — checked every 3 hours.',
+            ),
+            if (_alerts == null)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (alerts.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text(
+                  'No important alert found yet. Tap Check now for a fresh scan.',
+                ),
+              )
+            else
+              for (final alert in alerts.take(3)) ...[
+                const Divider(height: 20),
+                Text(
+                  alert.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall,
+                  textDirection: contentDirection(alert.title),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFFB54708),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => widget.onCreate(
+                        postType: 'video_prompt',
+                        topic:
+                            'URGENT NEWS VIDEO — Create a complete 10-second Google Flow prompt (8-second Raha/Arian scene + 2-second Rahboom end card). Use only this source, verify the publication date and claims, and do not invent details: ${alert.title} | ${alert.url}',
+                        mode: 'video',
+                        contentLabel: 'news',
+                      ),
+                      icon: const Icon(Icons.movie_creation_outlined, size: 18),
+                      label: const Text('Create 10s video'),
+                    ),
+                    if (alert.url.isNotEmpty)
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final uri = Uri.tryParse(alert.url);
+                          if (uri != null) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.open_in_new, size: 17),
+                        label: const Text('Source'),
+                      ),
+                  ],
+                ),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _weeklyPlan(BuildContext context) {
     final today = DateUtils.dateOnly(DateTime.now());
