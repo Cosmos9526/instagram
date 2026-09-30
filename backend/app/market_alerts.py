@@ -46,6 +46,8 @@ URGENT = ("price", "pricing", "plan", "tier", "subscription", "launch", "new mod
           "قیمت", "پلن", "اشتراک", "مدل جدید")
 AI_PRODUCT = ("ai", "model", "claude", "chatgpt", "openai", "gemini", "flow", "copilot",
               "agent", "grok", "cursor", "هوش مصنوعی", "کلاد", "مدل")
+LOW_TRUST_SOURCES = ("note", "letsdatascience", "startup fortune", "the currency analytics",
+                     "finance.biggo")
 
 
 def _text(node: ET.Element, names: tuple[str, ...]) -> str:
@@ -80,6 +82,8 @@ def _date(value: str) -> datetime | None:
 def _score(title: str, summary: str, official: bool = False, source: str = "") -> int:
     text = f"{title} {summary}".casefold()
     title_text = title.casefold()
+    if source.casefold() in LOW_TRUST_SOURCES:
+        return 0
     title_has_ai_product = bool(re.search(r"\bai\b", title_text)) or any(
         k in title_text for k in AI_PRODUCT if k != "ai"
     )
