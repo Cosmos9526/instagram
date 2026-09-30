@@ -1,7 +1,7 @@
 """Bounded product-price lookup across saved competitor sites; never model-invented prices."""
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from urllib.parse import urljoin, urlparse, urlencode, unquote
+from urllib.parse import urljoin, urlparse, urlencode, unquote, urldefrag
 import re
 import time
 from lxml import html as lh
@@ -26,12 +26,16 @@ def same_site(url,base):
     target=(urlparse(base).hostname or '').removeprefix('www.')
     return bool(target) and host==target
 
+def canonical(url):
+    """Page fragments never change product data and must not trigger another download."""
+    return urldefrag(url)[0].rstrip('/') or urldefrag(url)[0]
+
 def lookup(c,query):
     base=c.get('website','').strip()
     if base and '://' not in base:base='https://'+base
     out={'competitor_id':c['id'],'name':c.get('name') or urlparse(base).hostname or 'Competitor','website':base,'status':'not_found','matches':[],'checked_at':datetime.now(timezone.utc).isoformat()}
     if not base:out['status']='no_website';return out
-    deadline=time.monotonic()+55
+    deadline=time.monotonic()+32
     normalized=' '.join(terms(query))
     wanted=terms(query)
     slug='-'.join(wanted)
@@ -43,13 +47,13 @@ def lookup(c,query):
     if normalized!=query:queue.append(base.rstrip('/')+'/?'+urlencode({'s':query,'post_type':'product'}))
     queue.extend(direct)
     queue.append(base)
-    queue=list(dict.fromkeys(queue))
+    queue=list(dict.fromkeys(canonical(url) for url in queue))
     visited=set();ok=0;seen=set()
-    while queue and len(visited)<8 and time.monotonic()<deadline:
-        url=queue.pop(0)
+    while queue and len(visited)<6 and time.monotonic()<deadline:
+        url=canonical(queue.pop(0))
         if url in visited or not same_site(url,base):continue
         visited.add(url)
-        try:final,body=safe_fetch.text(url,timeout=6,connect_timeout=3)
+        try:final,body=safe_fetch.text(url,timeout=5,connect_timeout=2.5)
         except Exception:continue
         if not body or not same_site(final,base):continue
         ok+=1
@@ -57,7 +61,7 @@ def lookup(c,query):
         except Exception:continue
         links=[]
         for a in tree.xpath('//a[@href]'):
-            dest=urljoin(final,a.get('href'))
+            dest=canonical(urljoin(final,a.get('href')))
             if same_site(dest,base) and (matches(query,a.text_content()) or matches(query,dest)) and dest not in visited:
                 links.append(dest)
         queue=list(dict.fromkeys(links[:5]+queue))
@@ -82,12 +86,15 @@ def lookup(c,query):
             if key in seen:continue
             seen.add(key)
             out['matches'].append({'name':p['name'],'price':price,'price_max':price_max,'currency':'Toman' if price is not None else 'Unknown','duration':detect_duration(p['name']),'in_stock':p.get('in_stock'),'url':source})
+        if any(p['price'] is not None for p in out['matches']):
+            out['status']='found'
+            return out
     out['status']='found' if any(p['price'] is not None for p in out['matches']) else 'price_unavailable' if out['matches'] else 'not_found' if ok else 'unreachable'
     return out
 
 def run_price_search(competitors,query,on_progress=None):
     rows=[]
-    with ThreadPoolExecutor(max_workers=3) as pool:
+    with ThreadPoolExecutor(max_workers=min(6, len(competitors) or 1)) as pool:
         futures={pool.submit(lookup,c,query):c for c in competitors}
         for future in as_completed(futures):
             try:row=future.result()
