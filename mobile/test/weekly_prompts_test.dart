@@ -87,6 +87,8 @@ void main() {
           },
         },
     ];
+    final createdTopics = <String>[];
+    final createdLabels = <String>[];
     api.client = MockClient(
       (req) async => http.Response(
         jsonEncode(posts),
@@ -110,7 +112,11 @@ void main() {
                   topic = '',
                   mode = 'single',
                   videoStyle = '',
-                }) {},
+                  contentLabel = '',
+                }) {
+                  createdTopics.add(topic);
+                  createdLabels.add(contentLabel);
+                },
             onTab: (_) {},
           ),
         ),
@@ -122,7 +128,11 @@ void main() {
         'EEEE, MMMM d',
         'en',
       ).format(start.add(Duration(days: i)));
-      await tester.tap(find.byWidgetPredicate((w) => w is Semantics && w.properties.label == label));
+      await tester.tap(
+        find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == label,
+        ),
+      );
       await tester.pump();
       final ready = find.ancestor(
         of: find.text('10 seconds · Google Flow · Ready to copy'),
@@ -132,7 +142,11 @@ void main() {
         find.descendant(of: ready, matching: find.text('موضوع روز $i')),
         findsOneWidget,
       );
+      await tester.tap(find.widgetWithText(ActionChip, 'Promotion'));
+      await tester.pump();
       expect(tester.takeException(), isNull);
     }
+    expect(createdTopics.toSet(), hasLength(7));
+    expect(createdLabels, everyElement('promo'));
   });
 }

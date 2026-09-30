@@ -353,6 +353,28 @@ class Post {
   bool get isBusy => status == 'queued' || status == 'running';
   bool get isVideo => postType == 'video_prompt';
 
+  String get contentLabel {
+    final explicit = '${content['content_label'] ?? content['purpose'] ?? ''}'
+        .toLowerCase();
+    if (explicit == 'promo') return 'Promotional';
+    if (explicit == 'trending') return 'Trending';
+    if (explicit == 'news') return 'News';
+    if (explicit == 'educational') return 'Educational';
+    if (explicit == 'sales') return 'Sales';
+    if (!isVideo) return postTypes[postType] ?? 'Content';
+    final text = '${content['title'] ?? ''} ${content['topic_hint'] ?? ''}'
+        .toLowerCase();
+    if (text.contains('trend')) return 'Trending';
+    if (text.contains('news') || text.contains('خبر')) return 'News';
+    if (text.contains('educational') || text.contains('آموز')) {
+      return 'Educational';
+    }
+    if (text.contains('promo') || text.contains('تبلیغ')) {
+      return 'Promotional';
+    }
+    return 'Video';
+  }
+
   String get title {
     final c = content;
     final slots = c['slots'] as Map?;
@@ -403,9 +425,10 @@ class GenerateRequest {
     this.videoStyle = '',
     this.nBody = 4,
     this.targetSeconds = 10,
+    this.contentLabel = '',
   });
 
-  String postType, mode, topicHint, template, videoStyle;
+  String postType, mode, topicHint, template, videoStyle, contentLabel;
   int nBody, targetSeconds;
 
   Map<String, dynamic> toJson() => {
@@ -418,5 +441,6 @@ class GenerateRequest {
       'video_style': videoStyle,
     'n_body': nBody,
     'target_seconds': targetSeconds,
+    if (contentLabel.isNotEmpty) 'content_label': contentLabel,
   };
 }

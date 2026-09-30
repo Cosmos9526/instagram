@@ -15,6 +15,7 @@ typedef CreateCallback =
       String topic,
       String mode,
       String videoStyle,
+      String contentLabel,
     });
 
 class HomeScreen extends StatefulWidget {
@@ -170,11 +171,23 @@ class HomeScreenState extends State<HomeScreen> {
               leading: Icon(
                 p.isVideo ? Icons.movie_outlined : Icons.description_outlined,
               ),
-              title: Text(
-                p.title,
-                textDirection: contentDirection(p.title),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      p.contentLabel,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                  Text(
+                    p.title,
+                    textDirection: contentDirection(p.title),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
               subtitle: Text(
                 p.isBusy
@@ -212,23 +225,61 @@ class HomeScreenState extends State<HomeScreen> {
         )
         .firstOrNull;
     final rahboomDay = (_selectedDay.weekday + 1) % 7;
-    final rahboomSlots = <(String, String)>[
+    const promoAngles = [
+      'choosing Claude Max 5x or 20x by real usage',
+      'choosing ChatGPT Plus for a daily work workflow',
+      'using Cursor for coding with review and testing',
+      'planning a short Google Flow video with fixed references',
+      'using Gemini for research and source checking',
+      'choosing one AI subscription instead of buying every tool',
+      'starting a Rahboom consultation from the customer’s actual task',
+    ];
+    const newsLenses = [
+      'new AI model announcements',
+      'important product feature updates',
+      'access, pricing or plan changes',
+      'new AI video and creator tools',
+      'AI coding and GitHub updates',
+      'AI safety, privacy or policy changes',
+      'the strongest verified AI story of the week',
+    ];
+    const trendLenses = [
+      'a breakout Google search related to AI',
+      'a fast-growing YouTube video format',
+      'a Persian AI search phrase gaining attention',
+      'a product-comparison topic people are searching',
+      'a tutorial topic rising today',
+      'a practical workflow appearing across sources',
+      'the week’s strongest cross-source trend',
+    ];
+    const educationAngles = [
+      'writing a precise prompt with goal, context and output format',
+      'checking the original source and date of an AI claim',
+      'choosing an AI tool based on the task instead of popularity',
+      'protecting private information when using AI tools',
+    ];
+    final date = DateFormat('yyyy-MM-dd').format(_selectedDay);
+    final rahboomSlots = <(String, String, String)>[
       (
         'News',
-        'NEWS VIDEO for ${DateFormat('yyyy-MM-dd').format(_selectedDay)} — use the newest verified AI story from the Daily radar, include its source URL in the caption, and never invent a claim.',
+        'news',
+        'NEWS VIDEO for $date — focus on ${newsLenses[rahboomDay]}. Use the newest matching verified story from the Daily radar, include its source URL and publication date in the caption, and never invent a claim.',
       ),
       (
         'Fast trend',
-        'TREND VIDEO for ${DateFormat('yyyy-MM-dd').format(_selectedDay)} — use a verified Google or YouTube signal from the last 5–24 hours and explain why it matters now.',
+        'trending',
+        'TREND VIDEO for $date — focus on ${trendLenses[rahboomDay]}. Use a verified Google or YouTube signal and explain why it matters now without claiming unsupported search volume.',
       ),
       (
         'Promotion',
-        'PROMOTIONAL VIDEO for Rahboom — choose one real product from the saved catalogue, make one clear benefit-led offer, and use no unverified price or urgency.',
+        'promo',
+        'PROMOTIONAL VIDEO for $date — angle: ${promoAngles[rahboomDay]}. Use one real saved Rahboom product, one clear benefit and no unverified price, feature or urgency.',
       ),
       if (rahboomDay.isEven)
         (
           'Educational',
-          'EDUCATIONAL VIDEO — teach one useful AI workflow related to today’s strongest keyword; one practical takeaway, no unsupported promise.',
+          'educational',
+          'EDUCATIONAL VIDEO for $date — teach ${educationAngles[rahboomDay ~/ 2]}. Give one practical takeaway and make no unsupported promise.',
         ),
     ];
     const labels = {
@@ -288,8 +339,9 @@ class HomeScreenState extends State<HomeScreen> {
                       label: Text(slot.$1),
                       onPressed: () => widget.onCreate(
                         postType: 'video_prompt',
-                        topic: slot.$2,
+                        topic: slot.$3,
                         mode: 'video',
+                        contentLabel: slot.$2,
                       ),
                     ),
                 ],
@@ -311,9 +363,20 @@ class HomeScreenState extends State<HomeScreen> {
             if (daily != null)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(
-                  daily.title,
-                  textDirection: contentDirection(daily.title),
+                title: Row(
+                  children: [
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(daily.contentLabel),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        daily.title,
+                        textDirection: contentDirection(daily.title),
+                      ),
+                    ),
+                  ],
                 ),
                 subtitle: const Text(
                   '10 seconds · Google Flow · Ready to copy',

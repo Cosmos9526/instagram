@@ -301,6 +301,7 @@ class GenerateIn(BaseModel):
     video_style: str = ""  # video_prompt: a style id from /catalog
     n_body: int = Field(4, ge=2, le=8)
     target_seconds: int = Field(10, ge=10, le=40)
+    content_label: str = Field("", pattern="^(|educational|news|trending|promo|sales)$")
 
 
 class PostEdit(BaseModel):
@@ -332,6 +333,8 @@ def generate(brand_id: str, body: GenerateIn, user: User = Depends(current_user)
         raise HTTPException(422, "mode=video requires post_type=video_prompt")
     today = datetime.now(ZoneInfo(settings.timezone)).date().isoformat()
     opts = {"n_body": body.n_body, "target_seconds": body.target_seconds}
+    if body.content_label:
+        opts["content_label"] = body.content_label
     if body.template:
         opts["template"] = body.template
     if body.video_style:

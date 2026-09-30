@@ -51,6 +51,7 @@ class GenerateScreenState extends State<GenerateScreen> {
   String _format = 'single';
   String _template = '';
   String _videoStyle = '';
+  String _contentLabel = '';
   int _nBody = 4;
   int _seconds = 10;
   final _topic = TextEditingController();
@@ -80,10 +81,15 @@ class GenerateScreenState extends State<GenerateScreen> {
     String topic = '',
     String mode = 'single',
     String videoStyle = '',
+    String contentLabel = '',
   }) {
     setState(() {
       if (postType == 'video_prompt') {
         _format = 'video';
+        _contentLabel = contentLabel;
+        if (_objectives.any((o) => o.$1 == contentLabel)) {
+          _objective = contentLabel;
+        }
       } else {
         _objective = postType;
         _format = mode == 'carousel'
@@ -132,6 +138,9 @@ class GenerateScreenState extends State<GenerateScreen> {
         videoStyle: _videoStyle,
         nBody: _nBody,
         targetSeconds: _seconds,
+        contentLabel: _isVideo
+            ? (_contentLabel.isNotEmpty ? _contentLabel : _objective)
+            : '',
       );
       await widget.api.generate(widget.brand.id!, req);
       _topic.clear();
@@ -187,6 +196,7 @@ class GenerateScreenState extends State<GenerateScreen> {
                 ),
                 onTap: () => setState(() {
                   _objective = o.$1;
+                  _contentLabel = '';
                   _template = '';
                 }),
               ),

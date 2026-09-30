@@ -69,6 +69,7 @@ void main() {
                   topic = '',
                   mode = 'single',
                   videoStyle = '',
+                  contentLabel = '',
                 }) {},
           ),
         ),
