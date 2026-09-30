@@ -10,6 +10,21 @@ import 'package:postyar/screens/alerts_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('keeps one signal per emerging topic', () {
+    MarketAlert alert(String id, String title) => MarketAlert.fromJson({
+      'id': id,
+      'title': title,
+      'category': 'buzz',
+      'source': 'Source',
+    });
+    final result = distinctEmergingAlerts([
+      alert('1', 'OpenAI introduces Dots'),
+      alert('2', 'A closer look at ChatGPT Dots'),
+      alert('3', 'Jev decision model beats Pokémon'),
+    ]);
+    expect(result.map((a) => a.id), ['1', '3']);
+  });
+
   testWidgets(
     'shows 20 emerging signals and tapping one creates a trend video prompt',
     (tester) async {
