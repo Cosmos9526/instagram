@@ -191,7 +191,7 @@ def test_legacy_project_without_name_still_lists(client):
 
 def test_delete_restore_and_price_search_ownership(client, monkeypatch):
     from app.db import SessionLocal
-    from app.models import Post
+    from app.models import CompetitorScan, Post
     from app import price_search
     monkeypatch.setattr(price_search, "run_price_search", lambda *a, **kw: {"kind": "price_search", "results": []})
     a,b=_user(client),_user(client)
@@ -209,6 +209,11 @@ def test_delete_restore_and_price_search_ownership(client, monkeypatch):
     assert client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'قیمت'}).status_code==422
     r=client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'Claude Max'})
     assert r.status_code==200 and r.json()['report']['kind']=='price_search'
-    assert client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'Cursor'}).status_code==409
+    second=client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'Cursor'})
+    assert second.status_code==200
+    assert second.json()['report']['query']=='Cursor'
+    with SessionLocal() as db:
+        first=db.get(CompetitorScan,r.json()['id'])
+        assert first.status=='cancelled'
 
     _drain()

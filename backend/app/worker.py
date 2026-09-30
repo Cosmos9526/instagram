@@ -17,6 +17,10 @@ log = logging.getLogger("worker")
 MAX_ATTEMPTS = 2
 
 
+class _ScanCancelled(Exception):
+    pass
+
+
 def enqueue(db, post: Post, kind: str = "generate") -> None:
     db.add(Job(post_id=post.id, kind=kind))
 
@@ -45,6 +49,10 @@ def _run_research_job(db, job: Job) -> None:
 
 def _run_competitor_scan_job(db, job: Job) -> None:
     scan = db.get(CompetitorScan, job.competitor_scan_id)
+    if scan.status == "cancelled":
+        job.status = "cancelled"
+        db.commit()
+        return
     scan.status = "running"
     db.commit()
     try:
@@ -60,9 +68,15 @@ def _run_competitor_scan_job(db, job: Job) -> None:
                 CompetitorScan.brand_id == scan.brand_id, CompetitorScan.id != scan.id,
                 CompetitorScan.status == 'ready').order_by(CompetitorScan.created_at.desc()).limit(10))]
             def price_progress(rows, total):
+                db.refresh(scan)
+                if scan.status == "cancelled":
+                    raise _ScanCancelled()
                 scan.report = {"kind": "price_search", "extractor_version": EXTRACTOR_VERSION, "query": query, "results": preserve_verified(rows,previous_reports,query), "progress": {"done": len(rows), "total": total}}
                 db.commit()
             scan.report = run_price_search(comps, query, price_progress)
+            db.refresh(scan)
+            if scan.status == "cancelled":
+                raise _ScanCancelled()
             scan.report = scan.report | {'results':preserve_verified(scan.report['results'],previous_reports,query)}
             scan.status, scan.error, job.status = "ready", "", "done"
             db.commit()
@@ -75,6 +89,9 @@ def _run_competitor_scan_job(db, job: Job) -> None:
         scan.report = run_competitor_scan(brand, comps, on_progress=_progress)
         write_back_handles(brand, scan.report)
         scan.status, scan.error, job.status = "ready", "", "done"
+    except _ScanCancelled:
+        scan.status = job.status = "cancelled"
+        scan.error = "Replaced by a newer price search"
     except Exception as e:  # noqa: BLE001
         log.exception("competitor scan %s failed", scan.id)
         scan.error = str(e)[:2000]
