@@ -15,7 +15,7 @@ from . import auth as authlib
 from .competitors import normalize_competitors, parse_competitors_text
 from .config import settings
 from .db import SessionLocal, init_db
-from .models import POST_TYPES, Brand, CompetitorScan, Post, Research, User
+from .models import POST_TYPES, Brand, CompetitorScan, Job, Post, Research, User
 from .static import FastStatic, thumbnail
 from .scheduler import create_daily_posts
 from .template_registry import TEMPLATES
@@ -510,9 +510,21 @@ def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = De
         raise HTTPException(422, "Enter a product name")
     if not b.competitors:
         raise HTTPException(422, "Add competitor websites first")
-    active = db.scalars(select(CompetitorScan).where(CompetitorScan.brand_id == brand_id, CompetitorScan.status.in_(["queued", "running"]))).first()
-    if active:
-        raise HTTPException(409, "A search is already running")
+    # A price lookup is an interactive action. If the user changes the product
+    # while a lookup is running, supersede the old lookup instead of locking the
+    # form until every slow competitor has timed out.
+    active = list(db.scalars(select(CompetitorScan).where(
+        CompetitorScan.brand_id == brand_id,
+        CompetitorScan.status.in_(["queued", "running"]),
+    )))
+    for old in active:
+        old.status = "cancelled"
+        old.error = "Replaced by a newer price search"
+        for job in db.scalars(select(Job).where(
+            Job.competitor_scan_id == old.id,
+            Job.status.in_(["queued", "running"]),
+        )):
+            job.status = "cancelled"
     scan = CompetitorScan(brand_id=brand_id, report={"kind": "price_search", "query": body.query.strip(), "results": []})
     db.add(scan); db.flush(); enqueue_competitor_scan(db, scan); db.commit()
     return scan_out(scan)

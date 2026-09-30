@@ -329,7 +329,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
             textDirection: contentDirection(_query.text),
             onChanged: (_) => setState(() => _queryError = null),
             onSubmitted: (_) {
-              if (!busy && !_starting) _startScan();
+              if (!_starting) _startScan();
             },
             decoration: InputDecoration(
               labelText: 'Product name',
@@ -344,7 +344,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
               for (final product in ['Claude Max', 'ChatGPT Plus', 'Cursor'])
                 ActionChip(
                   label: Text(product),
-                  onPressed: busy || _starting
+                  onPressed: _starting
                       ? null
                       : () {
                           setState(() {
@@ -358,13 +358,13 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           ),
           const SizedBox(height: 10),
           FilledButton.icon(
-            onPressed: busy || _starting || items.isEmpty ? null : _startScan,
+            onPressed: _starting || items.isEmpty ? null : _startScan,
             icon: const Icon(Icons.search),
             label: Text(
               _starting
                   ? 'Starting search…'
                   : busy
-                  ? 'Checking websites…'
+                  ? 'Search this product'
                   : 'Check prices',
             ),
           ),
