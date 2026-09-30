@@ -298,12 +298,12 @@ class _ResearchScreenState extends State<ResearchScreen> {
         ],
         if (radarVideos.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text('YouTube in the last 24 hours', style: theme.textTheme.titleSmall),
+          Text('Recent YouTube signals', style: theme.textTheme.titleSmall),
           for (final v in radarVideos.take(8))
             _SignalCard(
               title: '${v['title'] ?? ''}',
               detail:
-                  '${v['channel'] ?? 'YouTube'} · ${uiDigits(_compact(v['views']))} views',
+                  '${v['channel'] ?? 'YouTube'}${(v['views'] ?? 0) != 0 ? ' · ${uiDigits(_compact(v['views']))} views' : ''}${'${v['published'] ?? ''}'.length >= 10 ? ' · ${'${v['published']}'.substring(0, 10)}' : ''}',
               sourceUrl: '${v['url'] ?? ''}',
               onCreate: () => widget.onUse(
                 postType: 'video_prompt',
