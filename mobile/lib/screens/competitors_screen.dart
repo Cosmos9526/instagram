@@ -29,6 +29,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   List<CompetitorScan>? _scans;
   Timer? _poll;
   bool _starting = false;
+  String? _queryError;
   final _query = TextEditingController();
 
   @override
@@ -54,7 +55,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
         _scans = scans;
       });
       _poll?.cancel();
-      if (scans.isNotEmpty && scans.first.isBusy) {
+      if (scans.any((scan) => scan.isBusy)) {
         _poll = Timer(const Duration(seconds: 5), _load);
       }
     } on ApiException catch (e) {
@@ -72,10 +73,19 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   }
 
   Future<void> _startScan() async {
+    final query = _query.text.trim();
+    if (query.length < 2) {
+      setState(
+        () => _queryError = 'Enter a product name, for example Claude Max.',
+      );
+      return;
+    }
+    FocusScope.of(context).unfocus();
     setState(() => _starting = true);
     try {
-      if (_query.text.trim().isEmpty) return;
-      await widget.api.searchPrices(widget.brand.id!, _query.text.trim());
+      final scan = await widget.api.searchPrices(widget.brand.id!, query);
+      if (!mounted) return;
+      setState(() => _scans = [scan, ...?_scans]);
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -83,6 +93,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           context,
           e.status == 409 ? 'A scan is already in progress' : e.message,
         );
+        if (e.status == 409) await _load();
       }
     } finally {
       if (mounted) setState(() => _starting = false);
@@ -316,20 +327,46 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           TextField(
             controller: _query,
             textDirection: contentDirection(_query.text),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => setState(() => _queryError = null),
             onSubmitted: (_) {
               if (!busy && !_starting) _startScan();
             },
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Product name',
               hintText: 'Claude Max, ChatGPT Plus, Cursor…',
+              errorText: _queryError,
             ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final product in ['Claude Max', 'ChatGPT Plus', 'Cursor'])
+                ActionChip(
+                  label: Text(product),
+                  onPressed: busy || _starting
+                      ? null
+                      : () {
+                          setState(() {
+                            _query.text = product;
+                            _queryError = null;
+                          });
+                          _startScan();
+                        },
+                ),
+            ],
           ),
           const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: busy || _starting || items.isEmpty ? null : _startScan,
             icon: const Icon(Icons.search),
-            label: Text(busy ? 'Checking websites…' : 'Check prices'),
+            label: Text(
+              _starting
+                  ? 'Starting search…'
+                  : busy
+                  ? 'Checking websites…'
+                  : 'Check prices',
+            ),
           ),
           if (latest != null) ...[
             const SizedBox(height: 16),
