@@ -20,6 +20,11 @@ def test_score_requires_ai_vendor_and_material_change():
         "Hugging Face adds faster AI inference", "A product update for developers",
         official=True, source="Hugging Face",
     ) >= 2
+    assert market_alerts._score(
+        "Google unveils long-awaited Gemini 4",
+        "The next-generation flagship model is rolling out to selected partners",
+        source="Axios",
+    ) == 5
 
 
 def test_alert_endpoint_returns_important_first():

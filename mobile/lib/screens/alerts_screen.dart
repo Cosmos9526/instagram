@@ -21,6 +21,34 @@ Source URL: ${alert.url}
 '''
         .trim();
 
+class MajorAlertBadge extends StatelessWidget {
+  const MajorAlertBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFE3D5),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.local_fire_department, size: 16, color: Color(0xFFB42318)),
+        SizedBox(width: 4),
+        Text(
+          'Major update',
+          style: TextStyle(
+            color: Color(0xFFB42318),
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class AlertsScreen extends StatefulWidget {
   const AlertsScreen({super.key, required this.api, required this.brand});
   final Api api;
@@ -160,6 +188,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (alert.importance >= 5) ...[
+                          const MajorAlertBadge(),
+                          const SizedBox(height: 8),
+                        ],
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [

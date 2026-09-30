@@ -27,6 +27,9 @@ FEEDS = {
 }
 
 QUERIES = (
+    'Gemini 4 Argon launch rollout Google',
+    'Gemini 4 release official Google latest',
+    'next generation OpenAI GPT Anthropic Claude flagship model launch',
     'Claude Pro price plan tier $500 $200',
     'site:anthropic.com/news Claude launch plan pricing',
     'Anthropic Claude pricing plan update',
@@ -45,6 +48,8 @@ QUERIES = (
 MATERIAL = (
     "price", "pricing", "plan", "tier", "subscription", "upgrade", "limit",
     "launch", "launched", "release", "released", "introducing", "available", "new model",
+    "unveil", "unveils", "unveiled", "announce", "announces", "announced", "rollout",
+    "rolling out", "preview", "early access", "upcoming", "next-generation", "flagship",
     "قیمت", "پلن", "اشتراک", "تعرفه", "عرضه", "رونمایی", "مدل جدید",
 )
 VENDORS = (
@@ -60,6 +65,13 @@ AI_PRODUCT = ("ai", "model", "claude", "chatgpt", "openai", "gemini", "flow", "c
               "agent", "grok", "cursor", "هوش مصنوعی", "کلاد", "مدل")
 LOW_TRUST_SOURCES = ("note", "letsdatascience", "startup fortune", "the currency analytics",
                      "finance.biggo", "boing boing", "crypto briefing", "tech times on msn")
+TRUSTED_NEWS_SOURCES = ("axios", "reuters", "associated press", "ap news", "the verge",
+                        "techcrunch", "wired", "ars technica", "bloomberg", "cnet", "zdnet",
+                        "venturebeat", "the information")
+MAJOR_MODEL_SIGNALS = (
+    "gemini 4", "gpt-6", "claude opus", "claude sonnet", "veo", "sora", "deepseek",
+    "frontier model", "next-generation", "flagship model", "major model", "new model",
+)
 
 
 def _text(node: ET.Element, names: tuple[str, ...]) -> str:
@@ -106,6 +118,13 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     if not has_vendor or (not has_material_change and not (official and title_has_ai_product)):
         return 0
     score = 2 + (2 if official else 0)
+    # A major model name must be in the headline; generic summary wording must not
+    # promote routine company news above an actual flagship launch.
+    major_model = any(k in title_text for k in MAJOR_MODEL_SIGNALS)
+    if major_model and has_material_change:
+        score += 3
+    elif major_model:
+        score += 2
     if any(k in text for k in URGENT):
         score += 2
     if re.search(r"(?:\$|usd|دلار)\s?\d|\d+\s?(?:usd|دلار)", text):
@@ -115,7 +134,8 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     )
     if uncertain:
         score -= 1
-    return max(0, min(score, 5 if official else 3 if uncertain else 4))
+    trusted = any(name in source.casefold() for name in TRUSTED_NEWS_SOURCES)
+    return max(0, min(score, 5 if official or trusted else 3 if uncertain else 4))
 
 
 def _feed(source: str, url: str) -> list[dict]:

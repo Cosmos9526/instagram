@@ -367,6 +367,10 @@ class HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (alert.importance >= 5) ...[
+                const MajorAlertBadge(),
+                const SizedBox(height: 6),
+              ],
               Text(
                 alert.title,
                 maxLines: 3,
