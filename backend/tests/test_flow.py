@@ -175,6 +175,25 @@ def test_daily_batch_uses_weekly_plan_and_refreshes_research(client):
     assert len(client.get(f"/brands/{bid}/research", headers=h).json()) == 1
 
 
+def test_rahboom_research_refreshes_even_when_today_has_content(client):
+    from datetime import datetime, timedelta, timezone
+    from app.db import SessionLocal
+    from app.models import Post, Research
+    from app.scheduler import create_daily_posts
+
+    h = _user(client)
+    bid = client.post('/brands', headers=h, json=BRAND | {
+        'website': 'https://rahboom.com', 'weekly_plan': {},
+    }).json()['id']
+    with SessionLocal() as db:
+        db.add(Research(brand_id=bid, status='ready', created_at=datetime.now(timezone.utc) - timedelta(hours=21)))
+        db.add(Post(brand_id=bid, post_type='video_prompt', mode='video', for_date='2026-09-30'))
+        db.commit()
+    create_daily_posts(datetime(2026, 9, 30))
+    rows = client.get(f'/brands/{bid}/research', headers=h).json()
+    assert len(rows) == 2 and rows[0]['status'] == 'queued'
+
+
 def test_legacy_project_without_name_still_lists(client):
     from app.db import SessionLocal
     from app.models import Brand
