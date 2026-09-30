@@ -117,7 +117,10 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     has_material_change = any(k in text for k in MATERIAL)
     if not has_vendor or (not has_material_change and not (official and title_has_ai_product)):
         return 0
-    score = 2 + (2 if official else 0)
+    # Official provenance is a trust signal, not proof that the update is major.
+    # Reserve the top score for flagship models, material pricing, or similarly
+    # consequential launches.
+    score = 2 + (1 if official else 0)
     # A major model name must be in the headline; generic summary wording must not
     # promote routine company news above an actual flagship launch.
     major_model = any(k in title_text for k in MAJOR_MODEL_SIGNALS)
@@ -126,7 +129,7 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     elif major_model:
         score += 2
     if any(k in text for k in URGENT):
-        score += 2
+        score += 1
     if re.search(r"(?:\$|usd|دلار)\s?\d|\d+\s?(?:usd|دلار)", text):
         score += 1
     uncertain = not official and any(
