@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../api.dart';
 import '../models.dart';
 import '../theme.dart';
@@ -36,6 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
   List<Post>? _posts;
   String? _error;
   Timer? _poll;
+  DateTime _selectedDay = DateUtils.dateOnly(DateTime.now());
   @override
   void initState() {
     super.initState();
@@ -105,6 +107,8 @@ class HomeScreenState extends State<HomeScreen> {
       children: [
         Text('Your content', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
+        _weeklyPlan(context),
+        const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: () =>
               widget.onCreate(postType: 'video_prompt', mode: 'video'),
@@ -172,6 +176,130 @@ class HomeScreenState extends State<HomeScreen> {
       ],
     ),
   );
+
+  Widget _weeklyPlan(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final start = today.subtract(Duration(days: (today.weekday + 1) % 7));
+    final planned =
+        widget.brand.weeklyPlan['${_selectedDay.weekday - 1}'] ?? [];
+    const labels = {
+      'educational': 'Educational',
+      'sales': 'Sales',
+      'promo': 'Promotional',
+      'news': 'News',
+      'trending': 'Trending',
+      'engagement': 'Engagement',
+      'video_prompt': 'Custom',
+    };
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Weekly plan',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => widget.onTab(4),
+                  child: const Text('Edit'),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: _weekDay(start.add(Duration(days: i)), today),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              DateFormat('EEEE, MMM d', 'en').format(_selectedDay),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            if (planned.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('No content planned for this day.'),
+              ),
+            for (final item in planned)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.movie_outlined),
+                title: Text(
+                  '${labels[item.split(':').first] ?? item.split(':').first} video',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => widget.onCreate(
+                  postType: item.split(':').first,
+                  mode: 'video',
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _weekDay(DateTime day, DateTime today) {
+    final selected = DateUtils.isSameDay(day, _selectedDay);
+    final planned =
+        widget.brand.weeklyPlan['${day.weekday - 1}']?.isNotEmpty ?? false;
+    return Semantics(
+      selected: selected,
+      label: DateFormat('EEEE, MMMM d', 'en').format(day),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => setState(() => _selectedDay = day),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? PColors.forest : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: DateUtils.isSameDay(day, today)
+                ? Border.all(color: PColors.green)
+                : null,
+          ),
+          child: Column(
+            children: [
+              Text(
+                DateFormat('EE', 'en').format(day).substring(0, 2),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: selected ? Colors.white : PColors.muted,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${day.day}',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.white : PColors.text,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Icon(
+                Icons.circle,
+                size: 5,
+                color: planned
+                    ? (selected ? Colors.white : PColors.green)
+                    : Colors.transparent,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 (int, int, int) toJalali(DateTime g) {
