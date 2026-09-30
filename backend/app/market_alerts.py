@@ -20,6 +20,10 @@ FEEDS = {
     "OpenAI": "https://openai.com/news/rss.xml",
     "Google AI": "https://blog.google/technology/ai/rss/",
     "GitHub": "https://github.blog/changelog/feed/",
+    "Google Developers": "https://developers.googleblog.com/feeds/posts/default",
+    "Hugging Face": "https://huggingface.co/blog/feed.xml",
+    "Google DeepMind": "https://deepmind.google/blog/rss.xml",
+    "NVIDIA AI": "https://blogs.nvidia.com/blog/category/generative-ai/feed/",
 }
 
 QUERIES = (
@@ -30,6 +34,12 @@ QUERIES = (
     'Google Gemini Flow pricing plan update',
     'AI model launch subscription price update',
     'Claude ChatGPT Gemini Cursor new feature release',
+    'OpenAI Anthropic Google AI major launch today',
+    'AI video model launch Veo Sora Runway latest',
+    'AI coding Copilot Cursor Claude Code update latest',
+    'Mistral Meta Llama Perplexity model release latest',
+    'Adobe Firefly ElevenLabs AI product release latest',
+    'AI subscription pricing change latest',
 )
 
 MATERIAL = (
@@ -40,6 +50,8 @@ MATERIAL = (
 VENDORS = (
     "claude", "anthropic", "openai", "chatgpt", "gemini", "google flow",
     "cursor", "github", "copilot", "grok", "midjourney", "veo", "sora",
+    "mistral", "llama", "meta ai", "perplexity", "runway", "firefly",
+    "elevenlabs", "notebooklm", "deepmind", "hugging face", "microsoft ai", "nvidia",
     "کلاد", "چت جی پی تی", "جمینای", "گوگل فلو", "کرسر",
 )
 URGENT = ("price", "pricing", "plan", "tier", "subscription", "launch", "new model",
@@ -47,7 +59,7 @@ URGENT = ("price", "pricing", "plan", "tier", "subscription", "launch", "new mod
 AI_PRODUCT = ("ai", "model", "claude", "chatgpt", "openai", "gemini", "flow", "copilot",
               "agent", "grok", "cursor", "هوش مصنوعی", "کلاد", "مدل")
 LOW_TRUST_SOURCES = ("note", "letsdatascience", "startup fortune", "the currency analytics",
-                     "finance.biggo")
+                     "finance.biggo", "boing boing", "crypto briefing", "tech times on msn")
 
 
 def _text(node: ET.Element, names: tuple[str, ...]) -> str:
@@ -89,7 +101,9 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     )
     if source == "GitHub" and not title_has_ai_product:
         return 0
-    if not any(v in text for v in VENDORS) or not any(k in text for k in MATERIAL):
+    has_vendor = any(v in text for v in VENDORS)
+    has_material_change = any(k in text for k in MATERIAL)
+    if not has_vendor or (not has_material_change and not (official and title_has_ai_product)):
         return 0
     score = 2 + (2 if official else 0)
     if any(k in text for k in URGENT):
@@ -131,7 +145,7 @@ def collect() -> list[dict]:
     for source, url in FEEDS.items():
         rows.extend(_feed(source, url))
     for query in QUERIES:
-        for row in news_search(query, max_results=8, timelimit="w"):
+        for row in news_search(query, max_results=10, timelimit="w"):
             score = _score(row.get("title", ""), row.get("snippet", ""))
             if score:
                 rows.append({**row, "summary": row.get("snippet", ""), "importance": score,
@@ -149,6 +163,17 @@ def collect() -> list[dict]:
 
 
 def refresh(db) -> int:
+    # Remove previously stored weak or stale stories as the source policy improves.
+    stale_before = datetime.now(timezone.utc) - timedelta(days=14)
+    for alert in db.scalars(select(MarketAlert)):
+        published = alert.published_at
+        if published is not None and published.tzinfo is None:
+            published = published.replace(tzinfo=timezone.utc)
+        if alert.source.casefold() in LOW_TRUST_SOURCES or (
+            published is not None and published < stale_before
+        ):
+            db.delete(alert)
+
     added = 0
     for row in collect():
         fingerprint = hashlib.sha256((row.get("url") or row["title"]).encode()).hexdigest()

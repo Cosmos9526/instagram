@@ -1,0 +1,240 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../api.dart';
+import '../models.dart';
+import '../theme.dart';
+import '../widgets/common.dart';
+import 'post_screen.dart';
+
+String newsVideoTopic(MarketAlert alert) =>
+    '''
+URGENT VERIFIED AI NEWS VIDEO FOR RAHBOOM.
+Create one production-ready Google Flow prompt for a vertical 9:16 video lasting exactly 10 seconds: one continuous 8-second cinematic scene followed by a clean 2-second Rahboom end card. Use Raha and Arian as the recurring presenters, keep their appearance consistent, and write short natural Persian dialogue that fits the timing and explains why this news matters. Include exact timing, shot composition, camera movement, lighting, expressions, actions, spoken Persian dialogue, ambient sound, transitions, negative constraints, and the final Rahboom cover/end-card copy. Do not invent facts, dates, prices, features, quotes, or availability. Base every factual claim only on this story and clearly preserve uncertainty when the source is reporting rather than official.
+
+Story: ${alert.title}
+Summary: ${alert.summary}
+Source: ${alert.source}
+Published: ${alert.publishedAt?.toUtc().toIso8601String() ?? 'date unavailable'}
+Source URL: ${alert.url}
+'''
+        .trim();
+
+class AlertsScreen extends StatefulWidget {
+  const AlertsScreen({super.key, required this.api, required this.brand});
+  final Api api;
+  final Brand brand;
+
+  @override
+  State<AlertsScreen> createState() => _AlertsScreenState();
+}
+
+class _AlertsScreenState extends State<AlertsScreen> {
+  List<MarketAlert>? _alerts;
+  String? _error;
+  String? _creatingId;
+  bool _refreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final alerts = await widget.api.alerts(widget.brand.id!);
+      if (!mounted) return;
+      setState(() {
+        _alerts = alerts;
+        _error = null;
+      });
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await widget.api.refreshAlerts(widget.brand.id!);
+      await _load();
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
+  }
+
+  Future<void> _create(MarketAlert alert) async {
+    if (_creatingId != null) return;
+    setState(() => _creatingId = alert.id);
+    try {
+      final post = await widget.api.generate(
+        widget.brand.id!,
+        GenerateRequest(
+          postType: 'video_prompt',
+          mode: 'video',
+          topicHint: newsVideoTopic(alert),
+          targetSeconds: 10,
+          contentLabel: 'news',
+        ),
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PostScreen(api: widget.api, postId: post.id),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _creatingId = null);
+    }
+  }
+
+  Future<void> _source(MarketAlert alert) async {
+    final uri = Uri.tryParse(alert.url);
+    if (uri != null) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alerts = _alerts ?? const <MarketAlert>[];
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('AI news radar'),
+        actions: [
+          IconButton(
+            tooltip: 'Check now',
+            onPressed: _refreshing ? null : _refresh,
+            icon: _refreshing
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          padding: pagePadding(context, maxWidth: 760),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            Text(
+              'Latest verified AI news',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              alerts.isEmpty
+                  ? 'Fresh stories from official and credible sources.'
+                  : '${alerts.length} real stories · Tap any story to create its complete 10-second video prompt.',
+            ),
+            const SizedBox(height: 16),
+            if (_alerts == null && _error == null)
+              const Center(child: CircularProgressIndicator()),
+            if (_error != null)
+              Card(
+                child: ListTile(
+                  title: Text(_error!),
+                  trailing: TextButton(
+                    onPressed: _load,
+                    child: const Text('Retry'),
+                  ),
+                ),
+              ),
+            for (final alert in alerts)
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: _creatingId == null ? () => _create(alert) : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                alert.title,
+                                style: Theme.of(context).textTheme.titleMedium,
+                                textDirection: contentDirection(alert.title),
+                              ),
+                            ),
+                            if (_creatingId == alert.id)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 12),
+                                child: SizedBox.square(
+                                  dimension: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            else
+                              const Padding(
+                                padding: EdgeInsets.only(left: 8),
+                                child: Icon(Icons.movie_creation_outlined),
+                              ),
+                          ],
+                        ),
+                        if (alert.summary.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            alert.summary,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: contentDirection(alert.summary),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        Text(
+                          '${alert.verification == 'official'
+                              ? 'Official'
+                              : alert.verification == 'in_product'
+                              ? 'Verified in product'
+                              : 'Reported'} · ${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: const Color(0xFFB54708)),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _creatingId == alert.id
+                                    ? 'Creating complete prompt…'
+                                    : 'Tap to create 10s video prompt',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            if (alert.url.isNotEmpty)
+                              IconButton(
+                                tooltip: 'Open source',
+                                onPressed: () => _source(alert),
+                                icon: const Icon(Icons.open_in_new),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
