@@ -197,7 +197,16 @@ def refresh(db) -> int:
     added = 0
     for row in collect():
         fingerprint = hashlib.sha256((row.get("url") or row["title"]).encode()).hexdigest()
-        if db.scalar(select(MarketAlert.id).where(MarketAlert.fingerprint == fingerprint)):
+        existing = db.scalar(select(MarketAlert).where(MarketAlert.fingerprint == fingerprint))
+        if existing:
+            # Re-score stored stories whenever ranking rules improve or the source
+            # provides better metadata on a later scan.
+            existing.title = row["title"]
+            existing.summary = row.get("summary", "")
+            existing.source = row.get("source", "")
+            existing.url = row.get("url", "")
+            existing.importance = row["importance"]
+            existing.published_at = row.get("published_at")
             continue
         db.add(MarketAlert(
             fingerprint=fingerprint, title=row["title"], summary=row.get("summary", ""),

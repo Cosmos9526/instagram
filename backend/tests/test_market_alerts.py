@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from app import market_alerts
 from app.db import SessionLocal, init_db
@@ -59,4 +60,7 @@ def test_refresh_deduplicates(monkeypatch):
     monkeypatch.setattr(market_alerts, 'collect', lambda: [item])
     with SessionLocal() as db:
         assert market_alerts.refresh(db) == 1
+        item['importance'] = 2
         assert market_alerts.refresh(db) == 0
+        stored = db.scalar(select(MarketAlert).where(MarketAlert.fingerprint.is_not(None)))
+        assert stored.importance == 2
