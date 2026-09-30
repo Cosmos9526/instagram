@@ -205,29 +205,39 @@ class HomeScreenState extends State<HomeScreen> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Chip(
-                    visualDensity: VisualDensity.compact,
-                    label: Text(
-                      p.contentLabel,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ),
                   Text(
                     p.title,
                     textDirection: contentDirection(p.title),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      TypeBadge(switch (p.contentLabel) {
+                        'Sales' => 'sales',
+                        'Promotional' => 'promo',
+                        'News' => 'news',
+                        'Educational' => 'educational',
+                        'Trending' => 'trending',
+                        _ => 'video_prompt',
+                      }, label: p.contentLabel),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          p.isBusy
+                              ? 'Creating…'
+                              : p.status == 'failed'
+                              ? 'Needs retry'
+                              : p.status == 'approved'
+                              ? 'Approved'
+                              : 'Ready to review',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-              subtitle: Text(
-                p.isBusy
-                    ? 'Creating…'
-                    : p.status == 'failed'
-                    ? 'Needs retry'
-                    : p.status == 'approved'
-                    ? 'Approved'
-                    : 'Ready to review',
               ),
               trailing: IconButton(
                 tooltip: 'Delete',

@@ -34,17 +34,29 @@ void main() {
       'base_url': 'https://example.test',
     });
     final api = await Api.load();
-    api.client = MockClient(
-      (req) async => http.Response(
-        jsonEncode(
-          req.url.path == '/catalog'
-              ? {'templates': [], 'video_styles': []}
-              : [],
-        ),
+    api.client = MockClient((req) async {
+      final body = switch (req.url.path) {
+        '/catalog' => {'templates': [], 'video_styles': []},
+        '/brands/test/posts' => [
+          {
+            'id': 'p1',
+            'post_type': 'video_prompt',
+            'mode': 'video',
+            'status': 'ready',
+            'content': {'title': 'خبر فوری', 'content_label': 'news'},
+            'slides': [],
+            'error': '',
+            'for_date': '',
+          },
+        ],
+        _ => [],
+      };
+      return http.Response(
+        jsonEncode(body),
         200,
         headers: {'content-type': 'application/json'},
-      ),
-    );
+      );
+    });
     await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
     final context = tester.element(find.text('Sign up'));
@@ -60,6 +72,11 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(FloatingNav), findsOneWidget);
     expect(find.text('Create video prompt'), findsOneWidget);
+    final titleY = tester.getCenter(find.text('خبر فوری')).dy;
+    final labelY = tester.getCenter(find.text('News')).dy;
+    final statusY = tester.getCenter(find.text('Ready to review')).dy;
+    expect(titleY, lessThan(labelY));
+    expect((labelY - statusY).abs(), lessThan(12));
     expect(tester.takeException(), isNull);
     tester.view.physicalSize = const Size(390, 844);
     await tester.pumpAndSettle();
