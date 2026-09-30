@@ -11,6 +11,7 @@ import '../widgets/common.dart';
 import 'edit_screen.dart';
 import 'video_prompt_view.dart';
 import 'prompt_package_view.dart';
+import '../widgets/delete_post.dart';
 
 /// One piece of content as a production package: preview, texts, caption, English prompts, review actions.
 class PostScreen extends StatefulWidget {
@@ -129,6 +130,16 @@ class _PostScreenState extends State<PostScreen> {
               : (p.isVideo ? 'Video production brief' : 'Publishing package'),
         ),
         actions: [
+          if (p != null && !p.isBusy)
+            IconButton(
+              tooltip: 'Delete',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                final removed = await deletePost(context, widget.api, p);
+                if (!context.mounted || !removed) return;
+                Navigator.pop(context);
+              },
+            ),
           if (p != null)
             Padding(
               padding: const EdgeInsets.all(12),

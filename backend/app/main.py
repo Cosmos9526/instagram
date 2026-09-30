@@ -349,7 +349,7 @@ def generate(brand_id: str, body: GenerateIn, user: User = Depends(current_user)
 def list_posts(brand_id: str, date: str | None = None, user: User = Depends(current_user),
                db: Session = Depends(get_db)):
     own_brand(brand_id, user, db)
-    q = select(Post).where(Post.brand_id == brand_id).order_by(Post.created_at.desc()).limit(100)
+    q = select(Post).where(Post.brand_id == brand_id, Post.status != "deleted").order_by(Post.created_at.desc()).limit(100)
     if date:
         q = q.where(Post.for_date == date)
     return [post_out(p) for p in db.scalars(q)]
@@ -358,6 +358,18 @@ def list_posts(brand_id: str, date: str | None = None, user: User = Depends(curr
 @app.get("/posts/{post_id}")
 def get_post(post_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     return post_out(own_post(post_id, user, db))
+
+
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    p = own_post(post_id, user, db)
+    if p.status in ("queued", "running"):
+        raise HTTPException(409, "Wait for generation to finish before deleting")
+    if p.status != "deleted":
+        p.content = {**p.content, "_previous_status": p.status}
+        p.status = "deleted"
+        db.commit()
+    return {"ok": True}
 
 
 @app.put("/posts/{post_id}")
@@ -377,7 +389,13 @@ def edit_post(post_id: str, body: PostEdit, user: User = Depends(current_user), 
 @app.post("/posts/{post_id}/{action}")
 def review(post_id: str, action: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     p = own_post(post_id, user, db)
-    if action == "approve":
+    if action == "restore" and p.status == "deleted":
+        content = dict(p.content)
+        p.status = content.pop("_previous_status", "ready")
+        p.content = content
+    elif p.status == "deleted":
+        raise HTTPException(409, "Restore this post first")
+    elif action == "approve":
         p.status = "approved"
     elif action == "reject":
         p.status = "rejected"
@@ -483,3 +501,23 @@ def run_daily():
 # The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.
 if os.path.isdir(settings.web_dir):
     app.mount("/", FastStatic(directory=settings.web_dir, html=True), name="web")
+
+
+class PriceSearchIn(BaseModel):
+    query: str = Field(min_length=2, max_length=120)
+
+
+@app.post("/brands/{brand_id}/competitors/prices")
+def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    b = own_brand(brand_id, user, db)
+    from .price_search import terms
+    if not terms(body.query):
+        raise HTTPException(422, "Enter a product name")
+    if not b.competitors:
+        raise HTTPException(422, "Add competitor websites first")
+    active = db.scalars(select(CompetitorScan).where(CompetitorScan.brand_id == brand_id, CompetitorScan.status.in_(["queued", "running"]))).first()
+    if active:
+        raise HTTPException(409, "A search is already running")
+    scan = CompetitorScan(brand_id=brand_id, report={"kind": "price_search", "query": body.query.strip(), "results": []})
+    db.add(scan); db.flush(); enqueue_competitor_scan(db, scan); db.commit()
+    return scan_out(scan)

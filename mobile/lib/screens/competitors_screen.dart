@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
 
@@ -8,50 +9,6 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'research_screen.dart' show UseIdea;
 
-const _productLabels = <String, String>{
-  'chatgpt_plus': 'ChatGPT Plus',
-  'chatgpt_pro': 'ChatGPT Pro',
-  'chatgpt_team': 'ChatGPT Team',
-  'chatgpt': 'ChatGPT',
-  'gemini': 'Gemini',
-  'claude': 'Claude',
-  'midjourney': 'Midjourney',
-  'cursor': 'Cursor',
-  'perplexity': 'Perplexity',
-  'grok': 'Grok',
-  'copilot': 'Copilot',
-  'canva': 'Canva',
-  'capcut': 'CapCut',
-  'spotify': 'Spotify',
-  'youtube_premium': 'YouTube Premium',
-  'netflix': 'Netflix',
-  'adobe': 'Adobe',
-  'windows': 'Windows',
-  'office': 'Office',
-};
-
-const _durationLabels = <String, String>{
-  '1m': '1 month',
-  '3m': '3 months',
-  '6m': '6 months',
-  '12m': '1 year',
-  '': '',
-};
-
-String _productRowLabel(Map<String, dynamic> row) {
-  final base = _productLabels['${row['product']}'] ?? '${row['product']}';
-  final dur = _durationLabels['${row['duration'] ?? ''}'] ?? '';
-  return dur.isEmpty ? base : '$base ($dur)';
-}
-
-String _fmtPrice(dynamic n) {
-  if (n == null) return '—';
-  final v = n is int ? n : int.tryParse('$n') ?? 0;
-  return '${uiDigits(v.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ','))} Toman';
-}
-
-/// Competitor intelligence: per-competitor websites and Instagram pages, a price matrix, and
-/// content gaps Postyar can turn into posts.
 class CompetitorsScreen extends StatefulWidget {
   const CompetitorsScreen({
     super.key,
@@ -72,6 +29,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   List<CompetitorScan>? _scans;
   Timer? _poll;
   bool _starting = false;
+  final _query = TextEditingController();
 
   @override
   void initState() {
@@ -82,6 +40,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   @override
   void dispose() {
     _poll?.cancel();
+    _query.dispose();
     super.dispose();
   }
 
@@ -115,7 +74,8 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   Future<void> _startScan() async {
     setState(() => _starting = true);
     try {
-      await widget.api.startCompetitorScan(widget.brand.id!);
+      if (_query.text.trim().isEmpty) return;
+      await widget.api.searchPrices(widget.brand.id!, _query.text.trim());
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -334,233 +294,172 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   @override
   Widget build(BuildContext context) {
     final items = _items;
-    final scans = _scans;
-    if (items == null || scans == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    final latest = scans.where((s) => s.status == 'ready').firstOrNull;
-    final busy = scans.isNotEmpty && scans.first.isBusy;
-    final failed = scans.isNotEmpty && scans.first.status == 'failed'
-        ? scans.first
-        : null;
-
+    if (items == null) return const Center(child: CircularProgressIndicator());
+    final searches = (_scans ?? <CompetitorScan>[])
+        .where((s) => s.report['kind'] == 'price_search')
+        .toList();
+    final latest = searches.firstOrNull;
+    final busy = (_scans ?? <CompetitorScan>[]).any((s) => s.isBusy);
+    final rows = (latest?.report['results'] as List? ?? const []);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: pagePadding(context, maxWidth: 900),
+        padding: pagePadding(context, maxWidth: 760),
         children: [
-          SectionTitle(
-            'Competitors (${uiDigits(items.length)})',
-            subtitle:
-                'Track products, prices and content from your competitors',
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.content_paste_go),
-                  tooltip: 'Bulk add',
-                  onPressed: _bulkPaste,
-                ),
-                IconButton.filledTonal(
-                  icon: const Icon(Icons.add),
-                  tooltip: 'Add competitor',
-                  onPressed: () => _editCompetitor(),
-                ),
-              ],
+          Text(
+            'Compare prices',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text('Search a product across all ${items.length} competitors.'),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _query,
+            textDirection: contentDirection(_query.text),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) {
+              if (!busy && !_starting) _startScan();
+            },
+            decoration: const InputDecoration(
+              labelText: 'Product name',
+              hintText: 'Claude Max, ChatGPT Plus, Cursor…',
             ),
           ),
-          if (items.isEmpty)
-            EmptyState(
-              icon: Icons.groups_outlined,
-              title: 'No competitors yet',
-              body:
-                  'Paste competitor websites or Instagram profiles to review their products and pages.',
-              action: Wrap(
-                spacing: 8,
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: busy || _starting || items.isEmpty ? null : _startScan,
+            icon: const Icon(Icons.search),
+            label: Text(busy ? 'Checking websites…' : 'Check prices'),
+          ),
+          if (latest != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              'Results: ${latest.report['query']}',
+              textDirection: contentDirection('${latest.report['query']}'),
+            ),
+            if (latest.isBusy)
+              Text(
+                '${latest.report['progress']?['done'] ?? 0} / ${latest.report['progress']?['total'] ?? items.length} checked',
+              ),
+            if (latest.status == 'failed')
+              Text('Search failed: ${latest.error}'),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Prices are snapshots. Compare the same plan and duration.',
+              ),
+            ),
+            for (final c in items)
+              _resultCard(
+                c,
+                rows.where((r) => r['competitor_id'] == c.id).firstOrNull,
+                busy,
+              ),
+          ],
+          const SizedBox(height: 20),
+          ExpansionTile(
+            title: Text('Manage competitors (${items.length})'),
+            children: [
+              Row(
                 children: [
-                  FilledButton.icon(
-                    onPressed: _bulkPaste,
-                    icon: const Icon(Icons.content_paste_go),
-                    label: const Text('Bulk add'),
-                  ),
-                  OutlinedButton(
+                  TextButton.icon(
                     onPressed: () => _editCompetitor(),
-                    child: const Text('Add one'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                  TextButton.icon(
+                    onPressed: _bulkPaste,
+                    icon: const Icon(Icons.content_paste),
+                    label: const Text('Paste list'),
                   ),
                 ],
               ),
-            ),
-          ResponsiveGrid(
-            minTile: 380,
-            spacing: 0,
-            children: [
               for (final c in items)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _CompetitorCard(
-                    c: c,
-                    onTap: () => _editCompetitor(c),
-                    onDelete: () => _deleteCompetitor(c),
-                  ),
+                _CompetitorCard(
+                  c: c,
+                  onTap: () => _editCompetitor(c),
+                  onDelete: () => _deleteCompetitor(c),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: items.isEmpty || busy || _starting ? null : _startScan,
-            icon: busy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.radar),
-            label: Text(busy ? 'Scanning competitors…' : 'Scan competitors'),
-          ),
-          if (failed != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(
-                'Last scan failed: ${failed.error}',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (latest == null && !busy && items.isNotEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('No scans yet.', textAlign: TextAlign.center),
-            ),
-          if (latest != null) ..._report(latest),
         ],
       ),
     );
   }
 
-  List<Widget> _report(CompetitorScan s) {
-    final theme = Theme.of(context);
-    return [
-      SectionTitle(
-        'Competitor report',
-        trailing: Text(
-          s.createdAt == null
-              ? ''
-              : uiDigits(s.createdAt!.toLocal().toString().substring(0, 16)),
-          style: theme.textTheme.labelSmall,
-        ),
-      ),
-      if (s.isPartial)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'This scan is partial. Some competitors could not be fully reviewed within the time limit.',
-                ),
-              ),
-            ],
-          ),
-        ),
-      if (s.priceMatrix.isNotEmpty) ...[
-        const SectionTitle(
-          'Price comparison',
-          subtitle: 'Lowest price first for each product and duration',
-        ),
-        ResponsiveGrid(
-          minTile: 280,
-          spacing: 10,
+  Widget _resultCard(Competitor c, dynamic row, bool busy) {
+    const labels = {
+      'found': 'Price found',
+      'price_unavailable': 'Product found · price unavailable',
+      'not_found': 'No matching product found',
+      'unreachable': 'Website unavailable',
+      'no_website': 'No website saved',
+    };
+    final matches = row?['matches'] as List? ?? const [];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final row in s.priceMatrix)
-              _PriceCard(
-                label: _productRowLabel(row),
-                row: row,
-                fmt: _fmtPrice,
+            Text(
+              c.name.isNotEmpty ? c.name : c.website,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            Text(
+              row == null
+                  ? (busy ? 'Waiting…' : 'Not checked')
+                  : labels[row['status']] ?? 'Unavailable',
+            ),
+            if (row?['checked_at'] != null)
+              Text(
+                'Checked: ${DateTime.tryParse(row['checked_at'])?.toLocal().toString().substring(0, 16) ?? row['checked_at']}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            for (final p in matches)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      '${p['name']}',
+                      textDirection: contentDirection('${p['name']}'),
+                    ),
+                    Text(
+                      p['price'] == null
+                          ? 'Price unavailable'
+                          : '${_price(p['price'])}${p['price_max'] != null && p['price_max'] != p['price'] ? ' – ${_price(p['price_max'])}' : ''} Toman',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (p['in_stock'] == false) const Text('Out of stock'),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: () async {
+                          final uri = Uri.tryParse('${p['url']}');
+                          if (uri != null &&
+                              ['http', 'https'].contains(uri.scheme)) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        child: const Text('View source'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
-      ],
-      if (s.competitors.isNotEmpty) ...[
-        const SectionTitle('Competitor profiles'),
-        for (final c in s.competitors)
-          _CompetitorReportCard(
-            c: c,
-            positioning: '${s.positioning[c['name']] ?? ''}',
-          ),
-      ],
-      if (s.gaps.isNotEmpty) ...[
-        const SectionTitle('Findings with evidence'),
-        for (final g in s.gaps)
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: const Icon(Icons.fact_check_outlined),
-              title: Text('${g['text'] ?? ''}'),
-              subtitle: Text(
-                'Evidence: ${(g['evidence'] as List? ?? const []).join('، ')}',
-                style: theme.textTheme.bodySmall,
-              ),
-              trailing: TextButton.icon(
-                onPressed: () => widget.onUse(
-                  postType: 'educational',
-                  topic: '${g['text'] ?? ''}',
-                ),
-                icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('Create'),
-              ),
-            ),
-          ),
-      ],
-      if (s.suggestions.isNotEmpty) ...[
-        const SectionTitle('General suggestions (not verified findings)'),
-        for (final sug in s.suggestions)
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: const Icon(Icons.lightbulb_outline),
-              title: Text(sug),
-              trailing: TextButton.icon(
-                onPressed: () =>
-                    widget.onUse(postType: 'educational', topic: sug),
-                icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('Create'),
-              ),
-            ),
-          ),
-      ],
-      if (s.postIdeas.isNotEmpty) ...[
-        const SectionTitle('Content ideas'),
-        for (final i in s.postIdeas)
-          Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text('${i['topic'] ?? ''}'),
-              subtitle: Text(
-                postTypes['${i['post_type']}'] ?? '${i['post_type']}',
-              ),
-              trailing: TextButton.icon(
-                onPressed: () => widget.onUse(
-                  postType: postTypes.containsKey(i['post_type'])
-                      ? '${i['post_type']}'
-                      : 'educational',
-                  topic: '${i['topic'] ?? ''}',
-                  mode: i['mode'] == 'carousel'
-                      ? 'carousel'
-                      : (i['mode'] == 'video' ? 'video' : 'single'),
-                ),
-                icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('Create'),
-              ),
-            ),
-          ),
-      ],
-    ];
+      ),
+    );
   }
+
+  String _price(dynamic n) =>
+      '$n'.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',');
 }
 
 class _CompetitorCard extends StatelessWidget {
@@ -605,188 +504,4 @@ class _CompetitorCard extends StatelessWidget {
       ),
     ),
   );
-}
-
-class _CompetitorReportCard extends StatelessWidget {
-  const _CompetitorReportCard({required this.c, required this.positioning});
-  final Map<String, dynamic> c;
-  final String positioning;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final website = Map<String, dynamic>.from(c['website'] as Map? ?? {});
-    final reachable = website['ok'] == true;
-    final signals = Map<String, dynamic>.from(website['signals'] as Map? ?? {});
-    final ig = Map<String, dynamic>.from(c['instagram'] as Map? ?? {});
-    final discounts = [
-      for (final d in (website['discounts'] as List? ?? const [])) '$d',
-    ];
-    final igStatus = '${c['instagram_status'] ?? ''}';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${c['name']}', style: theme.textTheme.titleSmall),
-            if (positioning.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(positioning),
-              ),
-            if (!reachable)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Website unavailable. Trust signals are unknown',
-                  style: theme.textTheme.bodySmall,
-                ),
-              ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                if (reachable && signals['enamad'] == true)
-                  const Chip(
-                    label: Text('e-Namad'),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (reachable && signals['guarantee'] == true)
-                  const Chip(
-                    label: Text('Warranty'),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (reachable && signals['instant_delivery'] == true)
-                  const Chip(
-                    label: Text('Instant delivery'),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                for (final d in discounts.take(2))
-                  Chip(
-                    label: Text(d, overflow: TextOverflow.ellipsis),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                if (igStatus.isNotEmpty)
-                  Chip(
-                    avatar: const Icon(Icons.camera_alt_outlined, size: 14),
-                    label: Text(socialStatusLabels[igStatus] ?? igStatus),
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: igStatus == 'verified'
-                        ? theme.colorScheme.primaryContainer
-                        : null,
-                  ),
-              ],
-            ),
-            if (ig.isNotEmpty && (ig['post_frequency_30d'] ?? 0) > 0) ...[
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.camera_alt_outlined,
-                    size: 16,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${uiDigits(ig['post_frequency_30d'] ?? 0)} posts in the last 30 days',
-                  ),
-                  if (ig['partial'] == true) ...[
-                    const SizedBox(width: 8),
-                    Chip(
-                      label: const Text('Partial data'),
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor:
-                          theme.colorScheme.surfaceContainerHighest,
-                    ),
-                  ],
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One product (and duration) with every competitor's price, cheapest first.
-class _PriceCard extends StatelessWidget {
-  const _PriceCard({required this.label, required this.row, required this.fmt});
-  final String label;
-  final Map<String, dynamic> row;
-  final String Function(Object?) fmt;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final prices = [
-      for (final e in ((row['prices'] as Map?) ?? const {}).entries)
-        if (e.value is num) (name: '${e.key}', price: e.value as num),
-    ]..sort((a, b) => a.price.compareTo(b.price));
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 6),
-            for (final (i, p) in prices.indexed)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        p.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontWeight: i == 0
-                              ? FontWeight.w700
-                              : FontWeight.w400,
-                        ),
-                      ),
-                    ),
-                    if (i == 0 && prices.length > 1)
-                      Container(
-                        margin: const EdgeInsetsDirectional.only(end: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'Lowest price',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: scheme.onPrimaryContainer,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      fmt(p.price),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: i == 0 ? scheme.primary : scheme.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (prices.isEmpty)
-              Text('No prices found', style: theme.textTheme.bodySmall),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -53,6 +53,17 @@ def _run_competitor_scan_job(db, job: Job) -> None:
         if scan.only:
             comps = [c for c in comps if c["id"] in scan.only]
 
+        if (scan.report or {}).get("kind") == "price_search":
+            from .price_search import run_price_search
+            query = scan.report["query"]
+            def price_progress(rows, total):
+                scan.report = {"kind": "price_search", "query": query, "results": rows, "progress": {"done": len(rows), "total": total}}
+                db.commit()
+            scan.report = run_price_search(comps, query, price_progress)
+            scan.status, scan.error, job.status = "ready", "", "done"
+            db.commit()
+            return
+
         def _progress(done: int, total: int) -> None:
             scan.report = {**(scan.report or {}), "progress": {"done": done, "total": total}}
             db.commit()

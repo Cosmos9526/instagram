@@ -67,7 +67,7 @@ void main() {
       final api = await setup(active: 'second');
       await tester.pumpWidget(PostyarApp(api: api));
       await tester.pumpAndSettle();
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('Your content'), findsOneWidget);
       expect(find.text('Second business'), findsOneWidget);
       expect(find.byType(FloatingNav), findsOneWidget);
       await tester.tap(find.text('Second business'));
@@ -75,7 +75,7 @@ void main() {
       await tester.tap(find.text('Rahboom'));
       await tester.pumpAndSettle();
       expect(api.activeBrandId, 'rahboom');
-      expect(find.text('Dashboard'), findsOneWidget);
+      expect(find.text('Your content'), findsOneWidget);
       expect(find.text('Rahboom'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
@@ -87,7 +87,7 @@ void main() {
     final api = await setup(active: 'deleted');
     await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
-    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Your content'), findsOneWidget);
     expect(api.activeBrandId, 'rahboom');
   });
 
@@ -96,7 +96,7 @@ void main() {
     await tester.pumpWidget(PostyarApp(api: api));
     await tester.pumpAndSettle();
     expect(find.text('Add your first business'), findsOneWidget);
-    expect(find.text('Dashboard'), findsNothing);
+    expect(find.text('Your content'), findsNothing);
   });
 
   testWidgets('expired session returns to sign in and clears selection', (

@@ -187,3 +187,28 @@ def test_legacy_project_without_name_still_lists(client):
     r = client.get("/brands", headers=h)
     assert r.status_code == 200 and r.json()[0]["name"] == ""
     assert client.post("/brands", json=BRAND | {"name": "  "}, headers=h).status_code == 422
+
+
+def test_delete_restore_and_price_search_ownership(client, monkeypatch):
+    from app.db import SessionLocal
+    from app.models import Post
+    from app import price_search
+    monkeypatch.setattr(price_search, "run_price_search", lambda *a, **kw: {"kind": "price_search", "results": []})
+    a,b=_user(client),_user(client)
+    bid=client.post('/brands',headers=a,json=BRAND | {'competitors':[{'website':'https://example.com'}]}).json()['id']
+    with SessionLocal() as db:
+        p=Post(brand_id=bid,post_type='video_prompt',mode='video',status='ready',content={'title':'Keep me'})
+        db.add(p);db.commit();pid=p.id
+    assert client.delete(f'/posts/{pid}',headers=b).status_code==404
+    assert client.delete(f'/posts/{pid}',headers=a).status_code==200
+    assert client.get(f'/brands/{bid}/posts',headers=a).json()==[]
+    assert client.post(f'/posts/{pid}/regenerate',headers=a).status_code==409
+    assert client.post(f'/posts/{pid}/restore',headers=a).json()['status']=='ready'
+    assert len(client.get(f'/brands/{bid}/posts',headers=a).json())==1
+    assert client.post(f'/brands/{bid}/competitors/prices',headers=b,json={'query':'Claude Max'}).status_code==404
+    assert client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'قیمت'}).status_code==422
+    r=client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'Claude Max'})
+    assert r.status_code==200 and r.json()['report']['kind']=='price_search'
+    assert client.post(f'/brands/{bid}/competitors/prices',headers=a,json={'query':'Cursor'}).status_code==409
+
+    _drain()
