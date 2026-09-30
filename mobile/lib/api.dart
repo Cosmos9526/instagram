@@ -223,6 +223,11 @@ class Api {
         ),
       );
 
+  Future<CompetitorScan> cancelCompetitorScan(String scanId) async =>
+      CompetitorScan.fromJson(
+        await _send('POST', '/competitor-scans/$scanId/cancel'),
+      );
+
   Future<Post> post(String id) async =>
       Post.fromJson(await _send('GET', '/posts/$id'));
 

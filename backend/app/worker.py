@@ -91,7 +91,7 @@ def _run_competitor_scan_job(db, job: Job) -> None:
         scan.status, scan.error, job.status = "ready", "", "done"
     except _ScanCancelled:
         scan.status = job.status = "cancelled"
-        scan.error = "Replaced by a newer price search"
+        scan.error = scan.error or "Replaced by a newer price search"
     except Exception as e:  # noqa: BLE001
         log.exception("competitor scan %s failed", scan.id)
         scan.error = str(e)[:2000]

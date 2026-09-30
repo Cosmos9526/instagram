@@ -400,6 +400,15 @@ def run_research(b: Brand, focus: str) -> dict:
         log.warning("style analysis failed: %s", e)
         report["video_styles"] = []
     report["sources"] = sources
+    if (b.website or "").lower().rstrip("/").endswith("rahboom.com"):
+        try:
+            from .rahboom_radar import collect
+            report["daily_radar"] = collect()
+            ran["daily_radar"] = "ok"
+        except Exception as e:  # noqa: BLE001 — the normal research report remains useful
+            log.warning("daily radar failed: %s", e)
+            report["daily_radar"] = {"window": "5–24 hours", "news": [], "videos": [], "search_signals": []}
+            ran["daily_radar"] = "error"
     report["ran"] = ran
     report["created"] = datetime.now(timezone.utc).isoformat()
     return report

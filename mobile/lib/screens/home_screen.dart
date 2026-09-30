@@ -211,6 +211,26 @@ class HomeScreenState extends State<HomeScreen> {
               p.content['weekly_series'] != null,
         )
         .firstOrNull;
+    final rahboomDay = (_selectedDay.weekday + 1) % 7;
+    final rahboomSlots = <(String, String)>[
+      (
+        'News',
+        'NEWS VIDEO for ${DateFormat('yyyy-MM-dd').format(_selectedDay)} — use the newest verified AI story from the Daily radar, include its source URL in the caption, and never invent a claim.',
+      ),
+      (
+        'Fast trend',
+        'TREND VIDEO for ${DateFormat('yyyy-MM-dd').format(_selectedDay)} — use a verified Google or YouTube signal from the last 5–24 hours and explain why it matters now.',
+      ),
+      (
+        'Promotion',
+        'PROMOTIONAL VIDEO for Rahboom — choose one real product from the saved catalogue, make one clear benefit-led offer, and use no unverified price or urgency.',
+      ),
+      if (rahboomDay.isEven)
+        (
+          'Educational',
+          'EDUCATIONAL VIDEO — teach one useful AI workflow related to today’s strongest keyword; one practical takeaway, no unsupported promise.',
+        ),
+    ];
     const labels = {
       'educational': 'Educational',
       'sales': 'Sales',
@@ -254,6 +274,27 @@ class HomeScreenState extends State<HomeScreen> {
               DateFormat('EEEE, MMM d', 'en').format(_selectedDay),
               style: Theme.of(context).textTheme.titleSmall,
             ),
+            if (rahboom) ...[
+              const SizedBox(height: 8),
+              const Text('Video prompts for this day'),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final slot in rahboomSlots)
+                    ActionChip(
+                      avatar: const Icon(Icons.movie_outlined, size: 17),
+                      label: Text(slot.$1),
+                      onPressed: () => widget.onCreate(
+                        postType: 'video_prompt',
+                        topic: slot.$2,
+                        mode: 'video',
+                      ),
+                    ),
+                ],
+              ),
+            ],
             if (rahboom && daily == null) ...[
               const SizedBox(height: 8),
               const Text(

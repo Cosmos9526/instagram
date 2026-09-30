@@ -17,11 +17,11 @@ def web_search(query: str, max_results: int = 8, region: str = "wt-wt") -> list[
         return []
 
 
-def news_search(query: str, max_results: int = 8, region: str = "wt-wt") -> list[dict]:
+def news_search(query: str, max_results: int = 8, region: str = "wt-wt", timelimit: str = "w") -> list[dict]:
     try:
         from ddgs import DDGS
 
-        rows = DDGS().news(query, max_results=max_results, region=region, timelimit="w")
+        rows = DDGS().news(query, max_results=max_results, region=region, timelimit=timelimit)
         return [
             {"title": r.get("title", ""), "snippet": r.get("body", ""), "url": r.get("url", ""),
              "date": (r.get("date") or "")[:10], "source": r.get("source", "")}

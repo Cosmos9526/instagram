@@ -108,15 +108,15 @@ def google_suggest(query: str, lang: str = "fa") -> list[str]:
         return []
 
 
-def google_rising(keywords: list[str], geo: str = "IR") -> list[dict]:
-    """Rising related searches from Google Trends for the last 3 months."""
+def google_rising(keywords: list[str], geo: str = "IR", timeframe: str = "today 3-m") -> list[dict]:
+    """Rising related searches from Google Trends for the requested window."""
     out = []
     try:
         from pytrends.request import TrendReq
 
         pt = TrendReq(hl="fa", tz=210, timeout=(10, 25))
         for kw in keywords[:3]:
-            pt.build_payload([kw], geo=geo, timeframe="today 3-m")
+            pt.build_payload([kw], geo=geo, timeframe=timeframe)
             rising = (pt.related_queries().get(kw) or {}).get("rising")
             if rising is not None:
                 out += [{"query": q, "growth": str(v), "seed": kw} for q, v in zip(rising["query"], rising["value"])]
@@ -130,7 +130,7 @@ def video_search(query: str, days: int = 7) -> list[dict]:
     try:
         from ddgs import DDGS
 
-        rows = DDGS().videos(query, max_results=20, timelimit="w" if days <= 7 else "m")
+        rows = DDGS().videos(query, max_results=20, timelimit="d" if days <= 1 else "w" if days <= 7 else "m")
         return [{
             "platform": (r.get("publisher") or "video").lower(), "title": r.get("title", ""),
             "channel": r.get("uploader", ""), "views": int((r.get("statistics") or {}).get("viewCount") or 0),

@@ -112,6 +112,8 @@ class Research {
   List<Map<String, dynamic>> get instagramPosts => _maps('instagram_posts');
   List<Map<String, dynamic>> get videoStyles => _maps('video_styles');
   List<Map<String, dynamic>> get sources => _maps('sources');
+  Map<String, dynamic> get dailyRadar =>
+      Map<String, dynamic>.from(report['daily_radar'] as Map? ?? {});
   Map<String, dynamic> get ran =>
       Map<String, dynamic>.from(report['ran'] as Map? ?? {});
 }

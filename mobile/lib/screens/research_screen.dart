@@ -138,6 +138,25 @@ class _ResearchScreenState extends State<ResearchScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Rahboom weekly video rhythm',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Every day · News + Fast trend + Promotion'),
+                  const Text('Every other day · Educational video'),
+                  const Text('Every video · 8-second scene + 2-second end card'),
+                ],
+              ),
+            ),
+          ),
           if (failed != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -179,6 +198,19 @@ class _ResearchScreenState extends State<ResearchScreen> {
       (_, 'off') => '$k: Off',
       _ => '$k: $v',
     };
+    final radar = r.dailyRadar;
+    final radarNews = [
+      for (final e in (radar['news'] as List? ?? const []))
+        Map<String, dynamic>.from(e as Map),
+    ];
+    final radarVideos = [
+      for (final e in (radar['videos'] as List? ?? const []))
+        Map<String, dynamic>.from(e as Map),
+    ];
+    final searchSignals = [
+      for (final e in (radar['search_signals'] as List? ?? const []))
+        Map<String, dynamic>.from(e as Map),
+    ];
     return [
       SectionTitle(
         'Summary',
@@ -225,6 +257,63 @@ class _ResearchScreenState extends State<ResearchScreen> {
           ),
         ),
       ),
+      if (radar.isNotEmpty) ...[
+        SectionTitle(
+          'Daily radar · ${radar['window'] ?? '5–24 hours'}',
+          trailing: Text(
+            '${uiDigits(radar['keyword_bank_count'] ?? 0)} keywords',
+            style: theme.textTheme.labelSmall,
+          ),
+        ),
+        if (radarNews.isNotEmpty) ...[
+          Text('Fresh AI news', style: theme.textTheme.titleSmall),
+          for (final n in radarNews.take(8))
+            _SignalCard(
+              title: '${n['title'] ?? ''}',
+              detail: '${n['source'] ?? 'News'} · ${n['date'] ?? 'last 24 hours'}',
+              sourceUrl: '${n['url'] ?? ''}',
+              onCreate: () => widget.onUse(
+                postType: 'video_prompt',
+                mode: 'video',
+                topic:
+                    'NEWS VIDEO — Use only this source and verify its date before writing: ${n['title']} | ${n['url']}',
+              ),
+            ),
+        ],
+        if (searchSignals.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('Fast Google signals', style: theme.textTheme.titleSmall),
+          for (final s in searchSignals.take(10))
+            _SignalCard(
+              title: '${s['query'] ?? ''}',
+              detail:
+                  '${s['source'] ?? 'Google'}${s['growth'] != null ? ' · ${s['growth']} rising' : ''}',
+              onCreate: () => widget.onUse(
+                postType: 'video_prompt',
+                mode: 'video',
+                topic:
+                    'TREND VIDEO — Search signal: ${s['query']}. Explain why it matters now without inventing statistics.',
+              ),
+            ),
+        ],
+        if (radarVideos.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text('YouTube in the last 24 hours', style: theme.textTheme.titleSmall),
+          for (final v in radarVideos.take(8))
+            _SignalCard(
+              title: '${v['title'] ?? ''}',
+              detail:
+                  '${v['channel'] ?? 'YouTube'} · ${uiDigits(_compact(v['views']))} views',
+              sourceUrl: '${v['url'] ?? ''}',
+              onCreate: () => widget.onUse(
+                postType: 'video_prompt',
+                mode: 'video',
+                topic:
+                    'TREND RESPONSE VIDEO — Reference this YouTube topic, do not copy it: ${v['title']} | ${v['url']}',
+              ),
+            ),
+        ],
+      ],
       if (r.trends.isNotEmpty) ...[
         const SectionTitle('Topics to explore'),
         for (final t in r.trends)
@@ -459,6 +548,55 @@ class _IdeaCard extends StatelessWidget {
               icon: const Icon(Icons.auto_awesome, size: 18),
               label: Text(action),
             ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _SignalCard extends StatelessWidget {
+  const _SignalCard({
+    required this.title,
+    required this.detail,
+    required this.onCreate,
+    this.sourceUrl = '',
+  });
+  final String title, detail, sourceUrl;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(top: 8),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title,
+            textDirection: contentDirection(title),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 4),
+          Text(detail, style: Theme.of(context).textTheme.bodySmall),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (sourceUrl.isNotEmpty)
+                TextButton(
+                  onPressed: () => launchUrl(
+                    Uri.parse(sourceUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  child: const Text('Source'),
+                ),
+              TextButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.movie_creation_outlined, size: 18),
+                label: const Text('Create 10s prompt'),
+              ),
+            ],
           ),
         ],
       ),

@@ -100,6 +100,24 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
     }
   }
 
+  Future<void> _stopScan(CompetitorScan scan) async {
+    try {
+      final stopped = await widget.api.cancelCompetitorScan(scan.id);
+      if (!mounted) return;
+      setState(() {
+        _scans = [
+          stopped,
+          for (final item in _scans ?? <CompetitorScan>[])
+            if (item.id != stopped.id) item,
+        ];
+      });
+      _poll?.cancel();
+      showSnack(context, 'Search stopped');
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    }
+  }
+
   Future<void> _editCompetitor([Competitor? existing]) async {
     final name = TextEditingController(text: existing?.name ?? '');
     final website = TextEditingController(text: existing?.website ?? '');
@@ -368,6 +386,14 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
                   : 'Check prices',
             ),
           ),
+          if (latest?.isBusy == true) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _stopScan(latest!),
+              icon: const Icon(Icons.stop_circle_outlined),
+              label: const Text('Stop search'),
+            ),
+          ],
           if (latest != null) ...[
             const SizedBox(height: 16),
             Text(

@@ -493,6 +493,24 @@ def get_competitor_scan(scan_id: str, user: User = Depends(current_user), db: Se
     return scan_out(s)
 
 
+@app.post("/competitor-scans/{scan_id}/cancel")
+def cancel_competitor_scan(scan_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    scan = db.get(CompetitorScan, scan_id)
+    if not scan:
+        _404()
+    own_brand(scan.brand_id, user, db)
+    if scan.status in ("queued", "running"):
+        scan.status = "cancelled"
+        scan.error = "Stopped by user"
+        for job in db.scalars(select(Job).where(
+            Job.competitor_scan_id == scan.id,
+            Job.status.in_(["queued", "running"]),
+        )):
+            job.status = "cancelled"
+        db.commit()
+    return scan_out(scan)
+
+
 @app.post("/admin/run-daily", dependencies=[Depends(admin)])
 def run_daily():
     return {"queued": create_daily_posts()}
