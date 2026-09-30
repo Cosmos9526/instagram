@@ -109,21 +109,58 @@ def google_suggest(query: str, lang: str = "fa") -> list[str]:
 
 
 def google_rising(keywords: list[str], geo: str = "IR", timeframe: str = "today 3-m") -> list[dict]:
-    """Rising related searches from Google Trends for the requested window."""
+    """Rising related searches from Google Trends, without an account or API key.
+
+    Explore is browser-backed and Google rate-limits it aggressively, so one seed is
+    queried per refresh and trendspyg's persistent cache/cookies are reused.
+    """
     out = []
     try:
-        from pytrends.request import TrendReq
+        from trendspyg import download_google_trends_explore
 
-        pt = TrendReq(hl="fa", tz=210, timeout=(10, 25))
-        for kw in keywords[:3]:
-            pt.build_payload([kw], geo=geo, timeframe=timeframe)
-            rising = (pt.related_queries().get(kw) or {}).get("rising")
-            if rising is not None:
-                out += [{"query": q, "growth": str(v), "seed": kw} for q, v in zip(rising["query"], rising["value"])]
-            time.sleep(1)
+        for kw in keywords[:1]:
+            result = download_google_trends_explore(
+                kw, geo=geo, timeframe=timeframe, include_geo=False,
+                max_retries=1, retry_wait=2, cache="disk", cookies="disk",
+            )
+            related = result.get("related_queries") or {}
+            rows = related.get("rising") or related.get("top") or []
+            out += [{
+                "query": row.get("query", ""),
+                "growth": row.get("formatted_value") or str(row.get("value", "")),
+                "score": row.get("value"),
+                "seed": kw,
+                "url": row.get("link", ""),
+                "source": "Google Trends Explore",
+            } for row in rows if row.get("query")]
     except Exception as e:  # noqa: BLE001
         log.warning("trends failed: %s", e)
     return out[:25]
+
+
+def google_trending_now(geo: str = "IR") -> list[dict]:
+    """Google's live Trending Now feed with its published minimum search volume."""
+    try:
+        from trendspyg import download_google_trends_rss
+
+        result = download_google_trends_rss(
+            geo=geo, normalize=True, include_images=False,
+            max_articles_per_trend=2, cache="disk",
+        )
+        return [{
+            "query": row.get("keyword", ""),
+            "search_volume_min": int(row.get("volume_min") or 0),
+            "search_volume": row.get("volume_text", ""),
+            "rank": row.get("rank"),
+            "started_at": row.get("started_at"),
+            "is_active": row.get("is_active", True),
+            "url": row.get("explore_url", ""),
+            "news": row.get("news") or [],
+            "source": "Google Trends Trending Now",
+        } for row in result.get("trends", []) if row.get("keyword")]
+    except Exception as e:  # noqa: BLE001
+        log.warning("trending now failed: %s", e)
+        return []
 
 
 def video_search(query: str, days: int = 7) -> list[dict]:

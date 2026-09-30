@@ -292,7 +292,8 @@ class _ResearchScreenState extends State<ResearchScreen> {
             _SignalCard(
               title: '${s['query'] ?? ''}',
               detail:
-                  '${s['source'] ?? 'Google'}${s['growth'] != null ? ' · ${s['growth']} rising' : ''}',
+                  '${s['source'] ?? 'Google'}${s['search_volume'] != null && '${s['search_volume']}'.isNotEmpty ? ' · ${uiDigits(s['search_volume'])} searches' : ''}${s['growth'] != null ? ' · ${s['growth']} rising' : ''}',
+              sourceUrl: '${s['url'] ?? ''}',
               onCreate: () => widget.onUse(
                 postType: 'video_prompt',
                 mode: 'video',

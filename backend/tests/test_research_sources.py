@@ -65,3 +65,21 @@ def test_instagram_search_filters_unrelated_max_results(monkeypatch):
     monkeypatch.setattr(ss.time, 'sleep', lambda _: None)
     result = ss.instagram_via_search(['کلود مکس'], must=['فروش اکانت', 'کلود مکس'])
     assert [p['code'] for p in result['posts']] == ['Claude123']
+
+
+def test_trending_now_normalizes_volume_and_source(monkeypatch):
+    from app import search_sources as ss
+    import trendspyg
+
+    monkeypatch.setattr(trendspyg, 'download_google_trends_rss', lambda **kwargs: {
+        'trends': [{
+            'keyword': 'هوش مصنوعی', 'volume_min': 2000, 'volume_text': '2000+',
+            'rank': 1, 'started_at': '2026-09-30T06:00:00Z', 'is_active': True,
+            'explore_url': 'https://trends.google.com/trends/explore?q=ai', 'news': [],
+        }]
+    })
+
+    rows = ss.google_trending_now('IR')
+    assert rows[0]['query'] == 'هوش مصنوعی'
+    assert rows[0]['search_volume_min'] == 2000
+    assert rows[0]['source'] == 'Google Trends Trending Now'
