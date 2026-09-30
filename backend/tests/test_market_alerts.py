@@ -13,6 +13,7 @@ def test_score_requires_ai_vendor_and_material_change():
     assert market_alerts._score("Private saved views are available", "GitHub update", official=True,
                                 source="GitHub") == 0
     assert market_alerts._score("Claude $500 plan reportedly being tested", "leak") == 3
+    assert market_alerts._score("ChatGPT launches a $500 plan", "", source="note") == 0
     assert market_alerts._score("Football results", "new season plan") == 0
     assert market_alerts._score("Claude customer story", "a team explains its workflow") == 0
 
