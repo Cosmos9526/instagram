@@ -11,7 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets(
-    'shows 20 real stories and tapping one creates a news video prompt',
+    'shows 20 emerging signals and tapping one creates a trend video prompt',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -32,6 +32,7 @@ void main() {
             'source': 'OpenAI',
             'url': 'https://example.test/source/$i',
             'verification': 'official',
+            'category': 'buzz',
             'importance': i == 0 ? 5 : 4,
             'published_at': '2026-09-30T10:00:00Z',
           },
@@ -80,18 +81,19 @@ void main() {
           home: AlertsScreen(
             api: api,
             brand: Brand(id: 'rahboom', name: 'Rahboom'),
+            category: 'buzz',
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('20 real stories'), findsOneWidget);
+      expect(find.textContaining('20 real signals'), findsOneWidget);
       expect(find.text('Major update'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Official AI launch 0'));
       await tester.pumpAndSettle();
       expect(generated?['post_type'], 'video_prompt');
       expect(generated?['target_seconds'], 10);
-      expect(generated?['content_label'], 'news');
+      expect(generated?['content_label'], 'trending');
       expect(generated?['topic_hint'], contains('Raha and Arian'));
       expect(generated?['topic_hint'], contains('Source URL'));
       expect(find.text('News prompt'), findsWidgets);

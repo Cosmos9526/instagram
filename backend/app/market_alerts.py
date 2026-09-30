@@ -27,6 +27,11 @@ FEEDS = {
 }
 
 QUERIES = (
+    'Jev AI decision model TypeSafe launch',
+    'Jev decision model beats Pokemon TypeSafe AI',
+    'OpenAI Dots always-on agents launch',
+    'viral AI tool new technique developers latest',
+    'AI agent architecture technique trending latest',
     'Gemini 4 Argon launch rollout Google',
     'Gemini 4 release official Google latest',
     'next generation OpenAI GPT Anthropic Claude flagship model launch',
@@ -57,6 +62,7 @@ VENDORS = (
     "cursor", "github", "copilot", "grok", "midjourney", "veo", "sora",
     "mistral", "llama", "meta ai", "perplexity", "runway", "firefly",
     "elevenlabs", "notebooklm", "deepmind", "hugging face", "microsoft ai", "nvidia",
+    "jev", "typesafe", "dots",
     "کلاد", "چت جی پی تی", "جمینای", "گوگل فلو", "کرسر",
 )
 URGENT = ("price", "pricing", "plan", "tier", "subscription", "launch", "new model",
@@ -68,16 +74,30 @@ LOW_TRUST_SOURCES = ("note", "letsdatascience", "startup fortune", "the currency
                      "the cryptonomist")
 TRUSTED_NEWS_SOURCES = ("axios", "reuters", "associated press", "ap news", "the verge",
                         "techcrunch", "wired", "ars technica", "bloomberg", "cnet", "zdnet",
-                        "venturebeat", "the information")
+                        "venturebeat", "the information", "tom's hardware")
 MAJOR_MODEL_SIGNALS = (
     "gemini 4", "gpt-6", "claude opus", "claude sonnet", "veo", "sora", "deepseek",
     "frontier model", "next-generation", "flagship model", "major model", "new model",
+)
+BUZZ_SIGNALS = (
+    "jev", "dots", "system one", "decision model", "typed decision", "always-on agent",
+    "agent architecture", "agentic memory", "model routing", "tool routing",
+    "context engineering", "computer use", "model context protocol", "mcp server",
 )
 
 
 def _low_trust(source: str) -> bool:
     normalized = source.casefold().strip()
     return any(blocked in normalized for blocked in LOW_TRUST_SOURCES)
+
+
+def _category(title: str, summary: str) -> str:
+    text = f"{title} {summary}".casefold()
+    if any(k in text for k in BUZZ_SIGNALS):
+        return "buzz"
+    if any(k in text for k in ("price", "pricing", "plan", "tier", "قیمت", "پلن")):
+        return "pricing"
+    return "news"
 
 
 def _text(node: ET.Element, names: tuple[str, ...]) -> str:
@@ -117,11 +137,15 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     title_has_ai_product = bool(re.search(r"\bai\b", title_text)) or any(
         k in title_text for k in AI_PRODUCT if k != "ai"
     )
+    trusted = any(name in source.casefold() for name in TRUSTED_NEWS_SOURCES)
+    has_buzz = any(k in text for k in BUZZ_SIGNALS)
     if source == "GitHub" and not title_has_ai_product:
         return 0
     has_vendor = any(v in text for v in VENDORS)
     has_material_change = any(k in text for k in MATERIAL)
-    if not has_vendor or (not has_material_change and not (official and title_has_ai_product)):
+    if (not has_vendor and not (trusted and has_buzz)) or (
+        not has_material_change and not (official and title_has_ai_product) and not has_buzz
+    ):
         return 0
     # Official provenance is a trust signal, not proof that the update is major.
     # Reserve the top score for flagship models, material pricing, or similarly
@@ -134,6 +158,8 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
         score += 3
     elif major_model:
         score += 2
+    if any(k in title_text for k in BUZZ_SIGNALS):
+        score += 2
     if any(k in text for k in URGENT):
         score += 1
     if re.search(r"(?:\$|usd|دلار)\s?\d|\d+\s?(?:usd|دلار)", text):
@@ -143,7 +169,6 @@ def _score(title: str, summary: str, official: bool = False, source: str = "") -
     )
     if uncertain:
         score -= 1
-    trusted = any(name in source.casefold() for name in TRUSTED_NEWS_SOURCES)
     return max(0, min(score, 5 if official or trusted else 3 if uncertain else 4))
 
 
@@ -216,12 +241,12 @@ def refresh(db) -> int:
             existing.url = row.get("url", "")
             existing.importance = row["importance"]
             existing.published_at = row.get("published_at")
+            existing.category = _category(row["title"], row.get("summary", ""))
             continue
         db.add(MarketAlert(
             fingerprint=fingerprint, title=row["title"], summary=row.get("summary", ""),
             source=row.get("source", ""), url=row.get("url", ""),
-            category="pricing" if any(k in f"{row['title']} {row.get('summary', '')}".casefold()
-                                      for k in ("price", "pricing", "plan", "tier", "قیمت", "پلن")) else "news",
+            category=_category(row["title"], row.get("summary", "")),
             importance=row["importance"], published_at=row.get("published_at"),
         ))
         added += 1
