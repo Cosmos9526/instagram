@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
-from .search_sources import google_rising, google_suggest, video_search
+from .search_sources import google_rising, google_suggest, google_trending_now, video_search
 from .sources import news_search
 
 
@@ -120,8 +120,13 @@ def collect() -> dict:
                 suggestions += [{"query": s, "seed": q, "source": "Google autocomplete"} for s in rows]
     if not videos:
         videos = youtube_channel_feeds()
+    trending_now = google_trending_now("IR")
     rising = google_rising([fa for fa, _ in TOPICS[:5]], timeframe="now 1-d")
-    trends = ([r | {"source": "Google Trends", "window_hours": 24} for r in rising] + suggestions)
+    trends = (
+        [r | {"window_hours": 24} for r in trending_now]
+        + [r | {"window_hours": 24} for r in rising]
+        + suggestions
+    )
     return {
         "window": "5–24 hours",
         "keyword_bank_count": len(keyword_bank()),

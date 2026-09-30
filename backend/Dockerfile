@@ -19,6 +19,7 @@ ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install -r requirements.txt && playwright install --with-deps chromium \
+    && apt-get update && apt-get install -y --no-install-recommends chromium chromium-driver \
     && rm -rf /var/lib/apt/lists/*
 COPY backend/app ./app
 COPY --from=web /src/build/web ./web

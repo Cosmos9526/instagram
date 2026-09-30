@@ -24,12 +24,17 @@ def test_collect_labels_sources_and_freshness(monkeypatch):
     ])
     monkeypatch.setattr(radar, "google_suggest", lambda q, *a: [q + " today"])
     monkeypatch.setattr(radar, "google_rising", lambda *a, **k: [{"query": "Claude trend", "growth": "Breakout"}])
+    monkeypatch.setattr(radar, "google_trending_now", lambda *a, **k: [
+        {"query": "AI search", "search_volume": "2000+", "search_volume_min": 2000,
+         "source": "Google Trends Trending Now"}
+    ])
     report = radar.collect()
     assert report["keyword_bank_count"] == len(radar.keyword_bank())
     assert report["window"] == "5–24 hours"
     assert report["news"][0]["source_type"] == "news"
     assert report["videos"][0]["source_type"] == "youtube"
-    assert report["search_signals"][0]["source"] == "Google Trends"
+    assert report["search_signals"][0]["source"] == "Google Trends Trending Now"
+    assert report["search_signals"][0]["search_volume_min"] == 2000
 
 
 def test_youtube_feed_fallback_is_used(monkeypatch):
@@ -37,6 +42,7 @@ def test_youtube_feed_fallback_is_used(monkeypatch):
     monkeypatch.setattr(radar, "video_search", lambda *a, **k: [])
     monkeypatch.setattr(radar, "google_suggest", lambda *a, **k: [])
     monkeypatch.setattr(radar, "google_rising", lambda *a, **k: [])
+    monkeypatch.setattr(radar, "google_trending_now", lambda *a, **k: [])
     monkeypatch.setattr(radar, "youtube_channel_feeds", lambda: [{
         "title": "Official update", "url": "https://youtube.test/1",
         "channel": "Official", "views": 0, "source_type": "youtube_feed",
