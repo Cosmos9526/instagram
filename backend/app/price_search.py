@@ -7,7 +7,7 @@ import time
 from lxml import html as lh
 from . import safe_fetch
 from .competitors import extract_products, detect_duration, _woo_currency
-from .price_adapters import CLAUDE_PAGES, extract as audited_products
+from .price_adapters import CLAUDE_PAGES, extract as audited_products, public_catalog
 
 ALIASES={'کلاد':'claude','کلاود':'claude','کلود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
 STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','buy','account','subscription','چنده','چقدر','است','توی','در','بهم','بگو','لطفا'}
@@ -54,6 +54,12 @@ def lookup(c,query):
     for path in (f'product/{slug}',f'product/{family}',f'product/ai-{family}',f'product/{family}-ai',f'services/ai/{family}'):
         if family:direct.append(base.rstrip('/')+'/'+path)
     host=(urlparse(base).hostname or '').removeprefix('www.')
+    try:catalog=public_catalog(host)
+    except Exception:catalog=None
+    if catalog is not None:
+        out['matches']=[p | {'currency':'Toman','duration':detect_duration(p['name'])} for p in catalog if matches(query,p['name'])]
+        out['status']='found' if out['matches'] else 'not_found'
+        return out
     queue=[base.rstrip('/')+p for p in CLAUDE_PAGES.get(host,[]) ] if family=='claude' else []
     queue.append(base.rstrip('/')+'/?'+urlencode({'s':family or normalized,'post_type':'product'}))
     queue.extend(direct)

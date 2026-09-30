@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "id": "claude-pro-account",
+      "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی)",
+      "variants": [
+        {
+          "id": 3069,
+          "region": "GLOBAL",
+          "currency": "USD",
+          "amount": 20,
+          "label": "۱ ماهه - Pro",
+          "price": 5299000,
+          "originalPrice": 5681000,
+          "discountPercent": 7,
+          "profitPercent": null
+        },
+        {
+          "id": 3070,
+          "region": "GLOBAL",
+          "currency": "USD",
+          "amount": 100,
+          "label": "۱ ماهه - Max 5x",
+          "price": 26499000,
+          "originalPrice": 28404000,
+          "discountPercent": 7,
+          "profitPercent": null
+        },
+        {
+          "id": 3071,
+          "region": "GLOBAL",
+          "currency": "USD",
+          "amount": 200,
+          "label": "۱ ماهه - Max 20x",
+          "price": 52999000,
+          "originalPrice": 56808000,
+          "discountPercent": 7,
+          "profitPercent": null
+        }
+      ],
+      "available": true
+    }
+  ]
+}

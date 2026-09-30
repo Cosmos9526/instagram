@@ -4,9 +4,28 @@ Never infer a plan's price from an unrelated page-wide amount. All returned
 amounts are Toman; selectors carry the exact plan and direct source URL.
 """
 import json
-from urllib.parse import urljoin, urlparse, unquote
+from urllib.parse import urljoin, urlparse, unquote, quote
 from lxml import html as lh
 from .competitors import parse_price
+from . import safe_fetch
+
+
+def public_catalog(host):
+    if host != 'codinocard.ir':return None
+    # Endpoint used by the public shop, not an authenticated/admin API.
+    _,body=safe_fetch.text('https://api.codinocard.ir/api/products',timeout=8,connect_timeout=3)
+    try:products=json.loads(body)['products']
+    except (ValueError,KeyError,TypeError):return None
+    result=[]
+    for p in products:
+        for v in p.get('variants',[]):
+            price=v.get('price')
+            if not isinstance(price,(int,float)):continue
+            # variant.currency is the face-value currency (USD), NOT the
+            # checkout currency. price is the displayed Toman selling amount.
+            source='https://codinocard.ir/product/'+quote(p['id'],safe='')
+            result.append(row(p['name']+' '+v.get('label',''),int(price),source,p.get('available'), 'Public catalogue selling price in Toman'))
+    return result
 
 CLAUDE_PAGES = {
     'parspremium.ir': ['/product/Claude-AI'],

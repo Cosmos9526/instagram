@@ -29,6 +29,13 @@ def test_parspremium_option_prices_not_aggregate_range():
 def test_quote_required_is_not_a_price():
     assert adapted('g1verify.ir')[0]['price'] is None
 
+def test_codinocard_selling_price_not_usd_face_value(monkeypatch):
+    body=(FIXTURES/'codinocard.json').read_text()
+    monkeypatch.setattr(ps.safe_fetch,'text',lambda url,**kw:(url,body))
+    result=ps.lookup({'id':'a','website':'https://codinocard.ir'},'Claude Max')
+    assert {p['price'] for p in result['matches']}=={26499000,52999000}
+    assert all(p['currency']=='Toman' for p in result['matches'])
+
 def test_max_without_space_and_cart_links():
     assert ps.matches('کلاد مکس ۵x','Claude max5x exclusive 1month')
     assert not ps.matches('Claude Max 5x','Claude max20x')
