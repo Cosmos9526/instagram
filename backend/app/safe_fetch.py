@@ -6,6 +6,7 @@ instead of loading the whole body."""
 import ipaddress
 import re
 import socket
+import threading
 from urllib.parse import urlparse
 
 import httpx
@@ -85,12 +86,30 @@ def get(url: str, timeout: float = 15, max_redirects: int = 5, headers: dict | N
             cl.close()
 
 
+_last = threading.local()
+
+
+def last_reason() -> str:
+    """Why the most recent text() call on this thread returned an empty body ('' = it succeeded)."""
+    return getattr(_last, "reason", "")
+
+
 def text(url: str, timeout: float = 15, client: httpx.Client | None = None, connect_timeout: float = 5.0) -> tuple[str, str]:
-    """Returns (final_url, text), or ('', '') on any failure — never raises."""
+    """Returns (final_url, text), or ('', '') on any failure — never raises. See last_reason()."""
+    _last.reason = ""
     try:
         r = get(url, timeout=timeout, client=client, connect_timeout=connect_timeout)
         if r.status_code < 400:
+            if not r.text.strip():
+                _last.reason = "empty_body"
             return str(r.url), r.text
-    except (UnsafeURLError, httpx.HTTPError):
-        pass
+        _last.reason = f"http_{r.status_code}"
+    except UnsafeURLError as e:
+        _last.reason = "dns" if "resolve" in str(e) else "unsafe"
+    except httpx.ConnectTimeout:
+        _last.reason = "timeout_connect"
+    except httpx.TimeoutException:
+        _last.reason = "timeout_read"
+    except httpx.HTTPError as e:
+        _last.reason = "tls" if "SSL" in str(e) or "certificate" in str(e).lower() else "connect_error"
     return url, ""

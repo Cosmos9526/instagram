@@ -56,6 +56,13 @@ def canonical(url):
     """Page fragments never change product data and must not trigger another download."""
     return urldefrag(url)[0].rstrip('/') or urldefrag(url)[0]
 
+def page_key(url):
+    """Numeric pagination of one product page (/product/claude-ai/2, /3) is the same page."""
+    parsed=urlparse(canonical(url))
+    parts=parsed.path.split('/')
+    if len([x for x in parts if x])>=3 and parts[-1].isdigit():parts=parts[:-1]
+    return parsed._replace(path='/'.join(parts),query='',fragment='').geturl().rstrip('/')
+
 def product_link(url):
     parsed=urlparse(url)
     if parsed.query or any(x in parsed.path.lower() for x in ('cart','checkout','comment-page','login','logout')):
@@ -65,9 +72,11 @@ def product_link(url):
 def lookup(c,query):
     base=c.get('website','').strip()
     if base and '://' not in base:base='https://'+base
+    reasons=[]
     out={'competitor_id':c['id'],'name':c.get('name') or urlparse(base).hostname or 'Competitor','website':base,'status':'not_found','matches':[],'checked_at':datetime.now(timezone.utc).isoformat()}
     if not base:out['status']='no_website';return out
-    deadline=time.monotonic()+40
+    started=time.monotonic()
+    deadline=started+40
     normalized=' '.join(terms(query))
     wanted=terms(query)
     slug='-'.join(wanted)
@@ -91,26 +100,35 @@ def lookup(c,query):
     queue.append(base)
     queue=list(dict.fromkeys(canonical(url) for url in queue))
     visited=set();ok=0;seen=set();blocked=False
-    while queue and len(visited)<8 and time.monotonic()<deadline:
+    while queue and len(visited)<8:
+        if time.monotonic()>=deadline:reasons.append('budget_exhausted');break
         url=canonical(queue.pop(0))
-        if url in visited or not same_site(url,base):continue
-        visited.add(url)
+        if page_key(url) in visited or not same_site(url,base):continue
+        visited.add(page_key(url))
         final,body=url,''
-        for attempt in range(2):
+        for attempt in range(3):
+            t0=time.monotonic();safe_fetch._last.reason=''
             try:final,body=safe_fetch.text(url,timeout=7,connect_timeout=3)
             except Exception:body=''
-            if body or time.monotonic()+7>=deadline:break
+            if body:break
+            reason=safe_fetch.last_reason() or 'empty_body'
+            reasons.append(reason)
+            if reason.startswith('http_4') and reason!='http_429' or reason in ('dns','unsafe'):break
+            # A slow site gets a longer budget (up to 65 s) instead of being reported as missing.
+            if time.monotonic()-t0>4:deadline=min(deadline+8,started+65)
+            if time.monotonic()+7>=deadline:reasons.append('budget_exhausted');break
+            time.sleep(0.6*(attempt+1))
         if not body or not same_site(final,base):continue
         if '__zrkjc' in body or 'در حال بررسی مرورگر' in body:
-            blocked=True;continue
+            blocked=True;reasons.append('challenge');continue
         ok+=1
         try:tree=lh.fromstring(body)
         except Exception:continue
         links=[]
         for a in tree.xpath('//a[@href]'):
             dest=canonical(urljoin(final,a.get('href')))
-            if same_site(dest,base) and product_link(dest) and (matches(family,a.text_content()) or matches(family,dest)) and dest not in visited:
-                links.append(dest)
+            if same_site(dest,base) and product_link(dest) and (matches(family,a.text_content()) or matches(family,dest)) and page_key(dest) not in visited:
+                links.append(page_key(dest))
         queue=list(dict.fromkeys(links[:2]+queue))
         adapted=audited_products(tree,final)
         for p in adapted if adapted is not None else extract_products(body):
@@ -141,6 +159,7 @@ def lookup(c,query):
         if specific_plan and any(p['price'] is not None for p in out['matches']):
             out['status']='found'
             return out
+    out['reason']=', '.join(dict.fromkeys(reasons))
     out['status']='found' if any(p['price'] is not None for p in out['matches']) else 'price_unavailable' if out['matches'] else 'blocked' if blocked else 'not_found' if ok else 'unreachable'
     return out
 

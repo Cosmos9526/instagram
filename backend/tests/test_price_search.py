@@ -91,3 +91,50 @@ def test_broad_max_search_keeps_distinct_plans(monkeypatch):
     assert {(p['name'],p['price']) for p in row['matches']} == {
         ('Claude Max 5x',32000000),('Claude Max 20x',60000000)
     }
+
+
+def test_numeric_pagination_is_one_page():
+    assert ps.page_key('https://dicardo.com/product/claude-ai/2')==ps.page_key('https://dicardo.com/product/claude-ai/3')==ps.page_key('https://dicardo.com/product/claude-ai')
+    assert ps.page_key('https://x.ir/product/1')=='https://x.ir/product/1'  # too short to be pagination
+
+
+def test_pagination_pages_are_not_refetched(monkeypatch):
+    calls=[]
+    page='<html><a href="/product/claude-ai/2">Claude</a><a href="/product/claude-ai/3">Claude</a><script type="application/ld+json">{"@type":"Product","name":"Claude Pro","offers":{"price":"100000","priceCurrency":"IRT"}}</script></html>'
+    def fake(url,**k):calls.append(url);return url,page
+    monkeypatch.setattr(ps.safe_fetch,'text',fake)
+    row=ps.lookup({'id':'a','website':'https://x.ir'},'Claude Pro')
+    assert not any(u.endswith(('/2','/3')) for u in calls)
+    assert len(row['matches'])==1
+
+
+def test_failure_reason_is_reported_and_retried(monkeypatch):
+    monkeypatch.setattr(ps.time,'sleep',lambda s:None)
+    calls=[]
+    def fake(url,**k):
+        calls.append(url);ps.safe_fetch._last.reason='timeout_read';return url,''
+    monkeypatch.setattr(ps.safe_fetch,'text',fake)
+    row=ps.lookup({'id':'a','website':'https://slow.ir'},'Claude Pro')
+    assert row['status']=='unreachable' and 'timeout_read' in row['reason']
+    assert len(calls)>=3  # retried with backoff, not a single miss
+
+
+def test_transient_failure_then_success(monkeypatch):
+    monkeypatch.setattr(ps.time,'sleep',lambda s:None)
+    state={'n':0}
+    page='<script type="application/ld+json">{"@type":"Product","name":"Claude Pro","offers":{"price":"100000","priceCurrency":"IRT"}}</script>'
+    def fake(url,**k):
+        state['n']+=1
+        if state['n']==1:ps.safe_fetch._last.reason='timeout_read';return url,''
+        return url,page
+    monkeypatch.setattr(ps.safe_fetch,'text',fake)
+    row=ps.lookup({'id':'a','website':'https://x.ir'},'Claude Pro')
+    assert row['status']=='found' and row['matches'][0]['price']==100000
+
+
+def test_numberland_duration_only_when_stated():
+    from lxml import html as lh
+    from app.price_adapters import extract
+    page='<div class="accountclickable" accid="1" datatag="اشتراک یک ماهه"><div>Claude Pro</div><div>5,900,000 تومان</div></div><div class="accountclickable" accid="2" datatag=""><div>Claude Max</div><div>9,000,000 تومان</div></div>'
+    rows=extract(lh.fromstring('<html>'+page+'</html>'),'https://numberland.ir/account/claude-ai')
+    assert rows[0].get('duration')=='1m' and 'duration' not in rows[1]

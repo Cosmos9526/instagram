@@ -6,7 +6,7 @@ amounts are Toman; selectors carry the exact plan and direct source URL.
 import json
 from urllib.parse import urljoin, urlparse, unquote, quote
 from lxml import html as lh
-from .competitors import parse_price
+from .competitors import detect_duration, parse_price
 from . import safe_fetch
 
 
@@ -87,7 +87,11 @@ def extract(tree, url):
             if len(parts)!=2 or 'تومان' not in parts[1].text_content():continue
             name=parts[0].text_content().strip()
             if name=='Max':name='Claude Max 5x' if '5 برابر' in card.get('datatag','') else 'Claude Max'
-            result.append(row(name,parse_price(parts[1].text_content(),'IRT'),url))
+            # Duration is only reported when the card text or tooltip states it; never assumed.
+            hint=detect_duration(name+' '+card.get('datatag','')+' '+parts[0].text_content())
+            r=row(name,parse_price(parts[1].text_content(),'IRT'),url)
+            if hint:r['duration']=hint
+            result.append(r)
         return result
     if host == 'dicardo.com':
         title=' '.join(tree.xpath('//h1//text()')).strip()
