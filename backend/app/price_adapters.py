@@ -13,9 +13,13 @@ from . import safe_fetch
 def public_catalog(host):
     if host != 'codinocard.ir':return None
     # Endpoint used by the public shop, not an authenticated/admin API.
-    _,body=safe_fetch.text('https://api.codinocard.ir/api/products',timeout=8,connect_timeout=3)
-    try:products=json.loads(body)['products']
-    except (ValueError,KeyError,TypeError):return None
+    products=None
+    for _ in range(2):
+        _,body=safe_fetch.text('https://api.codinocard.ir/api/products',timeout=8,connect_timeout=3)
+        try:products=json.loads(body)['products']
+        except (ValueError,KeyError,TypeError):continue
+        if isinstance(products,list):break
+    if not isinstance(products,list):return None
     result=[]
     for p in products:
         for v in p.get('variants',[]):

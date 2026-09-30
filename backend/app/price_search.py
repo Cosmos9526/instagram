@@ -78,6 +78,9 @@ def lookup(c,query):
     host=(urlparse(base).hostname or '').removeprefix('www.')
     try:catalog=public_catalog(host)
     except Exception:catalog=None
+    if host=='codinocard.ir' and catalog is None:
+        out['status']='unreachable'
+        return out
     if catalog is not None:
         out['matches']=[p | {'currency':'Toman','duration':detect_duration(p['name'])} for p in catalog if matches(query,p['name'])]
         out['status']='found' if out['matches'] else 'not_found'
