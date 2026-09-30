@@ -63,3 +63,18 @@ def test_direct_product_paths_find_sites_without_working_search(monkeypatch):
     assert row['status']=='found'
     assert row['matches'][0]['price']==299000
     assert row['matches'][0]['url'].endswith('/product/ai-claude')
+
+
+def test_broad_max_search_keeps_distinct_plans(monkeypatch):
+    def fetch(url,**k):
+        if url.endswith('/product/claude'):
+            name,price='Claude Max 20x','600000000'
+        else:
+            name,price='Claude Max 5x','320000000'
+        body=f'''<script type="application/ld+json">{{"@type":"Product","name":"{name}","offers":{{"price":"{price}","priceCurrency":"IRR"}}}}</script>'''
+        return url,body
+    monkeypatch.setattr(ps.safe_fetch,'text',fetch)
+    row=ps.lookup({'id':'a','website':'https://example.com'},'Claude Max')
+    assert {(p['name'],p['price']) for p in row['matches']} == {
+        ('Claude Max 5x',32000000),('Claude Max 20x',60000000)
+    }
