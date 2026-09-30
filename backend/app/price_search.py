@@ -35,7 +35,7 @@ def lookup(c,query):
     if base and '://' not in base:base='https://'+base
     out={'competitor_id':c['id'],'name':c.get('name') or urlparse(base).hostname or 'Competitor','website':base,'status':'not_found','matches':[],'checked_at':datetime.now(timezone.utc).isoformat()}
     if not base:out['status']='no_website';return out
-    deadline=time.monotonic()+32
+    deadline=time.monotonic()+40
     normalized=' '.join(terms(query))
     wanted=terms(query)
     slug='-'.join(wanted)
@@ -49,7 +49,7 @@ def lookup(c,query):
     queue.append(base)
     queue=list(dict.fromkeys(canonical(url) for url in queue))
     visited=set();ok=0;seen=set()
-    while queue and len(visited)<6 and time.monotonic()<deadline:
+    while queue and len(visited)<8 and time.monotonic()<deadline:
         url=canonical(queue.pop(0))
         if url in visited or not same_site(url,base):continue
         visited.add(url)
@@ -62,9 +62,10 @@ def lookup(c,query):
         links=[]
         for a in tree.xpath('//a[@href]'):
             dest=canonical(urljoin(final,a.get('href')))
-            if same_site(dest,base) and (matches(query,a.text_content()) or matches(query,dest)) and dest not in visited:
+            product_path = any(part in urlparse(dest).path.lower() for part in ('product','service','account','shop'))
+            if same_site(dest,base) and product_path and (matches(query,a.text_content()) or matches(query,dest)) and dest not in visited:
                 links.append(dest)
-        queue=list(dict.fromkeys(links[:5]+queue))
+        queue=list(dict.fromkeys(links[:2]+queue))
         for p in extract_products(body):
             if not matches(query,p['name']):continue
             # Generic list-page prices must link to the relevant product, not a whole catalog.
