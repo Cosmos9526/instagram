@@ -54,6 +54,19 @@ def test_page_fragments_are_not_downloaded_repeatedly(monkeypatch):
     assert len(product)==1
 
 
+def test_search_page_link_flood_does_not_starve_direct_candidates(monkeypatch):
+    urls=[]
+    product='''<script type="application/ld+json">{"@type":"Product","name":"Claude Max 5x","offers":{"price":"320000000","priceCurrency":"IRR"}}</script>'''
+    def fetch(url,**k):
+        urls.append(url)
+        links=''.join(f'<a href="/result-{i}">Claude Max result {i}</a>' for i in range(10))
+        return url, product if url.endswith('/product/claude-max') else links
+    monkeypatch.setattr(ps.safe_fetch,'text',fetch)
+    row=ps.lookup({'id':'a','website':'https://example.com'},'Claude Max')
+    assert row['status']=='found'
+    assert any(u.endswith('/product/claude-max') for u in urls)
+
+
 def test_direct_product_paths_find_sites_without_working_search(monkeypatch):
     product='''<script type="application/ld+json">{"@type":"Product","name":"Claude AI","offers":{"price":"2990000","priceCurrency":"IRR"}}</script>'''
     def fetch(url,**k):
