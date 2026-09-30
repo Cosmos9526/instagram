@@ -498,11 +498,6 @@ def run_daily():
     return {"queued": create_daily_posts()}
 
 
-# The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.
-if os.path.isdir(settings.web_dir):
-    app.mount("/", FastStatic(directory=settings.web_dir, html=True), name="web")
-
-
 class PriceSearchIn(BaseModel):
     query: str = Field(min_length=2, max_length=120)
 
@@ -521,3 +516,8 @@ def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = De
     scan = CompetitorScan(brand_id=brand_id, report={"kind": "price_search", "query": body.query.strip(), "results": []})
     db.add(scan); db.flush(); enqueue_competitor_scan(db, scan); db.commit()
     return scan_out(scan)
+
+
+# The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.
+if os.path.isdir(settings.web_dir):
+    app.mount("/", FastStatic(directory=settings.web_dir, html=True), name="web")
