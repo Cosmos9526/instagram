@@ -37,6 +37,7 @@ CLAUDE_PAGES = {
     'account4all.ir': ['/product/خرید-اکانت-claude-ai/'],
     'g1verify.ir': ['/product/claude-max/'],
     'kharidaccount.ir': ['/account/claude/'],
+    'licenseyar.ir': ['/product/claude-pro-یکماهه-گارانتی-۳۰-روزه/'],
     'premium24.ir': ['/product/calude-ai-pricing'],
     'majazite.com': ['/product/claude-ai/'],
     'giftpin.ir': ['/product/claude-pro'],
@@ -135,5 +136,5 @@ def extract(tree, url):
                     text=amounts[0].text_content()
                     if 'تومان' in text or 'ریال' in text:price=parse_price(text)
             result.append(row(title+' '+attrs,price,url,v.get('is_in_stock'), 'Selected product option price'))
-        if result and any(v.get('price_html') for v in variants):return result
+        if result:return result
     return None

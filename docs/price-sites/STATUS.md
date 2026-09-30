@@ -1,26 +1,37 @@
-# Rival price search: per-site status
+# Rival price audit — 2026-09-30
 
-One row per competitor site; 2 sites per session. Status: todo / in_progress / verified / unsupported (needs evidence in notes).
+Scope: all 16 saved competitor sites, with **Claude Max** and exact **20x** matching. Other products use the same generic discovery and WooCommerce parsing, but this audit does not certify every product on every site.
 
-| site | status | platform | strategy | products checked | accuracy | fixtures | last verified | notes |
-|---|---|---|---|---|---|---|---|---|
-| parspremium.ir | in_progress | - | - | - | - | - | - | waiting for probe output from the server |
-| cafearz.com | in_progress | - | - | - | - | - | - | waiting for probe output from the server |
-| dicardo.com | todo | - | - | - | - | - | - |  |
-| numberland.ir | todo | - | - | - | - | - | - |  |
-| license-market.ir | todo | - | - | - | - | - | - |  |
-| asangem.com | todo | - | - | - | - | - | - |  |
-| account4all.ir | todo | - | - | - | - | - | - |  |
-| g1verify.ir | todo | - | - | - | - | - | - |  |
-| kharidaccount.ir | todo | - | - | - | - | - | - |  |
-| licenseyar.ir | todo | - | - | - | - | - | - |  |
-| premium24.ir | todo | - | - | - | - | - | - |  |
-| codinocard.ir | todo | - | - | - | - | - | - |  |
-| majazite.com | todo | - | - | - | - | - | - |  |
-| giftpin.ir | todo | - | - | - | - | - | - |  |
-| khanehlicense.ir | todo | - | - | - | - | - | - |  |
-| www.iranicard.ir | todo | - | - | - | - | - | - |  |
+Three local runs and three isolated-server runs were requested. Raw, timestamped server results are stored in `server-audit-2026-09-30.json` after completion. Prices are snapshots, not a promise of stock or an interchangeable offer. Keep first-order, renewal, duration, and other conditions in the offer name.
 
-## Log
+| Site | Strategy and evidence | Claude Max outcome / limitation |
+|---|---|---|
+| parspremium.ir | Product option state, numeric unit checked against displayed Toman price | Separate 5x / 20x offers; aggregate Pro-to-Max range is not used |
+| cafearz.com | `/services/ai/claude`, also inspected public order page | Max mentioned; no verifiable public price exposed. Show price unavailable |
+| dicardo.com | Visible product option cards at `/product/claude-ai` | 5x price; never reuse Pro amount for Max; no priced 20x card in inspected page |
+| numberland.ir | Visible option cards at `/account/claude-ai` | Three distinct Max offers; preserve conditions, including no-warranty labels already in the product name |
+| license-market.ir | `/product/Claude-AI`, product state and schema | No exact Max price verified; do not call the whole site unavailable |
+| asangem.com | Visible catalogue priceboxes at `/game/claude/` | 5x / 20x. JSON-LD incorrectly says IRR; visible amounts are Toman. Values changed between audit runs |
+| account4all.ir | Claude product and WooCommerce options | Pro options observed; no exact Max offer verified |
+| g1verify.ir | `/product/claude-max/`, visible inquiry text | Product exists; seller requires a quote. No invented number |
+| kharidaccount.ir | Selected WooCommerce option `price_html` | Four Max options, first order / renewal. Raw display_price is Rials while rendered price_html is Toman |
+| licenseyar.ir | Direct Claude Pro product and discovery | Pro observed locally; intermittent server access. No exact Max price verified |
+| premium24.ir | `/product/calude-ai-pricing`, product options | Pro options observed; no exact Max price verified |
+| codinocard.ir | Public `/api/products` on api.codinocard.ir; compared with browser product page | 5x / 20x. Selling price is Toman; variant currency denotes USD face value. Static HTML is stale |
+| majazite.com | `/product/claude-ai/`, selected option price_html | Separate 5x / 20x; Pro prices excluded |
+| giftpin.ir | `/product/claude-pro`, schema and page | Pro observed; no exact Max price verified |
+| khanehlicense.ir | `/product/claude-pro/`, product options | Pro observed; no exact Max price verified |
+| iranicard.ir | Public page response | Browser-verification challenge. Mark blocked, not product absent |
 
-- 2026-09-30: STATUS.md created; merged fix/price-search-coverage (5c36f44); added `admin_price_check`. Sites 1-2 (parspremium.ir, cafearz.com) waiting for probe output from the server.
+## Verification
+
+- Saved minimal public markup fixtures cover the two factor-of-ten failures, exact variant matching, option conditions, inquiry-only products, and Codinocard's selling price versus USD face value.
+- No hardcoded live price, exchange-rate estimate, fabricated availability, authenticated competitor session, or third-party proxy is used.
+- Discovery rejects cart, checkout, comment-pagination and action-query links. Bounded requests retry transient empty responses once.
+- `not_found` means the bounded lookup could not verify a matching price; it does not prove the competitor does not sell the product.
+- Reproduce a targeted read-only server check with `python -m app.admin_price_check --sites asangem.com,majazite.com --products "Claude Max"`.
+- The previously added admin_price_probe and admin_price_check tools are preserved.
+
+## Intermittent access
+
+The second server run missed Majazite after the first run found both plans; the third run found 20x again. Premium24 also changed from a readable page to unreachable. The app therefore preserves a verified snapshot for up to 24 hours **with a stale label and its original timestamp** if a subsequent request fails. It never labels that snapshot as a fresh price, never crosses queries, and never reuses legacy results from before these currency corrections.

@@ -1,9 +1,22 @@
 from pathlib import Path
+from datetime import datetime, timezone
 from lxml import html
 from app.price_adapters import extract, CLAUDE_PAGES
 from app import price_search as ps
 
 FIXTURES=Path(__file__).parent/'fixtures'/'prices'
+
+def test_failed_refresh_preserves_timestamp_but_never_legacy_prices():
+    stamp=datetime.now(timezone.utc).isoformat()
+    old={'competitor_id':'a','status':'found','checked_at':stamp,'matches':[{'price':32000000}]}
+    now={'competitor_id':'a','status':'unreachable','checked_at':stamp,'matches':[]}
+    report={'query':'Claude Max','results':[old]}
+    assert ps.preserve_verified([now],[report],'Claude Max')[0]['matches']==[]
+    report['extractor_version']=ps.EXTRACTOR_VERSION
+    result=ps.preserve_verified([now],[report],'Claude Max')[0]
+    assert result['status']=='stale' and result['checked_at']==old['checked_at']
+    assert result['matches']==old['matches']
+    assert ps.preserve_verified([now],[report],'Claude Max 20x')[0]['matches']==[]
 
 def adapted(domain):
     return extract(html.fromstring((FIXTURES/(domain+'.html')).read_text()),'https://'+domain+CLAUDE_PAGES[domain][0])

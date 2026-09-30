@@ -54,12 +54,16 @@ def _run_competitor_scan_job(db, job: Job) -> None:
             comps = [c for c in comps if c["id"] in scan.only]
 
         if (scan.report or {}).get("kind") == "price_search":
-            from .price_search import run_price_search
+            from .price_search import run_price_search, preserve_verified, EXTRACTOR_VERSION
             query = scan.report["query"]
+            previous_reports=[s.report or {} for s in db.scalars(select(CompetitorScan).where(
+                CompetitorScan.brand_id == scan.brand_id, CompetitorScan.id != scan.id,
+                CompetitorScan.status == 'ready').order_by(CompetitorScan.created_at.desc()).limit(10))]
             def price_progress(rows, total):
-                scan.report = {"kind": "price_search", "query": query, "results": rows, "progress": {"done": len(rows), "total": total}}
+                scan.report = {"kind": "price_search", "extractor_version": EXTRACTOR_VERSION, "query": query, "results": preserve_verified(rows,previous_reports,query), "progress": {"done": len(rows), "total": total}}
                 db.commit()
             scan.report = run_price_search(comps, query, price_progress)
+            scan.report = scan.report | {'results':preserve_verified(scan.report['results'],previous_reports,query)}
             scan.status, scan.error, job.status = "ready", "", "done"
             db.commit()
             return

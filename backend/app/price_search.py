@@ -11,6 +11,28 @@ from .price_adapters import CLAUDE_PAGES, extract as audited_products, public_ca
 
 ALIASES={'کلاد':'claude','کلاود':'claude','کلود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
 STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','buy','account','subscription','چنده','چقدر','است','توی','در','بهم','بگو','لطفا'}
+EXTRACTOR_VERSION = 2
+
+def preserve_verified(rows, previous_reports, query):
+    """Keep a recent, explicitly labelled snapshot when a website stops replying.
+    Never reuse results made before the currency/variant corrections.
+    """
+    previous={}
+    for report in previous_reports:
+        if report.get('extractor_version') != EXTRACTOR_VERSION or terms(report.get('query','')) != terms(query):continue
+        for old in report.get('results',[]):
+            if old.get('status') not in ('found','stale') or not old.get('matches'):continue
+            try:age=(datetime.now(timezone.utc)-datetime.fromisoformat(old['checked_at'])).total_seconds()
+            except (KeyError,ValueError,TypeError):continue
+            if 0 <= age <= 86400:previous.setdefault(old['competitor_id'],old)
+    result=[]
+    for current in rows:
+        old=previous.get(current['competitor_id'])
+        if old and current['status'] in ('unreachable','blocked','not_found'):
+            current=current | {'status':'stale','matches':old['matches'],'checked_at':old['checked_at'],
+                               'attempted_at':current['checked_at'],'refresh_status':current['status']}
+        result.append(current)
+    return result
 
 def terms(text):
     text=unquote(text).lower().translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹يك','0123456789یک'))
@@ -105,7 +127,9 @@ def lookup(c,query):
                     price = int(price / 10) if price is not None else None
                     price_max = int(price_max / 10) if price_max is not None else None
             if price is not None and (price<=0 or price>10**10):price=None;price_max=None
-            key=(p['name'],canonical(source))
+            # Review pagination/alternate URLs often repeat the same offer.
+            # Keep the first exact offer from the prioritized product page.
+            key=p['name']
             if key in seen:continue
             seen.add(key)
             duration=detect_duration(p['name']) or ('1m' if 'monthly' in p['name'].lower() else '')
@@ -128,4 +152,4 @@ def run_price_search(competitors,query,on_progress=None):
             rows.append(row)
             if on_progress:on_progress(list(rows),len(competitors))
     order={c['id']:i for i,c in enumerate(competitors)}
-    return {'kind':'price_search','query':query,'results':sorted(rows,key=lambda r:order[r['competitor_id']]),'progress':{'done':len(rows),'total':len(competitors)}}
+    return {'kind':'price_search','extractor_version':EXTRACTOR_VERSION,'query':query,'results':sorted(rows,key=lambda r:order[r['competitor_id']]),'progress':{'done':len(rows),'total':len(competitors)}}

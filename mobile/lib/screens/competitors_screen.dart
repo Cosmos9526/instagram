@@ -427,6 +427,7 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   Widget _resultCard(Competitor c, dynamic row, bool busy) {
     const labels = {
       'found': 'Price found',
+      'stale': 'Last verified price · latest check failed',
       'price_unavailable': 'Product found · price unavailable',
       'not_found': 'Could not verify a matching price',
       'blocked': 'Website blocked automated access · check the source',
