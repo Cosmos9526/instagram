@@ -15,6 +15,12 @@ def test_keyword_bank_is_large_mixed_and_daily_rotation_is_bounded():
     assert first[:2] == ["اخبار هوش مصنوعی", "AI news"]
 
 
+def test_live_trends_are_limited_to_ai_topics():
+    assert radar._ai_related({"query": "ChatGPT update", "news": []})
+    assert radar._ai_related({"query": "technology", "news": [{"headline": "مدل جدید هوش مصنوعی"}]})
+    assert not radar._ai_related({"query": "football results", "news": []})
+
+
 def test_collect_labels_sources_and_freshness(monkeypatch):
     monkeypatch.setattr(radar, "news_search", lambda q, *a: [
         {"title": f"news {q}", "url": f"https://news.test/{q}", "date": "2026-09-30", "source": "Test"}

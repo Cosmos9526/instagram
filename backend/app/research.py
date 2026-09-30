@@ -405,6 +405,9 @@ def run_research(b: Brand, focus: str) -> dict:
             from .rahboom_radar import collect
             report["daily_radar"] = collect()
             ran["daily_radar"] = "ok"
+            if any(str(s.get("source", "")).startswith("Google Trends")
+                   for s in report["daily_radar"].get("search_signals", [])):
+                ran["google_trends"] = "ok"
         except Exception as e:  # noqa: BLE001 — the normal research report remains useful
             log.warning("daily radar failed: %s", e)
             report["daily_radar"] = {"window": "5–24 hours", "news": [], "videos": [], "search_signals": []}

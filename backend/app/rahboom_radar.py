@@ -42,6 +42,12 @@ YOUTUBE_CHANNELS = {
     "Fireship": "UCsBjURrPoezykLs9EqgamOA",
 }
 
+AI_TREND_TERMS = (
+    "هوش مصنوعی", "chatgpt", "openai", "claude", "کلاد", "gemini", "جمینای",
+    "google flow", "گوگل فلو", "ai ", "artificial intelligence", "cursor", "کرسر",
+    "copilot", "کوپایلت", "midjourney", "میدجرنی", "grok", "گروک", "llm",
+)
+
 
 def keyword_bank() -> list[str]:
     out = []
@@ -68,6 +74,14 @@ def _dedupe(rows: list[dict], limit: int) -> list[dict]:
         seen.add(key)
         out.append(row)
     return out[:limit]
+
+
+def _ai_related(row: dict) -> bool:
+    text = " ".join([
+        str(row.get("query", "")),
+        *(str(n.get("headline", "")) for n in row.get("news", []) if isinstance(n, dict)),
+    ]).casefold()
+    return any(term in text for term in AI_TREND_TERMS)
 
 
 def youtube_channel_feeds() -> list[dict]:
@@ -120,7 +134,7 @@ def collect() -> dict:
                 suggestions += [{"query": s, "seed": q, "source": "Google autocomplete"} for s in rows]
     if not videos:
         videos = youtube_channel_feeds()
-    trending_now = google_trending_now("IR")
+    trending_now = [row for row in google_trending_now("IR") if _ai_related(row)]
     rising = google_rising([fa for fa, _ in TOPICS[:5]], timeframe="now 1-d")
     trends = (
         [r | {"window_hours": 24} for r in trending_now]
