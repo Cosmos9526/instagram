@@ -296,7 +296,7 @@ def list_alerts(brand_id: str, user: User = Depends(current_user), db: Session =
     own_brand(brand_id, user, db)
     rows = db.scalars(select(MarketAlert).order_by(
         MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(),
-        MarketAlert.discovered_at.desc()).limit(30))
+        MarketAlert.discovered_at.desc()).limit(60))
     from .market_alerts import out
     return [out(row) for row in rows]
 

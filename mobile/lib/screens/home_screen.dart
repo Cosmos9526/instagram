@@ -109,10 +109,14 @@ class HomeScreenState extends State<HomeScreen> {
     refresh();
   }
 
-  Future<void> _openAlerts() async {
+  Future<void> _openAlerts({String? category}) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => AlertsScreen(api: widget.api, brand: widget.brand),
+        builder: (_) => AlertsScreen(
+          api: widget.api,
+          brand: widget.brand,
+          category: category,
+        ),
       ),
     );
     refresh();
@@ -129,7 +133,7 @@ class HomeScreenState extends State<HomeScreen> {
           mode: 'video',
           topicHint: newsVideoTopic(alert),
           targetSeconds: 10,
-          contentLabel: 'news',
+          contentLabel: alert.category == 'buzz' ? 'trending' : 'news',
         ),
       );
       if (!mounted) return;
@@ -191,6 +195,10 @@ class HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         _breakingAlerts(context),
         const SizedBox(height: 12),
+        if (_alerts == null || _alerts!.any((a) => a.category == 'buzz')) ...[
+          _buzzing(context),
+          const SizedBox(height: 12),
+        ],
         _weeklyPlan(context),
         const SizedBox(height: 12),
         FilledButton.icon(
@@ -290,7 +298,9 @@ class HomeScreenState extends State<HomeScreen> {
   );
 
   Widget _breakingAlerts(BuildContext context) {
-    final alerts = _alerts ?? const <MarketAlert>[];
+    final alerts = (_alerts ?? const <MarketAlert>[])
+        .where((a) => a.category != 'buzz')
+        .toList();
     final theme = Theme.of(context);
     return Card(
       margin: EdgeInsets.zero,
@@ -432,6 +442,106 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     ],
   );
+
+  Widget _buzzing(BuildContext context) {
+    final items = (_alerts ?? const <MarketAlert>[])
+        .where((a) => a.category == 'buzz')
+        .toList();
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: const Color(0xFFF2F0FF),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.bolt, color: Color(0xFF6941C6)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Emerging AI',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                TextButton(
+                  onPressed: items.isEmpty
+                      ? null
+                      : () => _openAlerts(category: 'buzz'),
+                  child: Text(
+                    'View all${items.isEmpty ? '' : ' (${items.length})'}',
+                  ),
+                ),
+              ],
+            ),
+            const Text(
+              'Fast-rising tools, techniques and ideas people are talking about.',
+            ),
+            if (_alerts == null)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 12),
+                child: Text('No strong emerging signal yet.'),
+              )
+            else
+              for (final alert in items.take(3)) ...[
+                const Divider(height: 20),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: _creatingAlertId == null
+                      ? () => _generateAlert(alert)
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                alert.title,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall,
+                                textDirection: contentDirection(alert.title),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${alert.source} · Tap to create a trend video',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF6941C6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _creatingAlertId == alert.id
+                            ? const SizedBox.square(
+                                dimension: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.movie_creation_outlined),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _weeklyPlan(BuildContext context) {
     final today = DateUtils.dateOnly(DateTime.now());

@@ -29,6 +29,17 @@ def test_score_requires_ai_vendor_and_material_change():
         "The next-generation flagship model is rolling out to selected partners",
         source="Axios",
     ) == 5
+    assert market_alerts._category(
+        "Jev decision model beats Pokémon", "TypeSafe AI's new System One model"
+    ) == "buzz"
+    assert market_alerts._category(
+        "OpenAI introduces Dots", "Always-on agents in ChatGPT"
+    ) == "buzz"
+    assert market_alerts._score(
+        "Developer says Jev decision model beat Pokémon Red",
+        "TypeSafe AI released the model this month",
+        source="Tom's Hardware",
+    ) >= 4
 
 
 def test_alert_endpoint_returns_important_first():
