@@ -59,8 +59,8 @@ Output only JSON matching this schema:
     if video:
         brief += '''Exactly TWO frames: first is an 8-second vertical 9:16 video scene; second is a static 2-second end card.
 Total editing duration exactly 10 seconds. First frame: one adult man and one adult woman from the user's
-existing character reference. References are NOT available yet: explicitly require supplied reference images;
-do NOT invent their faces, outfits, voices or claim a visual match. Lock both identities to references.
+existing character reference. Use the brand's supplied production style and reference description when available.
+Require the actual reference frame in Flow; do NOT invent their faces, outfits, voices or claim a voice match. Lock both identities to references.
 Give timed action/camera beats for 0–2, 2–5, 5–8 seconds, and speaker-labelled Persian dialogue (at most 20 words total).
 Embed that exact dialogue in the first English prompt with natural Persian delivery, turn-taking and lip-sync instructions. The characters SPEAK the dialogue in the generated clip; never say dialogue will be added later. Use explicit speaker labels.
 Second frame: no dialogue, no new characters; 8–10 seconds static end card, supplied brand logo,
@@ -85,7 +85,7 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
     norm = persian if brand.language == 'fa' else lambda x: x
     blocks = [{'label': 'Visual style', 'text': package.visual_style}]
     if video:
-        blocks.insert(0, {'label': 'Character references required', 'text': 'Attach the existing male and female character references to your generation tool. Their appearance and voices have not been verified yet.'})
+        blocks.insert(0, {'label': 'Character references required', 'text': 'Attach the supplied character frame and original logo in Flow. Follow the brand reference description; do not claim an exact voice match.'})
     for i, frame in enumerate(package.frames):
         label = ('Scene · 0–8 seconds' if i == 0 else 'End card · 8–10 seconds') if video else f'Image {i + 1}'
         full_prompt = package.visual_style + '\n\n' + frame.prompt
@@ -98,7 +98,8 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
         if frame.dialogue:
             blocks.append({'label': label + ' — Persian dialogue', 'text': norm(frame.dialogue)})
         blocks.append({'label': label + ' — on-screen text', 'text': norm(frame.on_screen_text)})
-    return {'output_kind': 'prompt_package', 'source': 'fake' if settings.llm_provider == 'fake' else 'model',
+    full_prompt = '\n\n'.join(b['label'] + '\n' + b['text'] for b in blocks if b['label'] != 'Character references required')
+    return {'output_kind': 'prompt_package', 'full_prompt': full_prompt, 'source': 'fake' if settings.llm_provider == 'fake' else 'model',
             'title': norm(package.title), 'caption': norm(package.caption),
             'hashtags': list(dict.fromkeys(norm(h).lstrip('#') for h in package.hashtags + (brand.hashtags or []))),
             'blocks': blocks, 'target_seconds': 10 if video else None,

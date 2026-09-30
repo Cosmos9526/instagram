@@ -37,6 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
   List<Post>? _posts;
   String? _error;
   Timer? _poll;
+  bool _preparingWeek = false;
   DateTime _selectedDay = DateUtils.dateOnly(DateTime.now());
   @override
   void initState() {
@@ -74,6 +75,18 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     );
     refresh();
+  }
+
+  Future<void> _prepareWeek() async {
+    setState(() => _preparingWeek = true);
+    try {
+      await widget.api.prepareWeek(widget.brand.id!);
+      await refresh();
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _preparingWeek = false);
+    }
   }
 
   Future<void> _remove(Post p) async {
@@ -136,7 +149,13 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        if (_error != null) Text(_error!),
+        if (_error != null)
+          Row(
+            children: [
+              Expanded(child: Text(_error!)),
+              TextButton(onPressed: refresh, child: const Text('Retry')),
+            ],
+          ),
         if (_posts == null && _error == null)
           const Center(child: CircularProgressIndicator()),
         if (_posts?.isEmpty == true)
@@ -182,6 +201,16 @@ class HomeScreenState extends State<HomeScreen> {
     final start = today.subtract(Duration(days: (today.weekday + 1) % 7));
     final planned =
         widget.brand.weeklyPlan['${_selectedDay.weekday - 1}'] ?? [];
+    final rahboom =
+        Uri.tryParse(widget.brand.website)?.host.replaceFirst('www.', '') ==
+        'rahboom.com';
+    final daily = (_posts ?? <Post>[])
+        .where(
+          (p) =>
+              p.forDate == DateFormat('yyyy-MM-dd').format(_selectedDay) &&
+              p.content['weekly_series'] != null,
+        )
+        .firstOrNull;
     const labels = {
       'educational': 'Educational',
       'sales': 'Sales',
@@ -225,12 +254,38 @@ class HomeScreenState extends State<HomeScreen> {
               DateFormat('EEEE, MMM d', 'en').format(_selectedDay),
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            if (planned.isEmpty)
+            if (rahboom && daily == null) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Seven different videos, with complete prompts ready to copy.',
+              ),
+              FilledButton.icon(
+                onPressed: _preparingWeek ? null : _prepareWeek,
+                icon: const Icon(Icons.calendar_month),
+                label: Text(
+                  _preparingWeek ? 'Preparing…' : 'Prepare 7 video prompts',
+                ),
+              ),
+            ],
+            if (daily != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  daily.title,
+                  textDirection: contentDirection(daily.title),
+                ),
+                subtitle: const Text(
+                  '10 seconds · Google Flow · Ready to copy',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _open(daily),
+              ),
+            if (!rahboom && planned.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: Text('No content planned for this day.'),
               ),
-            for (final item in planned)
+            for (final item in rahboom ? <String>[] : planned)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.movie_outlined),
@@ -252,7 +307,12 @@ class HomeScreenState extends State<HomeScreen> {
   Widget _weekDay(DateTime day, DateTime today) {
     final selected = DateUtils.isSameDay(day, _selectedDay);
     final planned =
-        widget.brand.weeklyPlan['${day.weekday - 1}']?.isNotEmpty ?? false;
+        (_posts ?? <Post>[]).any(
+          (p) =>
+              p.forDate == DateFormat('yyyy-MM-dd').format(day) &&
+              p.content['weekly_series'] != null,
+        ) ||
+        (widget.brand.weeklyPlan['${day.weekday - 1}']?.isNotEmpty ?? false);
     return Semantics(
       selected: selected,
       label: DateFormat('EEEE, MMMM d', 'en').format(day),

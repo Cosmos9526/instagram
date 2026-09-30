@@ -1,0 +1,892 @@
+[
+  {
+    "kind": "price_search",
+    "query": "Claude Max",
+    "results": [
+      {
+        "competitor_id": "parspremium.ir",
+        "name": "parspremium.ir",
+        "website": "https://parspremium.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude AI کلاد پرو با ایمیل شما(۹۵٪تخفیف) یکماهه قابل تمدید Max 5x / شارژ اکانت شخصی",
+            "price": 45170000,
+            "price_max": 45170000,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://parspremium.ir/product/Claude-AI",
+            "evidence": "Product option; unit checked against displayed Toman price"
+          },
+          {
+            "name": "خرید اکانت Claude AI کلاد پرو با ایمیل شما(۹۵٪تخفیف) یکماهه قابل تمدید Max 20x / شارژ اکانت شخصی",
+            "price": 80970500,
+            "price_max": 80970500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://parspremium.ir/product/Claude-AI",
+            "evidence": "Product option; unit checked against displayed Toman price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:22.031317+00:00"
+      },
+      {
+        "competitor_id": "cafearz.com",
+        "name": "cafearz.com",
+        "website": "https://cafearz.com",
+        "status": "price_unavailable",
+        "matches": [
+          {
+            "name": "Claude Max",
+            "price": null,
+            "price_max": null,
+            "currency": "Unknown",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://cafearz.com/services/ai/claude",
+            "evidence": "Plan mentioned; public page does not expose a verifiable price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:22.039478+00:00"
+      },
+      {
+        "competitor_id": "dicardo.com",
+        "name": "dicardo.com",
+        "website": "https://dicardo.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai/2",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai/3",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:22.042549+00:00"
+      },
+      {
+        "competitor_id": "numberland.ir",
+        "name": "numberland.ir",
+        "website": "https://numberland.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max 5x",
+            "price": 35123900,
+            "price_max": 35123900,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max 5X بدون گارانتی",
+            "price": 25746800,
+            "price_max": 25746800,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max 20X بدون گارانتی",
+            "price": 35378400,
+            "price_max": 35378400,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:22.043331+00:00"
+      },
+      {
+        "competitor_id": "license-market.ir",
+        "name": "license-market.ir",
+        "website": "https://license-market.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:22.044709+00:00"
+      },
+      {
+        "competitor_id": "asangem.com",
+        "name": "asangem.com",
+        "website": "https://asangem.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max / monthly 5x",
+            "price": 28189900,
+            "price_max": 28189900,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://asangem.com/product/claude-max-monthly/",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max / monthly 20x",
+            "price": 56379900,
+            "price_max": 56379900,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://asangem.com/product/cluade-max-plan/",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:22.051065+00:00"
+      },
+      {
+        "competitor_id": "account4all.ir",
+        "name": "account4all.ir",
+        "website": "https://account4all.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:38.037461+00:00"
+      },
+      {
+        "competitor_id": "g1verify.ir",
+        "name": "g1verify.ir",
+        "website": "https://g1verify.ir",
+        "status": "price_unavailable",
+        "matches": [
+          {
+            "name": "خرید اکانت  Claude Max",
+            "price": null,
+            "price_max": null,
+            "currency": "Unknown",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://g1verify.ir/product/claude-max/",
+            "evidence": "Contact seller for a quote"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:38.902376+00:00"
+      },
+      {
+        "competitor_id": "kharidaccount.ir",
+        "name": "kharidaccount.ir",
+        "website": "https://kharidaccount.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude claude max5x exclusive 1month first order",
+            "price": 47574700,
+            "price_max": 47574700,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max5x exclusive 1month",
+            "price": 31719400,
+            "price_max": 31719400,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month first order",
+            "price": 85638400,
+            "price_max": 85638400,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month",
+            "price": 61219200,
+            "price_max": 61219200,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:42.037573+00:00"
+      },
+      {
+        "competitor_id": "licenseyar.ir",
+        "name": "licenseyar.ir",
+        "website": "https://licenseyar.ir",
+        "status": "unreachable",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:42.455879+00:00"
+      },
+      {
+        "competitor_id": "premium24.ir",
+        "name": "premium24.ir",
+        "website": "https://premium24.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:48.932148+00:00"
+      },
+      {
+        "competitor_id": "codinocard.ir",
+        "name": "codinocard.ir",
+        "website": "https://codinocard.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی) ۱ ماهه - Max 5x",
+            "price": 26499000,
+            "price_max": 26499000,
+            "currency": "Toman",
+            "in_stock": true,
+            "url": "https://codinocard.ir/product/claude-pro-account",
+            "evidence": "Public catalogue selling price in Toman",
+            "duration": "1m"
+          },
+          {
+            "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی) ۱ ماهه - Max 20x",
+            "price": 52999000,
+            "price_max": 52999000,
+            "currency": "Toman",
+            "in_stock": true,
+            "url": "https://codinocard.ir/product/claude-pro-account",
+            "evidence": "Public catalogue selling price in Toman",
+            "duration": "1m"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:53.089048+00:00"
+      },
+      {
+        "competitor_id": "majazite.com",
+        "name": "majazite.com",
+        "website": "https://majazite.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude AI (هوش مصنوعی کلاد) یک ماهه فعالسازی max 5x",
+            "price": 34358000,
+            "price_max": 34358000,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://majazite.com/product/claude-ai/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude AI (هوش مصنوعی کلاد) یک ماهه فعالسازی max 20x",
+            "price": 66753000,
+            "price_max": 66753000,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://majazite.com/product/claude-ai/",
+            "evidence": "Selected product option price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:16:53.118196+00:00"
+      },
+      {
+        "competitor_id": "giftpin.ir",
+        "name": "giftpin.ir",
+        "website": "https://giftpin.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:54.860846+00:00"
+      },
+      {
+        "competitor_id": "khanehlicense.ir",
+        "name": "khanehlicense.ir",
+        "website": "https://khanehlicense.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:56.479141+00:00"
+      },
+      {
+        "competitor_id": "www.iranicard.ir",
+        "name": "iranicard.ir",
+        "website": "https://iranicard.ir",
+        "status": "blocked",
+        "matches": [],
+        "checked_at": "2026-09-30T11:16:59.074938+00:00"
+      }
+    ],
+    "progress": {
+      "done": 16,
+      "total": 16
+    },
+    "elapsed": 77.7
+  },
+  {
+    "kind": "price_search",
+    "query": "Claude Max",
+    "results": [
+      {
+        "competitor_id": "parspremium.ir",
+        "name": "parspremium.ir",
+        "website": "https://parspremium.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude AI کلاد پرو با ایمیل شما(۹۵٪تخفیف) یکماهه قابل تمدید Max 5x / شارژ اکانت شخصی",
+            "price": 45170000,
+            "price_max": 45170000,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://parspremium.ir/product/Claude-AI",
+            "evidence": "Product option; unit checked against displayed Toman price"
+          },
+          {
+            "name": "خرید اکانت Claude AI کلاد پرو با ایمیل شما(۹۵٪تخفیف) یکماهه قابل تمدید Max 20x / شارژ اکانت شخصی",
+            "price": 80970500,
+            "price_max": 80970500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://parspremium.ir/product/Claude-AI",
+            "evidence": "Product option; unit checked against displayed Toman price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:39.705692+00:00"
+      },
+      {
+        "competitor_id": "cafearz.com",
+        "name": "cafearz.com",
+        "website": "https://cafearz.com",
+        "status": "price_unavailable",
+        "matches": [
+          {
+            "name": "Claude Max",
+            "price": null,
+            "price_max": null,
+            "currency": "Unknown",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://cafearz.com/services/ai/claude",
+            "evidence": "Plan mentioned; public page does not expose a verifiable price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:39.708723+00:00"
+      },
+      {
+        "competitor_id": "dicardo.com",
+        "name": "dicardo.com",
+        "website": "https://dicardo.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai/2",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "خرید اکانت Claude کلود یکماهه Max 5X",
+            "price": 35262500,
+            "price_max": 35262500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://dicardo.com/product/claude-ai/3",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:39.733473+00:00"
+      },
+      {
+        "competitor_id": "numberland.ir",
+        "name": "numberland.ir",
+        "website": "https://numberland.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max 5x",
+            "price": 35123900,
+            "price_max": 35123900,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max 5X بدون گارانتی",
+            "price": 25746800,
+            "price_max": 25746800,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max 20X بدون گارانتی",
+            "price": 35378400,
+            "price_max": 35378400,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:39.734776+00:00"
+      },
+      {
+        "competitor_id": "license-market.ir",
+        "name": "license-market.ir",
+        "website": "https://license-market.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:17:39.831911+00:00"
+      },
+      {
+        "competitor_id": "asangem.com",
+        "name": "asangem.com",
+        "website": "https://asangem.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max / monthly 5x",
+            "price": 28189900,
+            "price_max": 28189900,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://asangem.com/product/claude-max-monthly/",
+            "evidence": "Visible product price"
+          },
+          {
+            "name": "Claude Max / monthly 20x",
+            "price": 56379900,
+            "price_max": 56379900,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://asangem.com/product/cluade-max-plan/",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:39.835722+00:00"
+      },
+      {
+        "competitor_id": "account4all.ir",
+        "name": "account4all.ir",
+        "website": "https://account4all.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:17:59.438700+00:00"
+      },
+      {
+        "competitor_id": "g1verify.ir",
+        "name": "g1verify.ir",
+        "website": "https://g1verify.ir",
+        "status": "price_unavailable",
+        "matches": [
+          {
+            "name": "خرید اکانت  Claude Max",
+            "price": null,
+            "price_max": null,
+            "currency": "Unknown",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://g1verify.ir/product/claude-max/",
+            "evidence": "Contact seller for a quote"
+          }
+        ],
+        "checked_at": "2026-09-30T11:17:59.648397+00:00"
+      },
+      {
+        "competitor_id": "kharidaccount.ir",
+        "name": "kharidaccount.ir",
+        "website": "https://kharidaccount.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude claude max5x exclusive 1month first order",
+            "price": 47574700,
+            "price_max": 47574700,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max5x exclusive 1month",
+            "price": 31719400,
+            "price_max": 31719400,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month first order",
+            "price": 85638400,
+            "price_max": 85638400,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month",
+            "price": 61219200,
+            "price_max": 61219200,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:18:01.836211+00:00"
+      },
+      {
+        "competitor_id": "licenseyar.ir",
+        "name": "licenseyar.ir",
+        "website": "https://licenseyar.ir",
+        "status": "unreachable",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:06.049738+00:00"
+      },
+      {
+        "competitor_id": "premium24.ir",
+        "name": "premium24.ir",
+        "website": "https://premium24.ir",
+        "status": "unreachable",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:09.134359+00:00"
+      },
+      {
+        "competitor_id": "codinocard.ir",
+        "name": "codinocard.ir",
+        "website": "https://codinocard.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی) ۱ ماهه - Max 5x",
+            "price": 26499000,
+            "price_max": 26499000,
+            "currency": "Toman",
+            "in_stock": true,
+            "url": "https://codinocard.ir/product/claude-pro-account",
+            "evidence": "Public catalogue selling price in Toman",
+            "duration": "1m"
+          },
+          {
+            "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی) ۱ ماهه - Max 20x",
+            "price": 52999000,
+            "price_max": 52999000,
+            "currency": "Toman",
+            "in_stock": true,
+            "url": "https://codinocard.ir/product/claude-pro-account",
+            "evidence": "Public catalogue selling price in Toman",
+            "duration": "1m"
+          }
+        ],
+        "checked_at": "2026-09-30T11:18:13.548537+00:00"
+      },
+      {
+        "competitor_id": "majazite.com",
+        "name": "majazite.com",
+        "website": "https://majazite.com",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:15.179811+00:00"
+      },
+      {
+        "competitor_id": "giftpin.ir",
+        "name": "giftpin.ir",
+        "website": "https://giftpin.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:17.008332+00:00"
+      },
+      {
+        "competitor_id": "khanehlicense.ir",
+        "name": "khanehlicense.ir",
+        "website": "https://khanehlicense.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:19.967748+00:00"
+      },
+      {
+        "competitor_id": "www.iranicard.ir",
+        "name": "iranicard.ir",
+        "website": "https://iranicard.ir",
+        "status": "blocked",
+        "matches": [],
+        "checked_at": "2026-09-30T11:18:21.522007+00:00"
+      }
+    ],
+    "progress": {
+      "done": 16,
+      "total": 16
+    },
+    "elapsed": 81.6
+  },
+  {
+    "kind": "price_search",
+    "query": "Claude Max 20x",
+    "results": [
+      {
+        "competitor_id": "parspremium.ir",
+        "name": "parspremium.ir",
+        "website": "https://parspremium.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude AI کلاد پرو با ایمیل شما(۹۵٪تخفیف) یکماهه قابل تمدید Max 20x / شارژ اکانت شخصی",
+            "price": 80970500,
+            "price_max": 80970500,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://parspremium.ir/product/Claude-AI",
+            "evidence": "Product option; unit checked against displayed Toman price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:01.324201+00:00"
+      },
+      {
+        "competitor_id": "cafearz.com",
+        "name": "cafearz.com",
+        "website": "https://cafearz.com",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:01.325705+00:00"
+      },
+      {
+        "competitor_id": "dicardo.com",
+        "name": "dicardo.com",
+        "website": "https://dicardo.com",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:01.328446+00:00"
+      },
+      {
+        "competitor_id": "numberland.ir",
+        "name": "numberland.ir",
+        "website": "https://numberland.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max 20X بدون گارانتی",
+            "price": 35378400,
+            "price_max": 35378400,
+            "currency": "Toman",
+            "duration": "",
+            "in_stock": null,
+            "url": "https://numberland.ir/account/claude-ai",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:01.330125+00:00"
+      },
+      {
+        "competitor_id": "license-market.ir",
+        "name": "license-market.ir",
+        "website": "https://license-market.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:01.332225+00:00"
+      },
+      {
+        "competitor_id": "asangem.com",
+        "name": "asangem.com",
+        "website": "https://asangem.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "Claude Max / monthly 20x",
+            "price": 56379900,
+            "price_max": 56379900,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": null,
+            "url": "https://asangem.com/product/cluade-max-plan/",
+            "evidence": "Visible product price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:01.336688+00:00"
+      },
+      {
+        "competitor_id": "account4all.ir",
+        "name": "account4all.ir",
+        "website": "https://account4all.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:03.547594+00:00"
+      },
+      {
+        "competitor_id": "g1verify.ir",
+        "name": "g1verify.ir",
+        "website": "https://g1verify.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:04.644385+00:00"
+      },
+      {
+        "competitor_id": "kharidaccount.ir",
+        "name": "kharidaccount.ir",
+        "website": "https://kharidaccount.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month first order",
+            "price": 85638400,
+            "price_max": 85638400,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          },
+          {
+            "name": "خرید اکانت Claude claude max20x exclusive 1month",
+            "price": 61219200,
+            "price_max": 61219200,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://kharidaccount.ir/account/claude/",
+            "evidence": "Selected product option price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:04.844640+00:00"
+      },
+      {
+        "competitor_id": "licenseyar.ir",
+        "name": "licenseyar.ir",
+        "website": "https://licenseyar.ir",
+        "status": "unreachable",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:09.142848+00:00"
+      },
+      {
+        "competitor_id": "premium24.ir",
+        "name": "premium24.ir",
+        "website": "https://premium24.ir",
+        "status": "unreachable",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:15.235657+00:00"
+      },
+      {
+        "competitor_id": "codinocard.ir",
+        "name": "codinocard.ir",
+        "website": "https://codinocard.ir",
+        "status": "found",
+        "matches": [
+          {
+            "name": "اکانت کلود Claude (پلن های مختلف + اکانت اختصاصی) ۱ ماهه - Max 20x",
+            "price": 52999000,
+            "price_max": 52999000,
+            "currency": "Toman",
+            "in_stock": true,
+            "url": "https://codinocard.ir/product/claude-pro-account",
+            "evidence": "Public catalogue selling price in Toman",
+            "duration": "1m"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:19.554691+00:00"
+      },
+      {
+        "competitor_id": "majazite.com",
+        "name": "majazite.com",
+        "website": "https://majazite.com",
+        "status": "found",
+        "matches": [
+          {
+            "name": "خرید اکانت Claude AI (هوش مصنوعی کلاد) یک ماهه فعالسازی max 20x",
+            "price": 66753000,
+            "price_max": 66753000,
+            "currency": "Toman",
+            "duration": "1m",
+            "in_stock": true,
+            "url": "https://majazite.com/product/claude-ai/",
+            "evidence": "Selected product option price"
+          }
+        ],
+        "checked_at": "2026-09-30T11:19:19.563097+00:00"
+      },
+      {
+        "competitor_id": "giftpin.ir",
+        "name": "giftpin.ir",
+        "website": "https://giftpin.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:21.431708+00:00"
+      },
+      {
+        "competitor_id": "khanehlicense.ir",
+        "name": "khanehlicense.ir",
+        "website": "https://khanehlicense.ir",
+        "status": "not_found",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:22.321687+00:00"
+      },
+      {
+        "competitor_id": "www.iranicard.ir",
+        "name": "iranicard.ir",
+        "website": "https://iranicard.ir",
+        "status": "blocked",
+        "matches": [],
+        "checked_at": "2026-09-30T11:19:25.964357+00:00"
+      }
+    ],
+    "progress": {
+      "done": 16,
+      "total": 16
+    },
+    "elapsed": 65.4
+  }
+]

@@ -10,6 +10,17 @@ class PromptPackageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = post.content;
+    final blocks = (c['blocks'] as List? ?? const []);
+    final fullPrompt = '${c['full_prompt'] ?? ''}'.trim().isNotEmpty
+        ? '${c['full_prompt']}'
+        : blocks
+              .where(
+                (b) =>
+                    '${b['label']}' != 'Reference status' &&
+                    '${b['label']}' != 'Production checklist',
+              )
+              .map((b) => '${b['label']}\n${b['text']}')
+              .join('\n\n');
     Widget copyCard(String label, String text) => Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
@@ -35,7 +46,11 @@ class PromptPackageView extends StatelessWidget {
             SelectableText(
               text,
               textDirection:
-                  label.endsWith('— prompt') || label == 'Visual style'
+                  label.endsWith('— prompt') ||
+                      label == 'Visual style' ||
+                      label == 'Full video prompt' ||
+                      label == 'Reference status' ||
+                      label == 'Opening frame — prompt'
                   ? TextDirection.ltr
                   : contentDirection(text),
               textAlign: TextAlign.start,
@@ -59,13 +74,27 @@ class PromptPackageView extends StatelessWidget {
               ? '10 seconds · 8-second scene + 2-second end card · 9:16'
               : 'Image prompts · 4:5',
         ),
-        const Text(
-          'Copy these prompts into your production tool. No media is generated here.',
+        Text(
+          post.isVideo
+              ? 'Attach your character reference and logo in Google Flow, then copy the complete brief below.'
+              : 'Copy the complete brief into your production tool.',
         ),
         const SizedBox(height: 16),
-        copyCard('Title', '${c['title'] ?? ''}'),
-        for (final block in (c['blocks'] as List? ?? const []))
-          copyCard('${block['label']}', '${block['text']}'),
+        Text(
+          '${c['title'] ?? ''}',
+          textDirection: contentDirection('${c['title'] ?? ''}'),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: () => copyText(context, fullPrompt),
+          icon: const Icon(Icons.copy),
+          label: const Text('Copy full prompt'),
+        ),
+        const SizedBox(height: 12),
+        copyCard(
+          post.isVideo ? 'Full video prompt' : 'Visual style',
+          fullPrompt,
+        ),
         copyCard('Caption and hashtags', post.captionWithTags),
       ],
     );
