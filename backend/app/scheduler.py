@@ -89,7 +89,8 @@ def main() -> None:
     sched = BlockingScheduler(timezone=settings.timezone)
     sched.add_job(create_daily_posts, "cron", hour=settings.daily_run_hour, minute=0,
                   misfire_grace_time=3600, coalesce=True)
-    sched.add_job(refresh_market_alerts, "interval", hours=3, next_run_time=datetime.now(),
+    sched.add_job(refresh_market_alerts, "interval", hours=3,
+                  next_run_time=datetime.now(ZoneInfo(settings.timezone)),
                   misfire_grace_time=1800, coalesce=True, max_instances=1)
     sched.start()
 

@@ -304,7 +304,11 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
+                  '${alert.verification == 'official'
+                      ? 'Official'
+                      : alert.verification == 'in_product'
+                      ? 'Verified in product'
+                      : 'Reported'} · ${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFFB54708),
                   ),

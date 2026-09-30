@@ -126,11 +126,12 @@ class MarketAlert {
       source = '${j['source'] ?? ''}',
       url = '${j['url'] ?? ''}',
       category = '${j['category'] ?? 'news'}',
+      verification = '${j['verification'] ?? 'reported'}',
       importance = (j['importance'] as num?)?.toInt() ?? 1,
       publishedAt = DateTime.tryParse('${j['published_at']}'),
       discoveredAt = DateTime.tryParse('${j['discovered_at']}');
 
-  final String id, title, summary, source, url, category;
+  final String id, title, summary, source, url, category, verification;
   final int importance;
   final DateTime? publishedAt, discoveredAt;
 }
