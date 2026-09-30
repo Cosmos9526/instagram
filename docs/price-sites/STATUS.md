@@ -35,3 +35,13 @@ Three local runs and three isolated-server runs were requested. Raw, timestamped
 ## Intermittent access
 
 The second server run missed Majazite after the first run found both plans; the third run found 20x again. Premium24 also changed from a readable page to unreachable. The app therefore preserves a verified snapshot for up to 24 hours **with a stale label and its original timestamp** if a subsequent request fails. It never labels that snapshot as a fresh price, never crosses queries, and never reuses legacy results from before these currency corrections.
+
+## Round 2 (stability and coverage)
+
+- `admin_price_check` now prints a `reason` column (`timeout_connect`, `timeout_read`, `dns`, `tls`, `connect_error`, `empty_body`, `http_NNN`, `challenge`, `budget_exhausted`) and the offer `duration`. Each price row also carries `reason` in the API result (added field only).
+- Stability: each page is tried up to 3 times with 0.6 s / 1.2 s backoff (not for permanent 4xx/DNS). A slow response extends that site's budget from 40 s up to 65 s.
+- Numeric pagination of one product page (`/product/claude-ai/2`, `/3`) is one page and is fetched once.
+- numberland.ir: `duration` is filled only when the card name or tooltip states it; otherwise it stays empty (never assumed).
+- **Not yet certified:** the full 16 sites x 7 products matrix (ChatGPT Plus, Claude Pro, Claude Max, Gemini, Cursor, Midjourney, Perplexity) needs a run on the server. The parspremium.ir 255,500 Toman value for ChatGPT Plus / Cursor / Perplexity is unresolved until its product pages are inspected; the current adapter lists every product option with its own price rather than one "from" value.
+
+Run the matrix: `python -m app.admin_price_check` (no arguments = all 16 sites, default products).

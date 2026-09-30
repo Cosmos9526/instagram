@@ -12,19 +12,19 @@ from .price_search import lookup
 
 
 def check(sites: list[str], products: list[str]) -> list[str]:
-    lines = ["site | product | status | name | price | url"]
+    lines = ["site | product | status | reason | name | price | duration | url"]
     for site in sites:
         host = site.removeprefix("https://").removeprefix("http://").strip("/")
         for q in products:
             try:
                 row = lookup({"id": host, "name": host, "website": site}, q)
             except Exception as e:  # noqa: BLE001
-                lines.append(f"{host} | {q} | error | {e} | - | -")
+                lines.append(f"{host} | {q} | error | {e} | - | - | - | -")
                 continue
             for m in row["matches"] or [{}]:
                 price = m.get("price")
-                lines.append(f"{host} | {q} | {row['status']} | {m.get('name', '-')} | "
-                             f"{price if price is None else format(price, ',')} | {m.get('url', '-')}")
+                lines.append(f"{host} | {q} | {row['status']} | {row.get('reason') or '-'} | {m.get('name', '-')} | "
+                             f"{price if price is None else format(price, ',')} | {m.get('duration') or '-'} | {m.get('url', '-')}")
     return lines
 
 
