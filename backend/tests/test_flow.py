@@ -215,5 +215,9 @@ def test_delete_restore_and_price_search_ownership(client, monkeypatch):
     with SessionLocal() as db:
         first=db.get(CompetitorScan,r.json()['id'])
         assert first.status=='cancelled'
+    stopped=client.post(f"/competitor-scans/{second.json()['id']}/cancel",headers=a)
+    assert stopped.status_code==200 and stopped.json()['status']=='cancelled'
+    assert stopped.json()['error']=='Stopped by user'
+    assert client.post(f"/competitor-scans/{second.json()['id']}/cancel",headers=b).status_code==404
 
     _drain()
