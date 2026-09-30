@@ -6,6 +6,7 @@ def test_aliases_and_plans():
     assert ps.matches('کلاد مکس ۵x','Claude Max 5x - یک ماهه')
     assert not ps.matches('کلاد مکس ۵x','Claude Max 20x')
     assert not ps.matches('کلاد مکس','Claude Pro')
+    assert ps.matches('کلود','Claude AI')
     assert ps.matches('Notion Plus','خرید Notion Plus')
 
 
@@ -40,3 +41,14 @@ def test_cannot_follow_offsite_links(monkeypatch):
     monkeypatch.setattr(ps.safe_fetch,'text',fetch)
     ps.lookup({'id':'a','website':'https://example.com'},'Claude Max')
     assert all(ps.same_site(u,'https://example.com') for u in urls)
+
+
+def test_direct_product_paths_find_sites_without_working_search(monkeypatch):
+    product='''<script type="application/ld+json">{"@type":"Product","name":"Claude AI","offers":{"price":"2990000","priceCurrency":"IRR"}}</script>'''
+    def fetch(url,**k):
+        return url, product if url.endswith('/product/ai-claude') else '<html></html>'
+    monkeypatch.setattr(ps.safe_fetch,'text',fetch)
+    row=ps.lookup({'id':'a','website':'https://example.com'},'Claude')
+    assert row['status']=='found'
+    assert row['matches'][0]['price']==299000
+    assert row['matches'][0]['url'].endswith('/product/ai-claude')

@@ -8,7 +8,7 @@ from lxml import html as lh
 from . import safe_fetch
 from .competitors import extract_products, detect_duration, _woo_currency
 
-ALIASES={'کلاد':'claude','کلاود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
+ALIASES={'کلاد':'claude','کلاود':'claude','کلود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
 STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','buy','account','subscription','چنده','چقدر','است','توی','در','بهم','بگو','لطفا'}
 
 def terms(text):
@@ -33,9 +33,17 @@ def lookup(c,query):
     if not base:out['status']='no_website';return out
     deadline=time.monotonic()+55
     normalized=' '.join(terms(query))
+    wanted=terms(query)
+    slug='-'.join(wanted)
+    family=wanted[0] if wanted else ''
+    direct=[]
+    for path in (f'product/{slug}',f'product/{family}',f'product/ai-{family}',f'product/{family}-ai',f'services/ai/{family}'):
+        if family:direct.append(base.rstrip('/')+'/'+path)
     queue=[base.rstrip('/')+'/?'+urlencode({'s':normalized,'post_type':'product'})]
     if normalized!=query:queue.append(base.rstrip('/')+'/?'+urlencode({'s':query,'post_type':'product'}))
+    queue.extend(direct)
     queue.append(base)
+    queue=list(dict.fromkeys(queue))
     visited=set();ok=0;seen=set()
     while queue and len(visited)<8 and time.monotonic()<deadline:
         url=queue.pop(0)
