@@ -39,10 +39,14 @@ class VideoPromptView extends StatelessWidget {
           children: [
             const TypeBadge('video_prompt', label: 'Video'),
             const SizedBox(width: 8),
-            Text(
-              '${uiDigits(total)} seconds · ${uiDigits(clips.length)} shots · 9:16',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
+            Expanded(
+              child: Text(
+                '${uiDigits(total)} seconds · ${uiDigits(clips.length)} shots · 9:16',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],

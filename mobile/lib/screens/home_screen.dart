@@ -7,6 +7,7 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/delete_post.dart';
+import 'alerts_screen.dart';
 import 'post_screen.dart';
 import 'posts_screen.dart';
 
@@ -42,6 +43,7 @@ class HomeScreenState extends State<HomeScreen> {
   Timer? _poll;
   bool _preparingWeek = false;
   bool _checkingAlerts = false;
+  String? _creatingAlertId;
   DateTime _selectedDay = DateUtils.dateOnly(DateTime.now());
   @override
   void initState() {
@@ -105,6 +107,43 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     );
     refresh();
+  }
+
+  Future<void> _openAlerts() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AlertsScreen(api: widget.api, brand: widget.brand),
+      ),
+    );
+    refresh();
+  }
+
+  Future<void> _generateAlert(MarketAlert alert) async {
+    if (_creatingAlertId != null) return;
+    setState(() => _creatingAlertId = alert.id);
+    try {
+      final post = await widget.api.generate(
+        widget.brand.id!,
+        GenerateRequest(
+          postType: 'video_prompt',
+          mode: 'video',
+          topicHint: newsVideoTopic(alert),
+          targetSeconds: 10,
+          contentLabel: 'news',
+        ),
+      );
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PostScreen(api: widget.api, postId: post.id),
+        ),
+      );
+      await refresh();
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, e.message);
+    } finally {
+      if (mounted) setState(() => _creatingAlertId = null);
+    }
   }
 
   Future<void> _prepareWeek() async {
@@ -274,7 +313,8 @@ class HomeScreenState extends State<HomeScreen> {
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
-                TextButton.icon(
+                IconButton(
+                  tooltip: 'Check now',
                   onPressed: _checkingAlerts ? null : _refreshAlerts,
                   icon: _checkingAlerts
                       ? const SizedBox(
@@ -282,8 +322,13 @@ class HomeScreenState extends State<HomeScreen> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.refresh, size: 18),
-                  label: const Text('Check now'),
+                      : const Icon(Icons.refresh, size: 20),
+                ),
+                TextButton(
+                  onPressed: alerts.isEmpty ? null : _openAlerts,
+                  child: Text(
+                    'View all${alerts.isEmpty ? '' : ' (${alerts.length})'}',
+                  ),
                 ),
               ],
             ),
@@ -303,64 +348,86 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else
-              for (final alert in alerts.take(3)) ...[
-                const Divider(height: 20),
-                Text(
-                  alert.title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall,
-                  textDirection: contentDirection(alert.title),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${alert.verification == 'official'
-                      ? 'Official'
-                      : alert.verification == 'in_product'
-                      ? 'Verified in product'
-                      : 'Reported'} · ${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFFB54708),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: () => widget.onCreate(
-                        postType: 'video_prompt',
-                        topic:
-                            'URGENT NEWS VIDEO — Create a complete 10-second Google Flow prompt (8-second Raha/Arian scene + 2-second Rahboom end card). Use only this source, verify the publication date and claims, and do not invent details: ${alert.title} | ${alert.url}',
-                        mode: 'video',
-                        contentLabel: 'news',
-                      ),
-                      icon: const Icon(Icons.movie_creation_outlined, size: 18),
-                      label: const Text('Create 10s video'),
-                    ),
-                    if (alert.url.isNotEmpty)
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final uri = Uri.tryParse(alert.url);
-                          if (uri != null) {
-                            await launchUrl(
-                              uri,
-                              mode: LaunchMode.externalApplication,
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.open_in_new, size: 17),
-                        label: const Text('Source'),
-                      ),
-                  ],
-                ),
-              ],
+              for (final alert in alerts.take(3)) _alertPreview(alert, theme),
           ],
         ),
       ),
     );
   }
+
+  Widget _alertPreview(MarketAlert alert, ThemeData theme) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const Divider(height: 20),
+      InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: _creatingAlertId == null ? () => _generateAlert(alert) : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                alert.title,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall,
+                textDirection: contentDirection(alert.title),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${alert.verification == 'official'
+                    ? 'Official'
+                    : alert.verification == 'in_product'
+                    ? 'Verified in product'
+                    : 'Reported'} · ${alert.source}${alert.publishedAt == null ? '' : ' · ${DateFormat('MMM d, HH:mm').format(alert.publishedAt!.toLocal())}'}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFFB54708),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _creatingAlertId == null
+                        ? () => _generateAlert(alert)
+                        : null,
+                    icon: _creatingAlertId == alert.id
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.movie_creation_outlined, size: 18),
+                    label: Text(
+                      _creatingAlertId == alert.id
+                          ? 'Creating…'
+                          : 'Create 10s video',
+                    ),
+                  ),
+                  if (alert.url.isNotEmpty)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.tryParse(alert.url);
+                        if (uri != null) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.open_in_new, size: 17),
+                      label: const Text('Source'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
 
   Widget _weeklyPlan(BuildContext context) {
     final today = DateUtils.dateOnly(DateTime.now());

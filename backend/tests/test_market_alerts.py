@@ -16,6 +16,10 @@ def test_score_requires_ai_vendor_and_material_change():
     assert market_alerts._score("ChatGPT launches a $500 plan", "", source="note") == 0
     assert market_alerts._score("Football results", "new season plan") == 0
     assert market_alerts._score("Claude customer story", "a team explains its workflow") == 0
+    assert market_alerts._score(
+        "Hugging Face adds faster AI inference", "A product update for developers",
+        official=True, source="Hugging Face",
+    ) >= 2
 
 
 def test_alert_endpoint_returns_important_first():

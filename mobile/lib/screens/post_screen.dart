@@ -122,12 +122,17 @@ class _PostScreenState extends State<PostScreen> {
   @override
   Widget build(BuildContext context) {
     final p = _post;
+    final compact = MediaQuery.sizeOf(context).width < 500;
     return Scaffold(
       appBar: AppBar(
         title: Text(
           p == null
               ? ''
-              : (p.isVideo ? 'Video production brief' : 'Publishing package'),
+              : (p.isVideo
+                    ? (compact ? 'Video brief' : 'Video production brief')
+                    : (compact ? 'Post' : 'Publishing package')),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
           if (p != null && !p.isBusy)
@@ -142,8 +147,8 @@ class _PostScreenState extends State<PostScreen> {
             ),
           if (p != null)
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: StatusChip(p.status),
+              padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 12),
+              child: StatusChip(p.status, dense: true),
             ),
         ],
       ),
