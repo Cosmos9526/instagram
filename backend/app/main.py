@@ -1,7 +1,7 @@
 import mimetypes
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -516,6 +516,20 @@ def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = De
     scan = CompetitorScan(brand_id=brand_id, report={"kind": "price_search", "query": body.query.strip(), "results": []})
     db.add(scan); db.flush(); enqueue_competitor_scan(db, scan); db.commit()
     return scan_out(scan)
+
+
+@app.post('/brands/{brand_id}/weekly-prompts')
+def weekly_prompts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    from .weekly_prompts import prepare_week, is_rahboom
+    brand = own_brand(brand_id, user, db)
+    if not is_rahboom(brand):
+        raise HTTPException(422, 'The reviewed starter week is available for Rahboom.')
+    today = datetime.now(ZoneInfo(settings.timezone)).date()
+    start = today - timedelta(days=(today.weekday() + 2) % 7)
+    db.execute(select(Brand).where(Brand.id == brand_id).with_for_update()).scalar_one()
+    posts = prepare_week(db, brand, start)
+    db.commit()
+    return [post_out(p) for p in posts]
 
 
 # The PWA (Flutter web build) is served from the same origin as the API. Mounted last so API routes win.

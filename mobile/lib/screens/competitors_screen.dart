@@ -428,7 +428,8 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
     const labels = {
       'found': 'Price found',
       'price_unavailable': 'Product found · price unavailable',
-      'not_found': 'No matching product found',
+      'not_found': 'Could not verify a matching price',
+      'blocked': 'Website blocked automated access · check the source',
       'unreachable': 'Website unavailable',
       'no_website': 'No website saved',
     };
@@ -470,6 +471,11 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     if (p['in_stock'] == false) const Text('Out of stock'),
+                    if (p['price'] == null && p['evidence'] != null)
+                      Text(
+                        '${p['evidence']}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton(

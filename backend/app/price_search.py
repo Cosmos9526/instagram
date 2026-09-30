@@ -7,6 +7,7 @@ import time
 from lxml import html as lh
 from . import safe_fetch
 from .competitors import extract_products, detect_duration, _woo_currency
+from .price_adapters import CLAUDE_PAGES, extract as audited_products
 
 ALIASES={'کلاد':'claude','کلاود':'claude','کلود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
 STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','buy','account','subscription','چنده','چقدر','است','توی','در','بهم','بگو','لطفا'}
@@ -14,11 +15,14 @@ STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','bu
 def terms(text):
     text=unquote(text).lower().translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹يك','0123456789یک'))
     text=text.replace('چت جی پی تی','chatgpt').replace('چت جی‌پی‌تی','chatgpt').replace('chat gpt','chatgpt')
+    text=re.sub(r'(max)(\d)',r'\1 \2',text)
     text=re.sub(r'(\d+)\s*[×xایکس]+',r'\1x',text)
     return [ALIASES.get(w,w) for w in re.findall(r'[\w]+',text) if w not in STOP]
 
 def matches(query,name):
     wanted=terms(query);found=terms(name)
+    if 'pro' in wanted and 'max' not in wanted and 'max' in found:
+        return False
     return bool(wanted) and all(w in found for w in wanted)
 
 def same_site(url,base):
@@ -29,6 +33,12 @@ def same_site(url,base):
 def canonical(url):
     """Page fragments never change product data and must not trigger another download."""
     return urldefrag(url)[0].rstrip('/') or urldefrag(url)[0]
+
+def product_link(url):
+    parsed=urlparse(url)
+    if parsed.query or any(x in parsed.path.lower() for x in ('cart','checkout','comment-page','login','logout')):
+        return False
+    return any(part in parsed.path.lower() for part in ('product','service','account','shop','game'))
 
 def lookup(c,query):
     base=c.get('website','').strip()
@@ -43,34 +53,40 @@ def lookup(c,query):
     direct=[]
     for path in (f'product/{slug}',f'product/{family}',f'product/ai-{family}',f'product/{family}-ai',f'services/ai/{family}'):
         if family:direct.append(base.rstrip('/')+'/'+path)
-    queue=[base.rstrip('/')+'/?'+urlencode({'s':normalized,'post_type':'product'})]
-    if normalized!=query:queue.append(base.rstrip('/')+'/?'+urlencode({'s':query,'post_type':'product'}))
+    host=(urlparse(base).hostname or '').removeprefix('www.')
+    queue=[base.rstrip('/')+p for p in CLAUDE_PAGES.get(host,[]) ] if family=='claude' else []
+    queue.append(base.rstrip('/')+'/?'+urlencode({'s':family or normalized,'post_type':'product'}))
     queue.extend(direct)
     queue.append(base)
     queue=list(dict.fromkeys(canonical(url) for url in queue))
-    visited=set();ok=0;seen=set()
+    visited=set();ok=0;seen=set();blocked=False
     while queue and len(visited)<8 and time.monotonic()<deadline:
         url=canonical(queue.pop(0))
         if url in visited or not same_site(url,base):continue
         visited.add(url)
-        try:final,body=safe_fetch.text(url,timeout=5,connect_timeout=2.5)
-        except Exception:continue
+        final,body=url,''
+        for attempt in range(2):
+            try:final,body=safe_fetch.text(url,timeout=7,connect_timeout=3)
+            except Exception:body=''
+            if body or time.monotonic()+7>=deadline:break
         if not body or not same_site(final,base):continue
+        if '__zrkjc' in body or 'در حال بررسی مرورگر' in body:
+            blocked=True;continue
         ok+=1
         try:tree=lh.fromstring(body)
         except Exception:continue
         links=[]
         for a in tree.xpath('//a[@href]'):
             dest=canonical(urljoin(final,a.get('href')))
-            product_path = any(part in urlparse(dest).path.lower() for part in ('product','service','account','shop'))
-            if same_site(dest,base) and product_path and (matches(query,a.text_content()) or matches(query,dest)) and dest not in visited:
+            if same_site(dest,base) and product_link(dest) and (matches(family,a.text_content()) or matches(family,dest)) and dest not in visited:
                 links.append(dest)
         queue=list(dict.fromkeys(links[:2]+queue))
-        for p in extract_products(body):
+        adapted=audited_products(tree,final)
+        for p in adapted if adapted is not None else extract_products(body):
             if not matches(query,p['name']):continue
             # Generic list-page prices must link to the relevant product, not a whole catalog.
             product_links=[urljoin(final,a.get('href')) for a in tree.xpath('//a[@href]') if matches(p['name'],a.text_content())]
-            source=next((u for u in product_links if same_site(u,base)),final)
+            source=p.get('url') or next((u for u in product_links if same_site(u,base) and product_link(u)),final)
             currency=p.get('currency','').upper()
             variation_currency = not currency and 'data-product_variations=' in body
             if variation_currency:
@@ -83,15 +99,16 @@ def lookup(c,query):
                     price = int(price / 10) if price is not None else None
                     price_max = int(price_max / 10) if price_max is not None else None
             if price is not None and (price<=0 or price>10**10):price=None;price_max=None
-            key=(p['name'],price,price_max)
+            key=(p['name'],canonical(source))
             if key in seen:continue
             seen.add(key)
-            out['matches'].append({'name':p['name'],'price':price,'price_max':price_max,'currency':'Toman' if price is not None else 'Unknown','duration':detect_duration(p['name']),'in_stock':p.get('in_stock'),'url':source})
+            duration=detect_duration(p['name']) or ('1m' if 'monthly' in p['name'].lower() else '')
+            out['matches'].append({'name':p['name'],'price':price,'price_max':price_max,'currency':'Toman' if price is not None else 'Unknown','duration':duration,'in_stock':p.get('in_stock'),'url':source,'evidence':p.get('evidence','Product structured data')})
         specific_plan = any(re.fullmatch(r'\d+x', term) for term in wanted)
         if specific_plan and any(p['price'] is not None for p in out['matches']):
             out['status']='found'
             return out
-    out['status']='found' if any(p['price'] is not None for p in out['matches']) else 'price_unavailable' if out['matches'] else 'not_found' if ok else 'unreachable'
+    out['status']='found' if any(p['price'] is not None for p in out['matches']) else 'price_unavailable' if out['matches'] else 'blocked' if blocked else 'not_found' if ok else 'unreachable'
     return out
 
 def run_price_search(competitors,query,on_progress=None):
