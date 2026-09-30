@@ -1,6 +1,9 @@
 """Fresh, source-backed content signals for Rahboom's daily video desk."""
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date
+import xml.etree.ElementTree as ET
+
+import httpx
 
 from .search_sources import google_rising, google_suggest, video_search
 from .sources import news_search
@@ -32,6 +35,13 @@ TOPICS = [
     ("اخبار هوش مصنوعی", "AI news"),
 ]
 
+YOUTUBE_CHANNELS = {
+    "OpenAI": "UCXZCJLdBC09xxGZ6gcdrc6A",
+    "Google for Developers": "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+    "Two Minute Papers": "UCbfYPyITQ-7l4upoX8nvctg",
+    "Fireship": "UCsBjURrPoezykLs9EqgamOA",
+}
+
 
 def keyword_bank() -> list[str]:
     out = []
@@ -60,6 +70,31 @@ def _dedupe(rows: list[dict], limit: int) -> list[dict]:
     return out[:limit]
 
 
+def youtube_channel_feeds() -> list[dict]:
+    """Keyless fallback: recent uploads from authoritative/high-signal AI channels."""
+    ns = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
+    out = []
+    for channel, channel_id in YOUTUBE_CHANNELS.items():
+        try:
+            xml = httpx.get(
+                "https://www.youtube.com/feeds/videos.xml",
+                params={"channel_id": channel_id}, timeout=20,
+            ).content
+            root = ET.fromstring(xml)
+            for entry in root.findall("a:entry", ns)[:5]:
+                video_id = entry.findtext("yt:videoId", default="", namespaces=ns)
+                out.append({
+                    "platform": "youtube", "source_type": "youtube_feed",
+                    "title": entry.findtext("a:title", default="", namespaces=ns),
+                    "channel": channel, "views": 0,
+                    "published": entry.findtext("a:published", default="", namespaces=ns),
+                    "url": f"https://www.youtube.com/watch?v={video_id}" if video_id else "",
+                })
+        except Exception:
+            continue
+    return sorted(out, key=lambda v: v.get("published", ""), reverse=True)
+
+
 def collect() -> dict:
     queries = daily_queries()
     news, videos, suggestions = [], [], []
@@ -83,6 +118,8 @@ def collect() -> dict:
                 videos += [r | {"keyword": q, "source_type": "youtube", "window_hours": 24} for r in rows]
             else:
                 suggestions += [{"query": s, "seed": q, "source": "Google autocomplete"} for s in rows]
+    if not videos:
+        videos = youtube_channel_feeds()
     rising = google_rising([fa for fa, _ in TOPICS[:5]], timeframe="now 1-d")
     trends = ([r | {"source": "Google Trends", "window_hours": 24} for r in rising] + suggestions)
     return {
