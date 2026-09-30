@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -39,7 +40,11 @@ def _refresh_research(db, brand: Brand) -> None:
     last = db.scalar(select(Research.created_at).where(Research.brand_id == brand.id).order_by(Research.created_at.desc()))
     if last and last.tzinfo is None:
         last = last.replace(tzinfo=timezone.utc)
-    if last and datetime.now(timezone.utc) - last < timedelta(days=settings.research_max_age_days):
+    host = (urlparse(brand.website or "").hostname or "").removeprefix("www.")
+    # News and fast-trend inputs for Rahboom are daily inventory. Twenty hours
+    # keeps the morning run fresh without queueing duplicates after a restart.
+    max_age = timedelta(hours=20) if host == "rahboom.com" else timedelta(days=settings.research_max_age_days)
+    if last and datetime.now(timezone.utc) - last < max_age:
         return
     res = Research(brand_id=brand.id)
     db.add(res)
@@ -52,10 +57,12 @@ def create_daily_posts(now: datetime | None = None) -> int:
     day, created = now.date().isoformat(), 0
     with SessionLocal() as db:
         for brand in db.scalars(select(Brand)):
+            # Refresh research independently of content creation. A prepared
+            # weekly post must not prevent today's news/trend radar from updating.
+            _refresh_research(db, brand)
             exists = db.scalar(select(Post.id).where(Post.brand_id == brand.id, Post.for_date == day))
             if exists:
                 continue
-            _refresh_research(db, brand)
             plan = brand.weekly_plan or DEFAULT_PLAN
             for entry in plan.get(str(now.weekday()), []):
                 post_type, mode = parse_entry(entry)
