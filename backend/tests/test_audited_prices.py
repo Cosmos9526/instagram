@@ -49,6 +49,18 @@ def test_codinocard_selling_price_not_usd_face_value(monkeypatch):
     assert {p['price'] for p in result['matches']}=={26499000,52999000}
     assert all(p['currency']=='Toman' for p in result['matches'])
 
+def test_public_catalog_retries_empty_response_and_never_uses_stale_html(monkeypatch):
+    responses=iter(['',(FIXTURES/'codinocard.json').read_text()])
+    monkeypatch.setattr(ps.safe_fetch,'text',lambda url,**kw:(url,next(responses)))
+    assert ps.lookup({'id':'a','website':'https://codinocard.ir'},'Claude Max')['status']=='found'
+    calls=[]
+    def empty(url,**kw):
+        calls.append(url)
+        return url,''
+    monkeypatch.setattr(ps.safe_fetch,'text',empty)
+    assert ps.lookup({'id':'a','website':'https://codinocard.ir'},'Claude Max')['status']=='unreachable'
+    assert calls==['https://api.codinocard.ir/api/products']*2
+
 def test_max_without_space_and_cart_links():
     assert ps.matches('کلاد مکس ۵x','Claude max5x exclusive 1month')
     assert not ps.matches('Claude Max 5x','Claude max20x')
