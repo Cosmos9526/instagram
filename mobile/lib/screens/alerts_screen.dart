@@ -8,6 +8,28 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'post_screen.dart';
 
+List<MarketAlert> distinctEmergingAlerts(Iterable<MarketAlert> alerts) {
+  final seen = <String>{};
+  final result = <MarketAlert>[];
+  for (final alert in alerts) {
+    final title = alert.title.toLowerCase();
+    final key = title.contains('dots')
+        ? 'dots'
+        : title.contains('jev')
+        ? 'jev'
+        : title.contains('model context protocol') ||
+              RegExp(r'\bmcp\b').hasMatch(title)
+        ? 'mcp'
+        : title.contains('context engineering')
+        ? 'context-engineering'
+        : title.contains('agentic memory')
+        ? 'agentic-memory'
+        : title;
+    if (seen.add(key)) result.add(alert);
+  }
+  return result;
+}
+
 String newsVideoTopic(MarketAlert alert) =>
     '''
 ${alert.category == 'buzz' ? 'FAST-RISING AI TOOL OR TECHNIQUE VIDEO FOR RAHBOOM.' : 'URGENT VERIFIED AI NEWS VIDEO FOR RAHBOOM.'}
@@ -83,6 +105,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
       setState(() {
         _alerts = widget.category == null
             ? alerts
+            : widget.category == 'buzz'
+            ? distinctEmergingAlerts(
+                alerts.where((a) => a.category == widget.category),
+              )
             : alerts.where((a) => a.category == widget.category).toList();
         _error = null;
       });

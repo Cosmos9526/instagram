@@ -444,9 +444,9 @@ class HomeScreenState extends State<HomeScreen> {
   );
 
   Widget _buzzing(BuildContext context) {
-    final items = (_alerts ?? const <MarketAlert>[])
-        .where((a) => a.category == 'buzz')
-        .toList();
+    final items = distinctEmergingAlerts(
+      (_alerts ?? const <MarketAlert>[]).where((a) => a.category == 'buzz'),
+    );
     final theme = Theme.of(context);
     return Card(
       margin: EdgeInsets.zero,
