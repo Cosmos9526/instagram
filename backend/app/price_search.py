@@ -86,7 +86,8 @@ def lookup(c,query):
             if key in seen:continue
             seen.add(key)
             out['matches'].append({'name':p['name'],'price':price,'price_max':price_max,'currency':'Toman' if price is not None else 'Unknown','duration':detect_duration(p['name']),'in_stock':p.get('in_stock'),'url':source})
-        if any(p['price'] is not None for p in out['matches']):
+        specific_plan = any(re.fullmatch(r'\d+x', term) for term in wanted)
+        if specific_plan and any(p['price'] is not None for p in out['matches']):
             out['status']='found'
             return out
     out['status']='found' if any(p['price'] is not None for p in out['matches']) else 'price_unavailable' if out['matches'] else 'not_found' if ok else 'unreachable'
