@@ -43,6 +43,17 @@ def test_cannot_follow_offsite_links(monkeypatch):
     assert all(ps.same_site(u,'https://example.com') for u in urls)
 
 
+def test_page_fragments_are_not_downloaded_repeatedly(monkeypatch):
+    urls=[]
+    def fetch(url,**k):
+        urls.append(url)
+        return url,'<a href="/product/claude-max#details">Claude Max</a><a href="/product/claude-max#faq">Claude Max</a>'
+    monkeypatch.setattr(ps.safe_fetch,'text',fetch)
+    ps.lookup({'id':'a','website':'https://example.com'},'Claude Max')
+    product=[u for u in urls if u.endswith('/product/claude-max')]
+    assert len(product)==1
+
+
 def test_direct_product_paths_find_sites_without_working_search(monkeypatch):
     product='''<script type="application/ld+json">{"@type":"Product","name":"Claude AI","offers":{"price":"2990000","priceCurrency":"IRR"}}</script>'''
     def fetch(url,**k):
