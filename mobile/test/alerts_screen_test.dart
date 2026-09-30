@@ -32,7 +32,7 @@ void main() {
             'source': 'OpenAI',
             'url': 'https://example.test/source/$i',
             'verification': 'official',
-            'importance': 4,
+            'importance': i == 0 ? 5 : 4,
             'published_at': '2026-09-30T10:00:00Z',
           },
       ];
@@ -85,6 +85,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('20 real stories'), findsOneWidget);
+      expect(find.text('Major update'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Official AI launch 0'));
       await tester.pumpAndSettle();
