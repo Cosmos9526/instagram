@@ -76,12 +76,21 @@ def create_daily_posts(now: datetime | None = None) -> int:
     return created
 
 
+def refresh_market_alerts() -> int:
+    """Small keyless scan; independent from the heavier daily research job."""
+    from .market_alerts import refresh
+    with SessionLocal() as db:
+        return refresh(db)
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     init_db()
     sched = BlockingScheduler(timezone=settings.timezone)
     sched.add_job(create_daily_posts, "cron", hour=settings.daily_run_hour, minute=0,
                   misfire_grace_time=3600, coalesce=True)
+    sched.add_job(refresh_market_alerts, "interval", hours=3, next_run_time=datetime.now(),
+                  misfire_grace_time=1800, coalesce=True, max_instances=1)
     sched.start()
 
 
