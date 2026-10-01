@@ -115,4 +115,27 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('social platform filter keeps source and safe prompt', (tester) async {
+    SharedPreferences.setMockInitialValues({'base_url': 'https://example.test', 'token': 'token'});
+    final api = await Api.load();
+    final rows = [
+      {'id': 'ig', 'title': 'Instagram AI tutorial', 'category': 'instagram', 'source': 'Instagram', 'summary': '120 likes. Publication date unverified.', 'url': 'https://instagram.com/reel/abc/', 'verification': 'social_snapshot'},
+      {'id': 'yt', 'title': 'YouTube AI tutorial', 'category': 'youtube', 'source': 'YouTube', 'summary': '9000 views', 'url': 'https://youtube.com/watch?v=abcdefghijk', 'verification': 'social_snapshot'},
+      {'id': 'news', 'title': 'Other news', 'category': 'news'},
+    ];
+    api.client = MockClient((request) async => http.Response(jsonEncode(rows), 200));
+    await tester.pumpWidget(MaterialApp(home: AlertsScreen(api: api, brand: Brand(id: 'rahboom', name: 'Rahboom'), category: 'social')));
+    await tester.pumpAndSettle();
+    expect(find.text('Instagram AI tutorial'), findsOneWidget);
+    expect(find.text('Other news'), findsNothing);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'YouTube'));
+    await tester.pumpAndSettle();
+    expect(find.text('Instagram AI tutorial'), findsNothing);
+    expect(find.text('YouTube AI tutorial'), findsOneWidget);
+    final topic = newsVideoTopic(MarketAlert.fromJson(rows.first));
+    expect(topic, contains('not verified news or proof of virality'));
+    expect(topic, contains('https://instagram.com/reel/abc/'));
+    expect(tester.takeException(), isNull);
+  });
+
 }

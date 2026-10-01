@@ -216,7 +216,7 @@ def collect() -> list[dict]:
     )[:30]
 
 
-def refresh(db) -> int:
+def refresh(db, social_only: bool = False) -> int:
     # Remove previously stored weak or stale stories as the source policy improves.
     stale_before = datetime.now(timezone.utc) - timedelta(days=14)
     for alert in db.scalars(select(MarketAlert)):
@@ -228,8 +228,11 @@ def refresh(db) -> int:
         ):
             db.delete(alert)
 
+    from .social_trends import collect as collect_social
+
     added = 0
-    for row in collect():
+    rows = collect_social() if social_only else collect() + collect_social()
+    for row in rows:
         fingerprint = hashlib.sha256((row.get("url") or row["title"]).encode()).hexdigest()
         existing = db.scalar(select(MarketAlert).where(MarketAlert.fingerprint == fingerprint))
         if existing:
@@ -241,12 +244,12 @@ def refresh(db) -> int:
             existing.url = row.get("url", "")
             existing.importance = row["importance"]
             existing.published_at = row.get("published_at")
-            existing.category = _category(row["title"], row.get("summary", ""))
+            existing.category = row.get("category") or _category(row["title"], row.get("summary", ""))
             continue
         db.add(MarketAlert(
             fingerprint=fingerprint, title=row["title"], summary=row.get("summary", ""),
             source=row.get("source", ""), url=row.get("url", ""),
-            category=_category(row["title"], row.get("summary", "")),
+            category=row.get("category") or _category(row["title"], row.get("summary", "")),
             importance=row["importance"], published_at=row.get("published_at"),
         ))
         added += 1
@@ -256,7 +259,8 @@ def refresh(db) -> int:
 
 def out(alert: MarketAlert) -> dict:
     verification = (
-        "in_product" if alert.source.endswith("in-product screen")
+        "social_snapshot" if alert.category in ("instagram", "youtube")
+        else "in_product" if alert.source.endswith("in-product screen")
         else "official" if alert.source in FEEDS
         else "reported"
     )

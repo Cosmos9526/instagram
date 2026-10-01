@@ -67,6 +67,8 @@ def test_alert_endpoint_returns_important_first():
 
 
 def test_refresh_deduplicates(monkeypatch):
+    from app import social_trends
+    monkeypatch.setattr(social_trends, "collect", lambda: [])
     init_db()
     item = {'title': 'Claude Pro pricing changed', 'summary': 'A new plan tier is available',
             'source': 'Anthropic', 'url': 'https://example.test/unique', 'importance': 5,

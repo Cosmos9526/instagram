@@ -204,8 +204,11 @@ class Api {
       MarketAlert.fromJson(a),
   ];
 
-  Future<int> refreshAlerts(String brandId) async {
-    final result = await _send('POST', '/brands/$brandId/alerts/refresh');
+  Future<int> refreshAlerts(String brandId, {bool social = false}) async {
+    final result = await _send(
+      'POST',
+      '/brands/$brandId/alerts/refresh${social ? '?social=true' : ''}',
+    );
     return (result['added'] as num?)?.toInt() ?? 0;
   }
 
