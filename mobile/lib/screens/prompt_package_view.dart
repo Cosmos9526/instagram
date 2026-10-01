@@ -95,6 +95,8 @@ class PromptPackageView extends StatelessWidget {
           post.isVideo ? 'Full video prompt' : 'Visual style',
           fullPrompt,
         ),
+        if ('${c['cover_prompt'] ?? ''}'.trim().isNotEmpty)
+          copyCard('Cover — prompt', '${c['cover_prompt']}'),
         copyCard('Caption and hashtags', post.captionWithTags),
       ],
     );

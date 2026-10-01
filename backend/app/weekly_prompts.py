@@ -76,11 +76,16 @@ Use correctly shaped Persian RTL typography. Keep {product} and @rahboom1 in sep
 NEGATIVE CONSTRAINTS AND FINAL CHECK
 No face drift, changing glasses, hair or outfits, deformed hands, duplicate phones, new people, moving furniture, shaky zoom, flickering screens or artificial beauty smoothing. Do not generate new letters, subtitles, logos or watermarks in the scene. Preserve existing reference lettering only when faithful; replace distorted lettering in editing with the real supplied asset. No unsupported claim, fabricated urgency or numeric price. {claim_rule}
 Use only the attached reference frame and original logo for identity and branding. Review both faces, spoken words, lip-sync, product spelling, contact handle and final duration before publishing.'''
+    cover = f"""RAHBOOM INSTAGRAM REEL COVER — 1080 × 1920, 9:16
+Use the supplied reference frame to preserve adult presenters Raha on the left and Arian on the right, their faces, glasses, hair, clothing and original home-office set. Create a crisp editorial still, eye-level medium two-shot, soft daylight, natural skin, subtle cool ambient background, uncluttered composition. Express the day's idea through the same restrained action: {action}
+Leave clean negative space in the upper central area for this exact Persian headline: «{title}». Use at most two lines, bold readable Persian typography, correct joined letters and RTL direction. Add text in editing if the image tool cannot typeset it accurately. Keep both faces and the entire headline inside the central 1080 × 1350 safe area for feed cropping; keep the bottom 250 pixels free of essential information.
+Place the original supplied orange Rahboom logo small in the upper corner without redrawing or recolouring it. Off-white, charcoal and a restrained orange accent for text treatment. No invented UI, price, feature claims, extra people, fake badges, watermarks or decorative clutter. The cover must clearly communicate {product} and match the video, rather than introduce a different topic."""
     caption = f'{title}\nبرای انتخاب ابزار و استعلام شرایط، به راه بوم پیام بده.\nتلگرام: @rahboom1 | rahboom.com'
     return {'output_kind': 'prompt_package', 'source': 'editorial', 'editorial_review': True,
             'title': title, 'caption': caption, 'hashtags': ['راه_بوم', 'هوش_مصنوعی'],
-            'full_prompt': full, 'blocks': [{'label': 'Full video prompt', 'text': full, 'language': 'en'},
-                                          {'label': 'Persian dialogue', 'text': dialogue, 'language': 'fa'}],
+            'full_prompt': full, 'cover_prompt': cover, 'blocks': [{'label': 'Full video prompt', 'text': full, 'language': 'en'},
+                                          {'label': 'Persian dialogue', 'text': dialogue, 'language': 'fa'},
+                                          {'label': 'Cover — prompt', 'text': cover, 'language': 'en'}],
             'target_seconds': 10, 'production_tool': 'Google Flow', 'weekly_series': SERIES,
             'purpose': purpose, 'scheduled_date': day.isoformat(), 'requires_character_references': True}
 
@@ -89,7 +94,7 @@ def prepare_week(db, brand, start):
     if not is_rahboom(brand):
         raise ValueError('This reviewed starter week is for Rahboom.')
     end = start + timedelta(days=6)
-    existing = list(db.scalars(select(Post).where(Post.brand_id == brand.id, Post.status != 'deleted',
+    existing = list(db.scalars(select(Post).where(Post.brand_id == brand.id,
                          Post.for_date >= start.isoformat(), Post.for_date <= end.isoformat())))
     result = []
     for offset in range(7):
@@ -97,10 +102,13 @@ def prepare_week(db, brand, start):
         p = next((p for p in existing if p.for_date == day.isoformat() and
                   (p.content or {}).get('weekly_series') == SERIES), None)
         if p is None:
-            content = package(offset, day)
+            content = package((day.weekday() + 2) % 7, day)
             p = Post(brand_id=brand.id, post_type='video_prompt', mode='video', status='ready',
                      for_date=day.isoformat(), topic_hint=content['title'], content=content)
             db.add(p)
-        result.append(p)
+        elif p.status == 'ready' and (p.content or {}).get('source') == 'editorial' and not p.content.get('cover_prompt'):
+            p.content = package((day.weekday() + 2) % 7, day)
+        if p.status != 'deleted':
+            result.append(p)
     db.flush()
     return result

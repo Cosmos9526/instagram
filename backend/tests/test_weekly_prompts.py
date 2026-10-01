@@ -12,6 +12,8 @@ def test_seven_complete_distinct_prompts():
         assert len(p['full_prompt'].split())>500
         assert p['blocks'][1]['text'] in p['full_prompt']
         assert len(p['blocks'][1]['text'].split())<=26
+        assert len(p['cover_prompt'].split()) > 100
+        assert p['title'] in p['cover_prompt']
         assert '8.00–10.00' in p['full_prompt'] and '@rahboom1' in p['full_prompt']
 
 def test_week_api_is_private_idempotent_and_ready():
@@ -27,3 +29,17 @@ def test_week_api_is_private_idempotent_and_ready():
         assert len(posts)==7 and len({p['for_date'] for p in posts})==7
         assert all(p['status']=='ready' and p['post_type']=='video_prompt' for p in posts)
         assert [p['id'] for p in posts]==[p['id'] for p in c.post(url,headers=h).json()]
+
+
+def test_deleted_starter_prompt_is_not_recreated():
+    with TestClient(app) as c:
+        token = c.post('/auth/register', json={'email': 'deleted-week@example.com', 'password': 'test-pass-123', 'name': 'Owner'}).json()['token']
+        h = {'Authorization': 'Bearer ' + token}
+        b = c.post('/brands', headers=h, json={'name': 'Rahboom', 'industry': 'AI', 'website': 'https://rahboom.com'}).json()['id']
+        url = f'/brands/{b}/weekly-prompts'
+        posts = c.post(url, headers=h).json()
+        removed = posts[0]['id']
+        assert c.delete(f'/posts/{removed}', headers=h).status_code == 200
+        remaining = c.post(url, headers=h).json()
+        assert len(remaining) == 6
+        assert removed not in {p['id'] for p in remaining}

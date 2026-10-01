@@ -587,7 +587,7 @@ def weekly_prompts(brand_id: str, user: User = Depends(current_user), db: Sessio
     if not is_rahboom(brand):
         raise HTTPException(422, 'The reviewed starter week is available for Rahboom.')
     today = datetime.now(ZoneInfo(settings.timezone)).date()
-    start = today - timedelta(days=(today.weekday() + 2) % 7)
+    start = today
     db.execute(select(Brand).where(Brand.id == brand_id).with_for_update()).scalar_one()
     posts = prepare_week(db, brand, start)
     db.commit()

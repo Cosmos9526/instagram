@@ -70,7 +70,7 @@ void main() {
     });
     final api = await Api.load();
     final today = DateUtils.dateOnly(DateTime.now());
-    final start = today.subtract(Duration(days: (today.weekday + 1) % 7));
+    final start = today;
     final posts = [
       for (var i = 0; i < 7; i++)
         {
@@ -84,18 +84,28 @@ void main() {
             'title': 'موضوع روز $i',
             'weekly_series': 'test',
             'full_prompt': 'Complete prompt $i',
+            'output_kind': 'prompt_package',
           },
         },
     ];
-    final createdTopics = <String>[];
-    final createdLabels = <String>[];
-    api.client = MockClient(
-      (req) async => http.Response(
-        jsonEncode(posts),
+    final openedIds = <String>[];
+    api.client = MockClient((req) async {
+      dynamic body;
+      if (req.url.path.contains('/posts/day-')) {
+        final id = req.url.path.split('/').last;
+        openedIds.add(id);
+        body = posts.firstWhere((p) => p['id'] == id);
+      } else if (req.url.path.endsWith('/alerts')) {
+        body = [];
+      } else {
+        body = posts;
+      }
+      return http.Response(
+        jsonEncode(body),
         200,
         headers: {'content-type': 'application/json'},
-      ),
-    );
+      );
+    });
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -114,8 +124,9 @@ void main() {
                   videoStyle = '',
                   contentLabel = '',
                 }) {
-                  createdTopics.add(topic);
-                  createdLabels.add(contentLabel);
+                  fail(
+                    'A prepared day must open its prompt, not an empty creation form',
+                  );
                 },
             onTab: (_) {},
           ),
@@ -143,14 +154,16 @@ void main() {
         find.descendant(of: ready, matching: find.text('موضوع روز $i')),
         findsOneWidget,
       );
-      final promotion = find.widgetWithText(ActionChip, 'Promotion');
-      await tester.ensureVisible(promotion);
+      await tester.ensureVisible(ready);
       await tester.pumpAndSettle();
-      await tester.tap(promotion);
-      await tester.pump();
+      await tester.tap(ready);
+      await tester.pumpAndSettle();
+      expect(find.text('Complete prompt $i'), findsOneWidget);
+      expect(find.text('Copy full prompt'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
-    expect(createdTopics.toSet(), hasLength(7));
-    expect(createdLabels, everyElement('promo'));
+    expect(openedIds.toSet(), hasLength(7));
   });
 }

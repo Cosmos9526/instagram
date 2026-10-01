@@ -27,6 +27,7 @@ class _PostScreenState extends State<PostScreen> {
   Post? _post;
   Timer? _poll;
   bool _busy = false;
+  String? _loadError;
   int _page = 0;
   final _pager = PageController();
   // Bumped after a re-render so cached images are refetched.
@@ -52,12 +53,13 @@ class _PostScreenState extends State<PostScreen> {
       final wasBusy = _post?.isBusy ?? false;
       setState(() {
         _post = p;
+        _loadError = null;
         if (wasBusy && !p.isBusy) _version++;
       });
       _poll?.cancel();
       if (p.isBusy) _poll = Timer(const Duration(seconds: 3), _load);
     } on ApiException catch (e) {
-      if (mounted) showSnack(context, e.message);
+      if (mounted) setState(() => _loadError = e.message);
     }
   }
 
@@ -153,7 +155,20 @@ class _PostScreenState extends State<PostScreen> {
         ],
       ),
       body: p == null
-          ? const Center(child: CircularProgressIndicator())
+          ? _loadError == null
+                ? const Center(child: CircularProgressIndicator())
+                : Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_loadError!),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
           : p.isBusy
           ? const Center(
               child: Column(
@@ -167,10 +182,16 @@ class _PostScreenState extends State<PostScreen> {
             )
           : p.status == 'failed'
           ? _failed(p)
-          : p.content['output_kind'] == 'prompt_package'
+          : p.content['output_kind'] == 'prompt_package' ||
+                '${p.content['full_prompt'] ?? ''}'.trim().isNotEmpty ||
+                (p.content['blocks'] is List &&
+                    (p.content['blocks'] as List).isNotEmpty)
           ? PromptPackageView(post: p)
           : p.isVideo
-          ? VideoPromptView(post: p)
+          ? (p.content['clips'] is List &&
+                    (p.content['clips'] as List).isNotEmpty
+                ? VideoPromptView(post: p)
+                : _failed(p))
           : _slides(p),
       bottomNavigationBar: p == null || p.isBusy ? null : _actions(p),
     );

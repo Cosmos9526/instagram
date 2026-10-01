@@ -48,7 +48,21 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    refresh();
+    _initializeWeek();
+  }
+
+  Future<void> _initializeWeek() async {
+    final rahboom =
+        Uri.tryParse(widget.brand.website)?.host.replaceFirst('www.', '') ==
+        'rahboom.com';
+    if (rahboom) {
+      try {
+        await widget.api.prepareWeek(widget.brand.id!);
+      } on ApiException catch (e) {
+        if (mounted) setState(() => _error = e.message);
+      }
+    }
+    if (mounted) await refresh();
   }
 
   @override
@@ -556,7 +570,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _weeklyPlan(BuildContext context) {
     final today = DateUtils.dateOnly(DateTime.now());
-    final start = today.subtract(Duration(days: (today.weekday + 1) % 7));
+    final start = today;
     final planned =
         widget.brand.weeklyPlan['${_selectedDay.weekday - 1}'] ?? [];
     final rahboom =
@@ -569,64 +583,6 @@ class HomeScreenState extends State<HomeScreen> {
               p.content['weekly_series'] != null,
         )
         .firstOrNull;
-    final rahboomDay = (_selectedDay.weekday + 1) % 7;
-    const promoAngles = [
-      'choosing Claude Max 5x or 20x by real usage',
-      'choosing ChatGPT Plus for a daily work workflow',
-      'using Cursor for coding with review and testing',
-      'planning a short Google Flow video with fixed references',
-      'using Gemini for research and source checking',
-      'choosing one AI subscription instead of buying every tool',
-      'starting a Rahboom consultation from the customer’s actual task',
-    ];
-    const newsLenses = [
-      'new AI model announcements',
-      'important product feature updates',
-      'access, pricing or plan changes',
-      'new AI video and creator tools',
-      'AI coding and GitHub updates',
-      'AI safety, privacy or policy changes',
-      'the strongest verified AI story of the week',
-    ];
-    const trendLenses = [
-      'a breakout Google search related to AI',
-      'a fast-growing YouTube video format',
-      'a Persian AI search phrase gaining attention',
-      'a product-comparison topic people are searching',
-      'a tutorial topic rising today',
-      'a practical workflow appearing across sources',
-      'the week’s strongest cross-source trend',
-    ];
-    const educationAngles = [
-      'writing a precise prompt with goal, context and output format',
-      'checking the original source and date of an AI claim',
-      'choosing an AI tool based on the task instead of popularity',
-      'protecting private information when using AI tools',
-    ];
-    final date = DateFormat('yyyy-MM-dd').format(_selectedDay);
-    final rahboomSlots = <(String, String, String)>[
-      (
-        'News',
-        'news',
-        'NEWS VIDEO for $date — focus on ${newsLenses[rahboomDay]}. Use the newest matching verified story from the Daily radar, include its source URL and publication date in the caption, and never invent a claim.',
-      ),
-      (
-        'Fast trend',
-        'trending',
-        'TREND VIDEO for $date — focus on ${trendLenses[rahboomDay]}. Use a verified Google or YouTube signal and explain why it matters now without claiming unsupported search volume.',
-      ),
-      (
-        'Promotion',
-        'promo',
-        'PROMOTIONAL VIDEO for $date — angle: ${promoAngles[rahboomDay]}. Use one real saved Rahboom product, one clear benefit and no unverified price, feature or urgency.',
-      ),
-      if (rahboomDay.isEven)
-        (
-          'Educational',
-          'educational',
-          'EDUCATIONAL VIDEO for $date — teach ${educationAngles[rahboomDay ~/ 2]}. Give one practical takeaway and make no unsupported promise.',
-        ),
-    ];
     const labels = {
       'educational': 'Educational',
       'sales': 'Sales',
@@ -670,28 +626,6 @@ class HomeScreenState extends State<HomeScreen> {
               DateFormat('EEEE, MMM d', 'en').format(_selectedDay),
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            if (rahboom) ...[
-              const SizedBox(height: 8),
-              const Text('Video prompts for this day'),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final slot in rahboomSlots)
-                    ActionChip(
-                      avatar: const Icon(Icons.movie_outlined, size: 17),
-                      label: Text(slot.$1),
-                      onPressed: () => widget.onCreate(
-                        postType: 'video_prompt',
-                        topic: slot.$3,
-                        mode: 'video',
-                        contentLabel: slot.$2,
-                      ),
-                    ),
-                ],
-              ),
-            ],
             if (rahboom && daily == null) ...[
               const SizedBox(height: 8),
               const Text(
