@@ -555,7 +555,10 @@ class PriceSearchIn(BaseModel):
 @app.post("/brands/{brand_id}/competitors/prices")
 def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     b = own_brand(brand_id, user, db)
-    from .price_search import terms
+    from .price_search import terms, query_problem
+    problem = query_problem(body.query)
+    if problem:
+        raise HTTPException(422, problem)
     if not terms(body.query):
         raise HTTPException(422, "Enter a product name")
     if not b.competitors:

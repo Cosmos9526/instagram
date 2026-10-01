@@ -81,7 +81,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       return;
     }
     FocusScope.of(context).unfocus();
-    setState(() => _starting = true);
+    setState(() {
+      _starting = true;
+      _queryError = null;
+    });
     try {
       final scan = await widget.api.searchPrices(widget.brand.id!, query);
       if (!mounted) return;
@@ -89,6 +92,10 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
+        if (e.status == 422) {
+          setState(() => _queryError = e.message);
+          return;
+        }
         showSnack(
           context,
           e.status == 409 ? 'A scan is already in progress' : e.message,
@@ -359,7 +366,12 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
           Wrap(
             spacing: 8,
             children: [
-              for (final product in ['Claude Max', 'ChatGPT Plus', 'Cursor'])
+              for (final product in [
+                'Claude Max',
+                'ChatGPT Pro',
+                'ChatGPT Plus',
+                'Cursor',
+              ])
                 ActionChip(
                   label: Text(product),
                   onPressed: _starting

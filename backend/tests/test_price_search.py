@@ -138,3 +138,25 @@ def test_numberland_duration_only_when_stated():
     page='<div class="accountclickable" accid="1" datatag="اشتراک یک ماهه"><div>Claude Pro</div><div>5,900,000 تومان</div></div><div class="accountclickable" accid="2" datatag=""><div>Claude Max</div><div>9,000,000 تومان</div></div>'
     rows=extract(lh.fromstring('<html>'+page+'</html>'),'https://numberland.ir/account/claude-ai')
     assert rows[0].get('duration')=='1m' and 'duration' not in rows[1]
+
+
+def test_chatgpt_persian_spellings_and_ambiguous_plan():
+    for query in ['چت جی پی تی مکس', 'چت‌جی‌پی‌تی مکس', 'چتجیپیتی مکس', 'Chat GPT Max']:
+        assert ps.terms(query) == ['chatgpt', 'max']
+        assert 'ChatGPT Pro' in ps.query_problem(query)
+    assert ps.query_problem('کلاد مکس') is None
+    assert ps.query_problem('چت جی پی تی پرو') is None
+    assert ps.matches('چت‌جی‌پی‌تی پرو', 'ChatGPT Pro یک ماهه')
+    assert not ps.matches('چت جی پی تی پرو', 'ChatGPT Plus')
+
+
+def test_ambiguous_query_does_not_queue_a_scan():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app) as c:
+        token = c.post('/auth/register', json={'email': 'price-plan@example.com', 'password': 'test-pass-123', 'name': 'Owner'}).json()['token']
+        h = {'Authorization': 'Bearer ' + token}
+        brand = c.post('/brands', headers=h, json={'name': 'Store', 'industry': 'AI', 'competitors': [{'website': 'https://example.com'}]}).json()['id']
+        response = c.post(f'/brands/{brand}/competitors/prices', headers=h, json={'query': 'چت جی پی تی مکس'})
+        assert response.status_code == 422
+        assert 'ChatGPT Pro' in response.json()['detail']

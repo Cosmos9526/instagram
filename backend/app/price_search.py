@@ -36,10 +36,17 @@ def preserve_verified(rows, previous_reports, query):
 
 def terms(text):
     text=unquote(text).lower().translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹يك','0123456789یک'))
-    text=text.replace('چت جی پی تی','chatgpt').replace('چت جی‌پی‌تی','chatgpt').replace('chat gpt','chatgpt')
+    text=re.sub(r'چت[\s\u200c_-]*جی[\s\u200c_-]*پی[\s\u200c_-]*تی|chat[\s_-]*gpt', 'chatgpt', text)
+    text=text.replace('\u200c', ' ')
     text=re.sub(r'(max)(\d)',r'\1 \2',text)
     text=re.sub(r'(\d+)\s*[×xایکس]+',r'\1x',text)
     return [ALIASES.get(w,w) for w in re.findall(r'[\w]+',text) if w not in STOP]
+
+def query_problem(query):
+    wanted = terms(query)
+    if 'chatgpt' in wanted and 'max' in wanted:
+        return 'ChatGPT Max is ambiguous. Choose ChatGPT Pro for OpenAI, or Claude Max for Anthropic. Prices are compared by the exact plan name.'
+    return None
 
 def matches(query,name):
     wanted=terms(query);found=terms(name)
