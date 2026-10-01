@@ -204,7 +204,16 @@ class _StyleLibraryScreenState extends State<StyleLibraryScreen> {
                         'Add your prompt above to prepare the complete brief.',
                       )
                     else
-                      SelectableText(_prompt, textDirection: TextDirection.ltr),
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text('View complete prompt'),
+                        children: [
+                          SelectableText(
+                            _prompt,
+                            textDirection: TextDirection.ltr,
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
