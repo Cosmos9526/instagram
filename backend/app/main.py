@@ -1,7 +1,7 @@
 import mimetypes
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -294,18 +294,29 @@ def list_research(brand_id: str, user: User = Depends(current_user), db: Session
 @app.get("/brands/{brand_id}/alerts")
 def list_alerts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     own_brand(brand_id, user, db)
-    rows = db.scalars(select(MarketAlert).order_by(
+    rows = db.scalars(select(MarketAlert).where(
+        MarketAlert.category.not_in(("instagram", "youtube"))).order_by(
         MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(),
         MarketAlert.discovered_at.desc()).limit(60))
     from .market_alerts import out
-    return [out(row) for row in rows]
+    news = [out(row) for row in rows if row.category not in ("instagram", "youtube")]
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
+    social = []
+    for platform in ("instagram", "youtube"):
+        candidates = db.scalars(select(MarketAlert).where(
+            MarketAlert.category == platform,
+            MarketAlert.discovered_at >= cutoff,
+            (MarketAlert.published_at.is_(None)) | (MarketAlert.published_at >= cutoff),
+        ).order_by(MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast()).limit(15))
+        social.extend(out(row) for row in candidates)
+    return news + social
 
 
 @app.post("/brands/{brand_id}/alerts/refresh")
-def refresh_alerts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def refresh_alerts(brand_id: str, social: bool = False, user: User = Depends(current_user), db: Session = Depends(get_db)):
     own_brand(brand_id, user, db)
     from .market_alerts import refresh
-    added = refresh(db)
+    added = refresh(db, social_only=social)
     return {"ok": True, "added": added}
 
 

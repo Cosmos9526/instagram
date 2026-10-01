@@ -30,11 +30,18 @@ List<MarketAlert> distinctEmergingAlerts(Iterable<MarketAlert> alerts) {
   return result;
 }
 
+bool isSocialAlert(MarketAlert alert) =>
+    alert.category == 'instagram' || alert.category == 'youtube';
+
+bool isTrendAlert(MarketAlert alert) =>
+    alert.category == 'buzz' || isSocialAlert(alert);
+
 String newsVideoTopic(MarketAlert alert) =>
     '''
-${alert.category == 'buzz' ? 'FAST-RISING AI TOOL OR TECHNIQUE VIDEO FOR RAHBOOM.' : 'URGENT VERIFIED AI NEWS VIDEO FOR RAHBOOM.'}
-Create one production-ready Google Flow prompt for a vertical 9:16 video lasting exactly 10 seconds: one continuous 8-second cinematic scene followed by a clean 2-second Rahboom end card. Use Raha and Arian as the recurring presenters, keep their appearance consistent, and write short natural Persian dialogue that fits the timing and explains ${alert.category == 'buzz' ? 'what this is, why people are talking about it, and one concrete use' : 'why this news matters'}. Include exact timing, shot composition, camera movement, lighting, expressions, actions, spoken Persian dialogue, ambient sound, transitions, negative constraints, and the final Rahboom cover/end-card copy. Do not invent facts, dates, prices, features, quotes, popularity metrics, or availability. Base every factual claim only on this source and clearly preserve uncertainty when the source is reporting rather than official.
+${isTrendAlert(alert) ? 'FAST-RISING AI TOOL OR TECHNIQUE VIDEO FOR RAHBOOM.' : 'URGENT VERIFIED AI NEWS VIDEO FOR RAHBOOM.'}
+Create one production-ready Google Flow prompt for a vertical 9:16 video lasting exactly 10 seconds: one continuous 8-second cinematic scene followed by a clean 2-second Rahboom end card. Use Raha and Arian as the recurring presenters, keep their appearance consistent, and write short natural Persian dialogue that fits the timing and explains ${isTrendAlert(alert) ? 'what this is, why people are talking about it, and one concrete use' : 'why this news matters'}. Include exact timing, shot composition, camera movement, lighting, expressions, actions, spoken Persian dialogue, ambient sound, transitions, negative constraints, and the final Rahboom cover/end-card copy. Do not invent facts, dates, prices, features, quotes, popularity metrics, or availability. Base every factual claim only on this source and clearly preserve uncertainty when the source is reporting rather than official.
 
+${isSocialAlert(alert) ? 'This is a social discovery candidate, not verified news or proof of virality. Do not claim it is trending, growing, or from today unless the evidence explicitly supports that. Make an original Rahboom demonstration inspired by the topic; do not copy the creator’s script or claim to have watched the video. Public search metadata may be incomplete.' : ''}
 Story: ${alert.title}
 Summary: ${alert.summary}
 Source: ${alert.source}
@@ -91,6 +98,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
   String? _error;
   String? _creatingId;
   bool _refreshing = false;
+  String _platform = 'all';
 
   @override
   void initState() {
@@ -105,6 +113,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
       setState(() {
         _alerts = widget.category == null
             ? alerts
+            : widget.category == 'social'
+            ? alerts.where(isSocialAlert).toList()
             : widget.category == 'buzz'
             ? distinctEmergingAlerts(
                 alerts.where((a) => a.category == widget.category),
@@ -121,7 +131,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
     if (_refreshing) return;
     setState(() => _refreshing = true);
     try {
-      await widget.api.refreshAlerts(widget.brand.id!);
+      await widget.api.refreshAlerts(
+        widget.brand.id!,
+        social: widget.category == 'social',
+      );
       await _load();
     } on ApiException catch (e) {
       if (mounted) showSnack(context, e.message);
@@ -141,7 +154,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
           mode: 'video',
           topicHint: newsVideoTopic(alert),
           targetSeconds: 10,
-          contentLabel: alert.category == 'buzz' ? 'trending' : 'news',
+          contentLabel: isTrendAlert(alert) ? 'trending' : 'news',
         ),
       );
       if (!mounted) return;
@@ -166,11 +179,18 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final alerts = _alerts ?? const <MarketAlert>[];
+    final social = widget.category == 'social';
+    final alerts = (_alerts ?? const <MarketAlert>[])
+        .where((a) => !social || _platform == 'all' || a.category == _platform)
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.category == 'buzz' ? 'Emerging AI' : 'AI news radar',
+          social
+              ? 'Social trends'
+              : widget.category == 'buzz'
+              ? 'Emerging AI'
+              : 'AI news radar',
         ),
         actions: [
           IconButton(
@@ -192,19 +212,48 @@ class _AlertsScreenState extends State<AlertsScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             Text(
-              widget.category == 'buzz'
+              social
+                  ? 'AI on Instagram & YouTube'
+                  : widget.category == 'buzz'
                   ? 'What people are talking about'
                   : 'Latest verified AI news',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 6),
             Text(
-              alerts.isEmpty
+              social
+                  ? 'Recent AI posts and videos. Public search coverage is partial; engagement snapshots do not prove growth. Unknown dates are marked.'
+                  : alerts.isEmpty
                   ? widget.category == 'buzz'
                         ? 'Fresh tools, techniques and ideas will appear here.'
                         : 'Fresh stories from official and credible sources.'
                   : '${alerts.length} real ${widget.category == 'buzz' ? 'signals' : 'stories'} · Tap any item to create its complete 10-second video prompt.',
             ),
+            if (social) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final entry in {
+                    'all': 'All',
+                    'instagram': 'Instagram',
+                    'youtube': 'YouTube',
+                  }.entries)
+                    ChoiceChip(
+                      label: Text(entry.value),
+                      selected: _platform == entry.key,
+                      onSelected: (_) => setState(() => _platform = entry.key),
+                    ),
+                ],
+              ),
+              if (_alerts != null && alerts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'No recent public results found for this platform. Try Check now; unavailable results are never replaced with invented trends.',
+                  ),
+                ),
+            ],
             const SizedBox(height: 16),
             if (_alerts == null && _error == null)
               const Center(child: CircularProgressIndicator()),
@@ -228,7 +277,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (alert.importance >= 5) ...[
+                        if (!isSocialAlert(alert) && alert.importance >= 5) ...[
                           const MajorAlertBadge(),
                           const SizedBox(height: 8),
                         ],
@@ -263,14 +312,16 @@ class _AlertsScreenState extends State<AlertsScreen> {
                           const SizedBox(height: 8),
                           Text(
                             alert.summary,
-                            maxLines: 3,
+                            maxLines: isSocialAlert(alert) ? 6 : 3,
                             overflow: TextOverflow.ellipsis,
                             textDirection: contentDirection(alert.summary),
                           ),
                         ],
                         const SizedBox(height: 10),
                         Text(
-                          '${alert.verification == 'official'
+                          '${alert.verification == 'social_snapshot'
+                              ? 'Discovery candidate'
+                              : alert.verification == 'official'
                               ? 'Official'
                               : alert.verification == 'in_product'
                               ? 'Verified in product'

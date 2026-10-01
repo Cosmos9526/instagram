@@ -133,7 +133,7 @@ class HomeScreenState extends State<HomeScreen> {
           mode: 'video',
           topicHint: newsVideoTopic(alert),
           targetSeconds: 10,
-          contentLabel: alert.category == 'buzz' ? 'trending' : 'news',
+          contentLabel: isTrendAlert(alert) ? 'trending' : 'news',
         ),
       );
       if (!mounted) return;
@@ -199,6 +199,17 @@ class HomeScreenState extends State<HomeScreen> {
           _buzzing(context),
           const SizedBox(height: 12),
         ],
+        Card(
+          margin: EdgeInsets.zero,
+          child: ListTile(
+            leading: const Icon(Icons.trending_up),
+            title: const Text('Social trends'),
+            subtitle: const Text('AI on Instagram & YouTube'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _openAlerts(category: 'social'),
+          ),
+        ),
+        const SizedBox(height: 12),
         _weeklyPlan(context),
         const SizedBox(height: 12),
         FilledButton.icon(
@@ -299,7 +310,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _breakingAlerts(BuildContext context) {
     final alerts = (_alerts ?? const <MarketAlert>[])
-        .where((a) => a.category != 'buzz')
+        .where((a) => a.category != 'buzz' && !isSocialAlert(a))
         .toList();
     final theme = Theme.of(context);
     return Card(
