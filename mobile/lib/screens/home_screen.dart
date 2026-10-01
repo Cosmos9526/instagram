@@ -86,9 +86,10 @@ class HomeScreenState extends State<HomeScreen> {
         _error = null;
       });
       _poll?.cancel();
-      if (posts.any((p) => p.isBusy)) {
-        _poll = Timer(const Duration(seconds: 4), refresh);
-      }
+      _poll = Timer(
+        Duration(seconds: posts.any((p) => p.isBusy) ? 4 : 60),
+        refresh,
+      );
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -140,16 +141,7 @@ class HomeScreenState extends State<HomeScreen> {
     if (_creatingAlertId != null) return;
     setState(() => _creatingAlertId = alert.id);
     try {
-      final post = await widget.api.generate(
-        widget.brand.id!,
-        GenerateRequest(
-          postType: 'video_prompt',
-          mode: 'video',
-          topicHint: newsVideoTopic(alert),
-          targetSeconds: 10,
-          contentLabel: isTrendAlert(alert) ? 'trending' : 'news',
-        ),
-      );
+      final post = await widget.api.alertPrompt(widget.brand.id!, alert.id);
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -368,7 +360,7 @@ class HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const Text(
-              'Important launches, pricing and plan changes — checked every 3 hours.',
+              'Important launches, pricing and plan changes — checked every hour.',
             ),
             if (_alerts == null)
               const Padding(

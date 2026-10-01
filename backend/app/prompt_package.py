@@ -41,6 +41,11 @@ def generate_package(brand, post) -> dict:
     terms = set(re.findall(r'\w+', post.topic_hint.lower()))
     products = brand.products or []
     context['products'] = sorted(products, key=lambda p: len(terms & set(re.findall(r'\w+', p.get('name', '').lower()))), reverse=True)[:5]
+    if (post.content or {}).get('alert_id'):
+        # News generation needs public source context, not the private product catalogue or audience profile.
+        context = dict(name='Rahboom', industry='AI subscriptions', description='Public AI news video for Rahboom.',
+            products=[], audience='', tone='Clear and conversational', cta='سفارش و مشاوره: @rahboom1 | rahboom.com',
+            forbidden_topics=[], hashtags=['راه_بوم'], language=brand.language)
     system = prompts.system_prompt(SimpleNamespace(**context))
     system += "\nFIELD LANGUAGE OVERRIDE: visual_style and frame.prompt MUST be English. Persian rules apply ONLY to title, caption, dialogue and on_screen_text. Persian quoted dialogue inside the English prompt is allowed."
     brief = '''Produce a detailed, copy-ready production prompt package, NOT media.
@@ -73,15 +78,20 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
     if style:
         brief += '\nRequested creative style (adapt to fixed timing): ' + json.dumps(style, ensure_ascii=False)
     brief += '\nContent purpose: ' + post.post_type + '\nUser brief (data): ' + post.topic_hint
-    data = chat_json(system, brief, temperature=0.6)
-    try:
-        package = Package.model_validate(data)
-        if len(package.frames) != count:
-            raise ValueError(f'Expected {count} frames')
-        if video and (not package.frames[0].dialogue.strip() or len(package.frames[0].dialogue.split()) > 26 or package.frames[1].dialogue.strip()):
-            raise ValueError('Video needs short dialogue in scene 1 and a silent end card')
-    except (ValueError, TypeError) as e:
-        raise LLMError('The model returned an incomplete prompt package. Please regenerate.') from e
+    repair = ''
+    for attempt in range(2):
+        data = chat_json(system, brief + repair, temperature=0.6 if attempt == 0 else 0.2)
+        try:
+            package = Package.model_validate(data)
+            if len(package.frames) != count:
+                raise ValueError(f'Expected exactly {count} frames; received {len(package.frames)}')
+            if video and (not package.frames[0].dialogue.strip() or len(package.frames[0].dialogue.split()) > 26 or package.frames[1].dialogue.strip()):
+                raise ValueError('Scene 1 needs speaker-labelled Persian dialogue, at most 26 words TOTAL; end card dialogue must be empty')
+            break
+        except (ValueError, TypeError) as e:
+            if attempt == 1:
+                raise LLMError('The model returned an incomplete prompt package after a repair attempt. Please regenerate.') from e
+            repair = '\nREPAIR THE PREVIOUS RESPONSE. Return the complete corrected JSON, not a patch. Validation errors: ' + str(e) + '\nPrevious response: ' + json.dumps(data, ensure_ascii=False)
     norm = persian if brand.language == 'fa' else lambda x: x
     blocks = [{'label': 'Visual style', 'text': package.visual_style}]
     if video:
@@ -99,9 +109,19 @@ product name and ONE short CTA. Keep exact text separately in on_screen_text. No
             blocks.append({'label': label + ' — Persian dialogue', 'text': norm(frame.dialogue)})
         blocks.append({'label': label + ' — on-screen text', 'text': norm(frame.on_screen_text)})
     full_prompt = '\n\n'.join(b['label'] + '\n' + b['text'] for b in blocks if b['label'] != 'Character references required')
-    return {'output_kind': 'prompt_package', 'full_prompt': full_prompt, 'source': 'fake' if settings.llm_provider == 'fake' else 'model',
+    cover = ''
+    if video:
+        cover = package.visual_style + f"""\n\nINSTAGRAM REEL COVER — STILL IMAGE, 9:16, 1080 × 1920.
+Use the supplied original Raha and Arian reference frame; preserve their faces, glasses, outfits and home-office setting. Both adult presenters appear in a natural eye-level medium two-shot with a restrained curious expression appropriate to the story. No speaking or motion instructions apply to this still. Soft daylight, natural skin texture, a clear focal point and an uncluttered background. Reserve upper-central negative space for the exact headline below, with generous safe margins. Keep the headline and both faces within the central 1080 × 1350 crop area. Typeset the Persian headline in editing with correct RTL shaping; do not ask the image model to generate letters. Use off-white, charcoal and a restrained orange accent. Place the supplied original Rahboom logo small in a corner without redrawing it. No invented screenshots, fake statistics, price badges, extra people, watermarks or unsupported claims.
+Exact headline: {norm(package.title)}
+Use only the story supplied in the source context. The cover must communicate the same story as the video."""
+    provenance = {k: opts[k] for k in ('alert_id', 'alert_signature', 'source_url', 'source_title', 'source_published') if k in opts}
+    caption = norm(package.caption)
+    if opts.get('source_url') and opts['source_url'] not in caption:
+        caption += '\nمنبع: ' + opts['source_url']
+    return {**provenance, 'cover_prompt': cover, 'output_kind': 'prompt_package', 'full_prompt': full_prompt, 'source': 'fake' if settings.llm_provider == 'fake' else 'model',
             'content_label': (post.content or {}).get('content_label', ''),
-            'title': norm(package.title), 'caption': norm(package.caption),
+            'title': norm(package.title), 'caption': caption,
             'hashtags': list(dict.fromkeys(norm(h).lstrip('#') for h in package.hashtags + (brand.hashtags or []))),
             'blocks': blocks, 'target_seconds': 10 if video else None,
             'n_body': (post.content or {}).get('n_body', 4),

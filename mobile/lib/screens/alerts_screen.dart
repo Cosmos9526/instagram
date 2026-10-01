@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -98,12 +99,19 @@ class _AlertsScreenState extends State<AlertsScreen> {
   String? _error;
   String? _creatingId;
   bool _refreshing = false;
+  Timer? _poll;
   String _platform = 'all';
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -122,6 +130,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
             : alerts.where((a) => a.category == widget.category).toList();
         _error = null;
       });
+      _poll?.cancel();
+      _poll = Timer(const Duration(seconds: 60), _load);
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -147,16 +157,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     if (_creatingId != null) return;
     setState(() => _creatingId = alert.id);
     try {
-      final post = await widget.api.generate(
-        widget.brand.id!,
-        GenerateRequest(
-          postType: 'video_prompt',
-          mode: 'video',
-          topicHint: newsVideoTopic(alert),
-          targetSeconds: 10,
-          contentLabel: isTrendAlert(alert) ? 'trending' : 'news',
-        ),
-      );
+      final post = await widget.api.alertPrompt(widget.brand.id!, alert.id);
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute(

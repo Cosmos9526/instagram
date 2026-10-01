@@ -80,7 +80,10 @@ def refresh_market_alerts() -> int:
     """Small keyless scan; independent from the heavier daily research job."""
     from .market_alerts import refresh
     with SessionLocal() as db:
-        return refresh(db)
+        added = refresh(db)
+        from .alert_prompts import prepare_top_alerts
+        prepare_top_alerts(db)
+        return added
 
 
 def main() -> None:
@@ -89,7 +92,7 @@ def main() -> None:
     sched = BlockingScheduler(timezone=settings.timezone)
     sched.add_job(create_daily_posts, "cron", hour=settings.daily_run_hour, minute=0,
                   misfire_grace_time=3600, coalesce=True)
-    sched.add_job(refresh_market_alerts, "interval", hours=3,
+    sched.add_job(refresh_market_alerts, "interval", hours=1,
                   next_run_time=datetime.now(ZoneInfo(settings.timezone)),
                   misfire_grace_time=1800, coalesce=True, max_instances=1)
     sched.start()

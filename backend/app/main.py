@@ -320,6 +320,19 @@ def refresh_alerts(brand_id: str, social: bool = False, user: User = Depends(cur
     return {"ok": True, "added": added}
 
 
+@app.post('/brands/{brand_id}/alerts/{alert_id}/prompt')
+def alert_prompt(brand_id: str, alert_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    brand = own_brand(brand_id, user, db)
+    alert = db.get(MarketAlert, alert_id)
+    if not alert:
+        _404()
+    from .alert_prompts import ensure_prompt
+    db.execute(select(Brand).where(Brand.id == brand_id).with_for_update()).scalar_one()
+    post = ensure_prompt(db, brand, alert, explicit=True)
+    db.commit()
+    return post_out(post)
+
+
 # ---------- posts ----------
 
 class GenerateIn(BaseModel):

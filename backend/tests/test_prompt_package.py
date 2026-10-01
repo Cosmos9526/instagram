@@ -43,3 +43,22 @@ def test_no_media_calls_or_offline_success(monkeypatch):
 def test_reject_incomplete_package(monkeypatch):
     monkeypatch.setattr(pp,'chat_json',lambda *a,**k: response())
     with pytest.raises(LLMError):pp.generate_package(brand(),SimpleNamespace(post_type='video_prompt',mode='video',topic_hint='',content={}))
+
+
+def test_repairs_incomplete_video_and_keeps_source(monkeypatch):
+    broken = response(True)
+    broken['frames'][0]['dialogue'] = 'کلمه ' * 30
+    call = Mock(side_effect=[broken, response(True)])
+    monkeypatch.setattr(pp, 'chat_json', call)
+    post = SimpleNamespace(post_type='video_prompt', mode='video', topic_hint='خبر مشخص', content={'alert_id': 'alert1', 'source_url': 'https://source.test/story'})
+    private_brand = brand()
+    private_brand.products = [{'name': 'PRIVATE CATALOG SENTINEL'}]
+    private_brand.description = 'PRIVATE DESCRIPTION SENTINEL'
+    result = pp.generate_package(private_brand, post)
+    assert 'PRIVATE CATALOG SENTINEL' not in call.call_args.args[0]
+    assert 'PRIVATE DESCRIPTION SENTINEL' not in call.call_args.args[0]
+    assert call.call_count == 2
+    assert 'REPAIR' in call.call_args.args[1]
+    assert result['source_url'] == 'https://source.test/story'
+    assert result['alert_id'] == 'alert1'
+    assert len(result['cover_prompt']) > 500

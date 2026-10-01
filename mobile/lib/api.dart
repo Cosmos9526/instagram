@@ -221,6 +221,11 @@ class Api {
 
   Future<void> deletePost(String id) async => _send('DELETE', '/posts/$id');
 
+  Future<Post> alertPrompt(String brandId, String alertId) async =>
+      Post.fromJson(
+        await _send('POST', '/brands/$brandId/alerts/$alertId/prompt'),
+      );
+
   Future<List<Post>> prepareWeek(String brandId) async => [
     for (final p
         in await _send('POST', '/brands/$brandId/weekly-prompts') as List)

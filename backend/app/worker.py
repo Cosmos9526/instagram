@@ -5,7 +5,7 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import select, case
 
 from .competitors import normalize_competitors, run_competitor_scan, write_back_handles
 from .db import SessionLocal, init_db
@@ -111,7 +111,8 @@ def _prune_scans(db, brand_id: str, keep: int = 10) -> None:
 
 
 def claim(db) -> Job | None:
-    q = select(Job).where(Job.status == "queued").order_by(Job.id).limit(1)
+    q = select(Job).where(Job.status == "queued").order_by(
+        case((Job.kind == "generate", 0), (Job.kind == "alert_auto", 2), else_=1), Job.id).limit(1)
     if db.bind.dialect.name == "postgresql":
         q = q.with_for_update(skip_locked=True)
     job = db.scalars(q).first()
