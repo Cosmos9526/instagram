@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:url_launcher/url_launcher.dart';
 import '../api.dart';
 import '../models.dart';
@@ -620,38 +620,6 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
               ],
             ),
-            if (rahboom) ...[
-              const SizedBox(height: 12),
-              for (var i = 0; i < 7; i++)
-                Builder(
-                  builder: (context) {
-                    final date = start.add(Duration(days: i));
-                    final post = (_posts ?? <Post>[])
-                        .where(
-                          (p) =>
-                              p.forDate ==
-                                  DateFormat('yyyy-MM-dd').format(date) &&
-                              p.content['weekly_series'] != null,
-                        )
-                        .firstOrNull;
-                    if (post == null) return const SizedBox.shrink();
-                    return ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Text(
-                        '${DateFormat('EEE', 'en').format(date)}\n${date.day}',
-                      ),
-                      title: Text(
-                        post.title,
-                        textDirection: contentDirection(post.title),
-                      ),
-                      subtitle: Text(post.contentLabel),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => _open(post),
-                    );
-                  },
-                ),
-            ],
             const SizedBox(height: 12),
             Text(
               DateFormat('EEEE, MMM d', 'en').format(_selectedDay),
@@ -673,18 +641,23 @@ class HomeScreenState extends State<HomeScreen> {
             if (daily != null)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Row(
+                title: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Chip(
-                      visualDensity: VisualDensity.compact,
-                      label: Text(daily.contentLabel),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        daily.title,
-                        textDirection: contentDirection(daily.title),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TypeBadge(
+                        '${daily.content['purpose'] ?? 'video_prompt'}',
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      daily.title,
+                      textDirection: contentDirection(daily.title),
+                      textAlign:
+                          contentDirection(daily.title) == TextDirection.rtl
+                          ? TextAlign.right
+                          : TextAlign.left,
                     ),
                   ],
                 ),

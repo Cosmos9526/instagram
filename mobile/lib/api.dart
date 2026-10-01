@@ -228,7 +228,11 @@ class Api {
 
   Future<List<Post>> prepareWeek(String brandId) async => [
     for (final p
-        in await _send('POST', '/brands/$brandId/weekly-prompts') as List)
+        in await _send(
+              'POST',
+              '/brands/$brandId/weekly-prompts?start_date=${DateTime.now().toIso8601String().split('T').first}',
+            )
+            as List)
       Post.fromJson(p),
   ];
 

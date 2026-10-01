@@ -146,6 +146,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(day);
       await tester.pump();
+      expect(find.text('موضوع روز $i'), findsOneWidget);
       final ready = find.ancestor(
         of: find.text('10 seconds · Google Flow · Ready to copy'),
         matching: find.byType(ListTile),

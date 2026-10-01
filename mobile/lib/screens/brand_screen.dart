@@ -180,8 +180,12 @@ class _BrandScreenState extends State<BrandScreen> {
     textDirection: ltr
         ? TextDirection.ltr
         : contentDirection(_fields[key]!.text),
+    textAlign: ltr || contentDirection(_fields[key]!.text) == TextDirection.ltr
+        ? TextAlign.left
+        : TextAlign.right,
+    onChanged: (_) => setState(() {}),
     minLines: lines,
-    maxLines: lines,
+    maxLines: lines == 1 ? 1 : lines + 2,
     decoration: InputDecoration(
       labelText: label,
       hintText: hint,

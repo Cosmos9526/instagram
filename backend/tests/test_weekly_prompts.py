@@ -53,3 +53,13 @@ def test_next_week_does_not_recycle_scripts():
     assert len({p['full_prompt'] for p in prompts}) == 14
     assert len({p['blocks'][1]['text'] for p in prompts}) == 14
     assert all(len(p['blocks'][1]['text'].split()) <= 26 for p in prompts)
+
+
+def test_week_uses_requested_local_start_date():
+    with TestClient(app) as c:
+        token=c.post('/auth/register',json={'email':'local-week@example.com','password':'test-pass-123','name':'Owner'}).json()['token']
+        h={'Authorization':'Bearer '+token}
+        b=c.post('/brands',headers=h,json={'name':'Rahboom','industry':'AI','website':'https://rahboom.com'}).json()['id']
+        r=c.post(f'/brands/{b}/weekly-prompts?start_date=2026-10-02',headers=h)
+        assert r.status_code==200
+        assert [p['for_date'] for p in r.json()]==['2026-10-02','2026-10-03','2026-10-04','2026-10-05','2026-10-06','2026-10-07','2026-10-08']

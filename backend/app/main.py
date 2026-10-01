@@ -1,7 +1,7 @@
 import mimetypes
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -597,13 +597,13 @@ def search_competitor_prices(brand_id: str, body: PriceSearchIn, user: User = De
 
 
 @app.post('/brands/{brand_id}/weekly-prompts')
-def weekly_prompts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def weekly_prompts(brand_id: str, start_date: date | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)):
     from .weekly_prompts import prepare_week, is_rahboom
     brand = own_brand(brand_id, user, db)
     if not is_rahboom(brand):
         raise HTTPException(422, 'The reviewed starter week is available for Rahboom.')
     today = datetime.now(ZoneInfo(settings.timezone)).date()
-    start = today
+    start = start_date or today
     db.execute(select(Brand).where(Brand.id == brand_id).with_for_update()).scalar_one()
     posts = prepare_week(db, brand, start)
     db.commit()
