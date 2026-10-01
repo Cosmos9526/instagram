@@ -100,6 +100,48 @@ class _StyleLibraryScreenState extends State<StyleLibraryScreen> {
     }
   }
 
+  Widget _preview(PromptStyle style) => style.preview == null
+      ? const Center(child: Icon(Icons.image_outlined))
+      : Image.network(
+          widget.api.mediaUrl(style.preview!),
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) =>
+              const Center(child: Text('Preview unavailable')),
+        );
+
+  void _enlarge(PromptStyle style) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(child: Text(style.name)),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            AspectRatio(
+              aspectRatio: 640 / 440,
+              child: InteractiveViewer(child: _preview(style)),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text('${style.previewLabel} · Not AI model output'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -169,18 +211,68 @@ class _StyleLibraryScreenState extends State<StyleLibraryScreen> {
           else if (styles.isEmpty)
             const Text('No matching style. Try another search.')
           else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final style in styles)
-                  ChoiceChip(
-                    label: Text(style.name),
-                    selected: _selected?.id == style.id,
-                    onSelected: (_) => setState(() => _selected = style),
-                  ),
-              ],
+            SizedBox(
+              height: 232,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: styles.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (_, index) {
+                  final style = styles[index];
+                  final selected = _selected?.id == style.id;
+                  return SizedBox(
+                    width: 220,
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: selected
+                              ? theme.colorScheme.primary
+                              : theme.dividerColor,
+                          width: selected ? 2 : 1,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => setState(() => _selected = style),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 640 / 440,
+                              child: _preview(style),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                              child: Text(
+                                style.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleSmall,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              child: Text(
+                                style.previewLabel,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
+          const SizedBox(height: 8),
+          const Text(
+            'Original visual guides, not AI model output. Swipe to explore styles.',
+          ),
           if (_selected != null) ...[
             const SizedBox(height: 16),
             Card(
@@ -189,7 +281,21 @@ class _StyleLibraryScreenState extends State<StyleLibraryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_selected!.name, style: theme.textTheme.titleMedium),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _selected!.name,
+                            style: theme.textTheme.titleMedium,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => _enlarge(_selected!),
+                          tooltip: 'Enlarge preview',
+                          icon: const Icon(Icons.zoom_in),
+                        ),
+                      ],
+                    ),
                     Text(_selected!.nameFa, textDirection: TextDirection.rtl),
                     const SizedBox(height: 8),
                     Text(_selected!.description),

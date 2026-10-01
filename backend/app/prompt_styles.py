@@ -61,4 +61,8 @@ def prompt_styles():
                    prompt=IMAGE_BASE.replace("{direction}", direction),
                    cover_prompt=COVER.replace("{direction}", direction),
                    provenance="Original Rahboom template") for key, name, fa, direction in IMAGE_DIRECTIONS]
-    return videos + images
+    styles = videos + images
+    for style in styles:
+        style['preview'] = '/previews/styles/' + style['id'] + '.png'
+        style['preview_label'] = 'Illustrated storyboard' if style['kind'] == 'video' else 'Illustrated style guide'
+    return styles

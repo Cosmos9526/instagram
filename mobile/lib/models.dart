@@ -76,7 +76,11 @@ class PromptStyle {
       videoStyle = '${j['video_style'] ?? ''}',
       prompt = '${j['prompt']}',
       coverPrompt = '${j['cover_prompt']}',
-      provenance = '${j['provenance']}';
+      provenance = '${j['provenance']}',
+      preview = j['preview'] as String?,
+      previewLabel = '${j['preview_label'] ?? 'Visual guide'}';
+  final String? preview;
+  final String previewLabel;
   final String id,
       kind,
       name,

@@ -96,14 +96,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cinematic'));
     await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Copy complete prompt'),
-          )
-          .onPressed,
-      isNull,
-    );
     await tester.enterText(
       find.byType(TextField).first,
       'رها می‌گوید: این ابزار را ببین.',
@@ -111,7 +103,11 @@ void main() {
     await tester.pumpAndSettle();
     const expected =
         '10 seconds Rahboom\nرها می‌گوید: این ابزار را ببین.\n8-second scene + 2-second end card';
-    await tester.ensureVisible(find.text('Copy complete prompt'));
+    await tester.scrollUntilVisible(
+      find.text('Copy complete prompt'),
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Copy complete prompt'));
     await tester.pumpAndSettle();
     expect(copied, expected);

@@ -12,6 +12,11 @@ def test_catalog_offers_distinct_complete_original_styles():
     assert len({s['prompt'] for s in styles}) == len(styles)
     assert sum(s['kind'] == 'video' for s in styles) == 14
     for style in styles:
+        assert style['preview_label']
+        with TestClient(app) as client:
+            preview = client.get(style['preview'])
+        assert preview.status_code == 200
+        assert preview.headers['content-type'] == 'image/png'
         assert '{{brief}}' in style['prompt'] and '{{brand}}' in style['prompt']
         assert '{{brief}}' in style['cover_prompt']
         assert style['name_fa'] and style['provenance'] == 'Original Rahboom template'
