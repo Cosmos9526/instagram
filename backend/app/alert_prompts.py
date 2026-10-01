@@ -1,7 +1,7 @@
 """Source-bound, reusable news prompt jobs. No fabricated ready fallback."""
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from .config import settings
@@ -47,8 +47,11 @@ URL: {alert.url}"""
 
 
 def prepare_top_alerts(db):
-    alerts = list(db.scalars(select(MarketAlert).where(MarketAlert.category.in_(('news', 'pricing')))
-        .order_by(MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(), MarketAlert.discovered_at.desc()).limit(3)))
+    from .market_alerts import eligible_news
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    candidates = db.scalars(select(MarketAlert).where(MarketAlert.published_at >= cutoff, MarketAlert.category.in_(('news', 'pricing')))
+        .order_by(MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(), MarketAlert.discovered_at.desc()))
+    alerts = [alert for alert in candidates if eligible_news(alert.url, alert.published_at)][:3]
     for brand in db.scalars(select(Brand)):
         if not is_rahboom(brand):
             continue

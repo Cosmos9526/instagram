@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy import select, delete
 import pytest
+from datetime import datetime, timedelta, timezone
 from app.main import app
 from app.db import SessionLocal
 from app.models import MarketAlert, Job, Post
@@ -26,14 +27,14 @@ def test_news_prompt_is_private_source_bound_and_reused():
         headers = {'Authorization':'Bearer '+token}
         brand = client.post('/brands',headers=headers,json={'name':'Rahboom','industry':'AI','website':'https://rahboom.com'}).json()['id']
         with SessionLocal() as db:
-            alert = MarketAlert(fingerprint='test-prompt-news',title='A specific new feature',summary='A source-grounded summary',url='https://source.test/story',source='Official example',category='news',importance=5)
+            alert = MarketAlert(fingerprint='test-prompt-news',title='A specific new feature',summary='A source-grounded summary',url='https://openai.com/news/story',source='OpenAI',category='news',importance=5,published_at=datetime.now(timezone.utc))
             db.add(alert);db.commit();alert_id=alert.id
         path = f'/brands/{brand}/alerts/{alert_id}/prompt'
         assert client.post(path).status_code == 401
         first = client.post(path,headers=headers).json()
         second = client.post(path,headers=headers).json()
         assert first['id']==second['id']
-        assert first['content']['source_url']=='https://source.test/story'
+        assert first['content']['source_url']=='https://openai.com/news/story'
         with SessionLocal() as db:
             assert 'A source-grounded summary' in db.get(Post,first['id']).topic_hint
             assert len(list(db.scalars(select(Job).where(Job.post_id==first['id']))))==1
@@ -42,3 +43,9 @@ def test_news_prompt_is_private_source_bound_and_reused():
             post=db.get(Post,first['id']);post.status='ready';post.content={**post.content,'full_prompt':'Prepared news prompt','output_kind':'prompt_package'};db.commit()
         cached=client.post(path,headers=headers).json()
         assert cached['status']=='ready' and cached['content']['full_prompt']=='Prepared news prompt'
+
+        with SessionLocal() as db:
+            alert = db.get(MarketAlert, alert_id)
+            alert.published_at = datetime.now(timezone.utc) - timedelta(hours=25)
+            db.commit()
+        assert client.post(path, headers=headers).status_code == 410

@@ -24,7 +24,7 @@ def news_search(query: str, max_results: int = 8, region: str = "wt-wt", timelim
         rows = DDGS().news(query, max_results=max_results, region=region, timelimit=timelimit)
         return [
             {"title": r.get("title", ""), "snippet": r.get("body", ""), "url": r.get("url", ""),
-             "date": (r.get("date") or "")[:10], "source": r.get("source", "")}
+             "date": (r.get("date") or ""), "source": r.get("source", "")}
             for r in rows
         ]
     except Exception as e:  # noqa: BLE001

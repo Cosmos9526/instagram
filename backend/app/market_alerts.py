@@ -7,6 +7,7 @@ import hashlib
 import logging
 import re
 import xml.etree.ElementTree as ET
+from urllib.parse import urlsplit
 
 import httpx
 from sqlalchemy import select
@@ -25,6 +26,36 @@ FEEDS = {
     "Google DeepMind": "https://deepmind.google/blog/rss.xml",
     "NVIDIA AI": "https://blogs.nvidia.com/blog/category/generative-ai/feed/",
 }
+
+# Explicit publisher domains, rather than publisher names or country-code guesses.
+NEWS_DOMAINS = (
+    "openai.com", "anthropic.com", "blog.google", "deepmind.google",
+    "developers.googleblog.com", "github.blog", "huggingface.co", "nvidia.com",
+    "microsoft.com", "mistral.ai", "ai.meta.com", "about.fb.com", "meta.com",
+    "perplexity.ai", "cursor.com", "runwayml.com", "adobe.com", "elevenlabs.io",
+    "reuters.com", "apnews.com", "axios.com", "theverge.com", "techcrunch.com",
+    "wired.com", "arstechnica.com", "bloomberg.com", "cnet.com", "zdnet.com",
+    "venturebeat.com", "theinformation.com", "tomshardware.com", "bbc.com",
+    "bbc.co.uk", "theguardian.com", "ft.com", "euronews.com",
+)
+
+
+def eligible_news(url: str, published: datetime | None, now: datetime | None = None) -> bool:
+    """Only approved US/European publishers, with a known rolling-24h timestamp."""
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or "").lower()
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https") or not any(
+        host == domain or host.endswith("." + domain) for domain in NEWS_DOMAINS
+    ) or published is None:
+        return False
+    if published.tzinfo is None:
+        published = published.replace(tzinfo=timezone.utc)
+    now = now or datetime.now(timezone.utc)
+    return now - timedelta(hours=24) <= published <= now
+
 
 QUERIES = (
     'Jev AI decision model TypeSafe launch',
@@ -199,8 +230,8 @@ def collect() -> list[dict]:
     for source, url in FEEDS.items():
         rows.extend(_feed(source, url))
     for query in QUERIES:
-        for row in news_search(query, max_results=10, timelimit="w"):
-            score = _score(row.get("title", ""), row.get("snippet", ""))
+        for row in news_search(query, max_results=10, timelimit="d"):
+            score = _score(row.get("title", ""), row.get("snippet", ""), source=row.get("source", ""))
             if score:
                 rows.append({**row, "summary": row.get("snippet", ""), "importance": score,
                              "published_at": _date(row.get("date", ""))})
@@ -209,9 +240,10 @@ def collect() -> list[dict]:
         key = row.get("url") or row.get("title", "").casefold()
         if key and (key not in unique or row["importance"] > unique[key]["importance"]):
             unique[key] = row
-    cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(hours=24)
     return sorted(
-        [r for r in unique.values() if not r.get("published_at") or r["published_at"] >= cutoff],
+        [r for r in unique.values() if eligible_news(r.get("url", ""), r.get("published_at"), now)],
         key=lambda r: (r["importance"], r.get("published_at") or cutoff), reverse=True,
     )[:30]
 
@@ -233,6 +265,10 @@ def refresh(db, social_only: bool = False) -> int:
     added = 0
     rows = collect_social() if social_only else collect() + collect_social()
     for row in rows:
+        if row.get("category") not in ("instagram", "youtube") and not eligible_news(
+            row.get("url", ""), row.get("published_at")
+        ):
+            continue
         fingerprint = hashlib.sha256((row.get("url") or row["title"]).encode()).hexdigest()
         existing = db.scalar(select(MarketAlert).where(MarketAlert.fingerprint == fingerprint))
         if existing:

@@ -294,12 +294,15 @@ def list_research(brand_id: str, user: User = Depends(current_user), db: Session
 @app.get("/brands/{brand_id}/alerts")
 def list_alerts(brand_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     own_brand(brand_id, user, db)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
     rows = db.scalars(select(MarketAlert).where(
+        MarketAlert.published_at >= cutoff,
+        MarketAlert.published_at <= datetime.now(timezone.utc),
         MarketAlert.category.not_in(("instagram", "youtube"))).order_by(
         MarketAlert.importance.desc(), MarketAlert.published_at.desc().nullslast(),
-        MarketAlert.discovered_at.desc()).limit(60))
-    from .market_alerts import out
-    news = [out(row) for row in rows if row.category not in ("instagram", "youtube")]
+        MarketAlert.discovered_at.desc()))
+    from .market_alerts import out, eligible_news
+    news = [out(row) for row in rows if eligible_news(row.url, row.published_at)][:60]
     cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
     social = []
     for platform in ("instagram", "youtube"):
@@ -326,6 +329,9 @@ def alert_prompt(brand_id: str, alert_id: str, user: User = Depends(current_user
     alert = db.get(MarketAlert, alert_id)
     if not alert:
         _404()
+    from .market_alerts import eligible_news
+    if alert.category not in ("instagram", "youtube") and not eligible_news(alert.url, alert.published_at):
+        raise HTTPException(410, "This story is outside the last 24 hours or its publisher is not approved")
     from .alert_prompts import ensure_prompt
     db.execute(select(Brand).where(Brand.id == brand_id).with_for_update()).scalar_one()
     post = ensure_prompt(db, brand, alert, explicit=True)

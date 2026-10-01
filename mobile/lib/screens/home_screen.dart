@@ -367,7 +367,7 @@ class HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const Text(
-              'Important launches, pricing and plan changes — checked every hour.',
+              'Last 24 hours · Trusted US & European sources · Updated hourly.',
             ),
             if (_alerts == null)
               const Padding(
@@ -378,7 +378,7 @@ class HomeScreenState extends State<HomeScreen> {
               const Padding(
                 padding: EdgeInsets.only(top: 12),
                 child: Text(
-                  'No important alert found yet. Tap Check now for a fresh scan.',
+                  'No verified news from the last 24 hours. Tap refresh for a fresh scan.',
                 ),
               )
             else

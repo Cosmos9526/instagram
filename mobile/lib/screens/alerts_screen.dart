@@ -227,8 +227,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   : alerts.isEmpty
                   ? widget.category == 'buzz'
                         ? 'Fresh tools, techniques and ideas will appear here.'
-                        : 'Fresh stories from official and credible sources.'
-                  : '${alerts.length} real ${widget.category == 'buzz' ? 'signals' : 'stories'} · Tap any item to create its complete 10-second video prompt.',
+                        : 'Last 24 hours · Trusted US & European sources.'
+                  : 'Last 24 hours · ${alerts.length} real ${widget.category == 'buzz' ? 'signals' : 'stories'} · Tap any item to create its complete 10-second video prompt.',
             ),
             if (social) ...[
               const SizedBox(height: 12),

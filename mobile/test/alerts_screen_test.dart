@@ -37,7 +37,7 @@ void main() {
         'token': 'token',
       });
       final api = await Api.load();
-      Map<String, dynamic>? generated;
+      String? generatedPath;
       final alerts = [
         for (var i = 0; i < 20; i++)
           {
@@ -57,8 +57,8 @@ void main() {
           return http.Response(jsonEncode(alerts), 200);
         }
         if (request.method == 'POST' &&
-            request.url.path.endsWith('/generate')) {
-          generated = jsonDecode(request.body) as Map<String, dynamic>;
+            request.url.path.endsWith('/alerts/0/prompt')) {
+          generatedPath = request.url.path;
           return http.Response(
             jsonEncode({
               'id': 'post-1',
@@ -106,11 +106,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Official AI launch 0'));
       await tester.pumpAndSettle();
-      expect(generated?['post_type'], 'video_prompt');
-      expect(generated?['target_seconds'], 10);
-      expect(generated?['content_label'], 'trending');
-      expect(generated?['topic_hint'], contains('Raha and Arian'));
-      expect(generated?['topic_hint'], contains('Source URL'));
+      expect(generatedPath, '/brands/rahboom/alerts/0/prompt');
       expect(find.text('News prompt'), findsWidgets);
       expect(tester.takeException(), isNull);
     },
