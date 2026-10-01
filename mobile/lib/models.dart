@@ -409,8 +409,9 @@ class Post {
       final v = '${slots?[k] ?? ''}'.trim();
       if (v.isNotEmpty) return v;
     }
-    final t = '${cover?['headline'] ?? c['title'] ?? c['topic_hint'] ?? ''}'
-        .trim();
+    final t =
+        '${cover?['headline'] ?? c['title'] ?? c['source_title'] ?? c['topic_hint'] ?? ''}'
+            .trim();
     return t.isNotEmpty ? t : (postTypes[postType] ?? '');
   }
 

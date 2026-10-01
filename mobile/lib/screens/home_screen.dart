@@ -199,6 +199,8 @@ class HomeScreenState extends State<HomeScreen> {
       children: [
         Text('Your content', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
+        _weeklyPlan(context),
+        const SizedBox(height: 12),
         _breakingAlerts(context),
         const SizedBox(height: 12),
         if (_alerts == null || _alerts!.any((a) => a.category == 'buzz')) ...[
@@ -215,8 +217,6 @@ class HomeScreenState extends State<HomeScreen> {
             onTap: () => _openAlerts(category: 'social'),
           ),
         ),
-        const SizedBox(height: 12),
-        _weeklyPlan(context),
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: () =>
@@ -259,7 +259,14 @@ class HomeScreenState extends State<HomeScreen> {
             padding: EdgeInsets.all(24),
             child: Text('Your video prompts will appear here.'),
           ),
-        for (final p in (_posts ?? <Post>[]).take(20))
+        for (final p
+            in (_posts ?? <Post>[])
+                .where(
+                  (p) =>
+                      p.content['weekly_series'] == null &&
+                      !(p.content['alert_id'] != null && p.status == 'failed'),
+                )
+                .take(20))
           Card(
             child: ListTile(
               onTap: () => _open(p),
@@ -613,6 +620,38 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
               ],
             ),
+            if (rahboom) ...[
+              const SizedBox(height: 12),
+              for (var i = 0; i < 7; i++)
+                Builder(
+                  builder: (context) {
+                    final date = start.add(Duration(days: i));
+                    final post = (_posts ?? <Post>[])
+                        .where(
+                          (p) =>
+                              p.forDate ==
+                                  DateFormat('yyyy-MM-dd').format(date) &&
+                              p.content['weekly_series'] != null,
+                        )
+                        .firstOrNull;
+                    if (post == null) return const SizedBox.shrink();
+                    return ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Text(
+                        '${DateFormat('EEE', 'en').format(date)}\n${date.day}',
+                      ),
+                      title: Text(
+                        post.title,
+                        textDirection: contentDirection(post.title),
+                      ),
+                      subtitle: Text(post.contentLabel),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _open(post),
+                    );
+                  },
+                ),
+            ],
             const SizedBox(height: 12),
             Text(
               DateFormat('EEEE, MMM d', 'en').format(_selectedDay),

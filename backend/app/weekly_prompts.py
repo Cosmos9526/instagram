@@ -38,6 +38,38 @@ DAYS = [
      'Invite a consultation without promising free service, delivery time or warranty that has not been confirmed.'),
 ]
 
+# A second reviewed week prevents the next seven days recycling the first week's scripts.
+NEXT_DAYS = [
+    ('sales', 'کلاد؛ قبل از انتخاب پلن، کارت را مشخص کن', 'Claude',
+     'رها: «برای نوشتن و تحقیق کدوم کلاد رو بگیرم؟»\nآرین: «نوع کار و حجم استفاده‌ت رو به راه بوم بگو.»',
+     'Raha slides a closed notebook toward Arian. He gestures toward the notebook and then her phone, inviting a needs-based conversation.',
+     'Do not invent plan differences, prices or guaranteed research accuracy.'),
+    ('educational', 'پایان‌نامه؛ منبع ساختگی را وارد نکن', 'AI research',
+     'رها: «این منبع پایان‌نامه رو هوش مصنوعی داده؛ کافیه؟»\nآرین: «نه؛ اصل مقاله و مشخصاتش رو خودت بررسی کن.»',
+     'Raha points once at a page in her notebook. Arian lightly taps the closed notebook with one finger, then looks back to her.',
+     'Do not display invented papers or citations. This is source verification advice.'),
+    ('promo', 'گوگل فلو؛ مرجع شخصیتت را آماده کن', 'Google Flow',
+     'رها: «برای ویدیوم از کجا شروع کنم؟»\nآرین: «عکس مرجع و سناریوت رو آماده کن؛ انتخاب اشتراک با راه بوم.»',
+     'Raha raises her phone beside her shoulder without showing screen text. Arian frames a small rectangle with his hands below chest level.',
+     'Do not promise perfect consistency or imply this reference workflow is a paid-only feature.'),
+    ('educational', 'کد ناشناس؛ اول توضیحش را بخواه', 'AI coding',
+     'رها: «این کد رو نمی‌فهمم؛ اجراش کنم؟»\nآرین: «اول توضیح خط‌به‌خط بخواه؛ بعد توی محیط آزمایشی تست کن.»',
+     'Raha draws her hand away from the laptop keyboard. Arian points toward the defocused laptop and makes a small measured pause gesture.',
+     'No invented code on screen. Never claim an AI explanation guarantees safety.'),
+    ('educational', 'جمینی؛ فایل حساس را بی‌فکر آپلود نکن', 'Gemini',
+     'رها: «فایل مشتری رو بدم به جمینی؟»\nآرین: «اول اطلاعات حساس رو حذف کن و اجازهٔ استفاده رو بررسی کن.»',
+     'Raha holds a plain unmarked document folder closed. Arian keeps an open hand near the folder without taking it, signalling a considered pause.',
+     'General privacy advice only; do not assert specific provider retention policies.'),
+    ('promo', 'اشتراک هوش مصنوعی؛ از کاربردت شروع کن', 'AI subscriptions',
+     'رها: «برای طراحی و کدنویسی یک ابزار کافیه؟»\nآرین: «نیازت فرق داره؛ راه بوم کمک می‌کنه انتخابت کنی.»',
+     'Raha places a pencil beside the laptop. Arian gestures once between the pencil and laptop, visually contrasting two tasks.',
+     'Do not promise one tool covers every task or invent product capabilities.'),
+    ('sales', 'راه بوم؛ قبل از خرید، سؤال‌هایت را بپرس', 'Rahboom',
+     'رها: «قبل از خرید اشتراک چی بپرسم؟»\nآرین: «پلن، مدت و شرایط فعال‌سازی؛ از راه بوم بپرس.»',
+     'Raha makes a small three-point counting gesture while looking at Arian. He nods and turns gently toward the camera at the end.',
+     'Do not state unverified activation terms, delivery times or warranty promises.'),
+]
+
 STYLE = '''CHARACTER AND SET CONTINUITY
 Use the supplied reference frame from the owner's 122.MP4 as the visual source of truth. Two adult presenters remain seated throughout: Raha on frame-left, Arian on frame-right. Raha has long loose wavy blonde-brown hair with darker roots, a centre part, dark rounded rectangular glasses, a fitted white short-sleeved crew-neck top and dark high-waisted trousers. Arian has short textured silver-grey hair with trimmed sides, a neat dark beard and moustache, dark rectangular glasses, an open light-blue short-sleeved shirt over a white T-shirt, dark trousers and a dark watch on his left wrist. Match reference faces and proportions; do not redesign either presenter.
 Keep the same home office: light wooden desk across the foreground, dark desk mat, partial laptop at far left, dark coding monitors behind the presenters, pale walls, curtain, and illuminated white/cyan/lavender hexagonal wall panels. Preserve soft daylight from frame-left and gentle cool ambient light. Do not turn the room orange. Use a realistic eye-level vertical medium two-shot, equivalent to a 40 mm lens; keep both faces in focus, natural skin texture, stable exposure and restrained contrast. Keep faces inside the central 70% of the frame, with bottom space clear for interface overlays. No reverse angle or crossing the screen axis.'''
@@ -48,7 +80,8 @@ def is_rahboom(brand):
 
 
 def package(index, day):
-    purpose, title, product, dialogue, action, claim_rule = DAYS[index]
+    week = (day - date(2026, 9, 26)).days // 7
+    purpose, title, product, dialogue, action, claim_rule = (DAYS if week % 2 == 0 else NEXT_DAYS)[index]
     full = f'''GOOGLE FLOW — RAHBOOM VERTICAL VIDEO
 Creative concept: {title}
 Product/topic: {product}. Purpose: {purpose}.
@@ -106,7 +139,7 @@ def prepare_week(db, brand, start):
             p = Post(brand_id=brand.id, post_type='video_prompt', mode='video', status='ready',
                      for_date=day.isoformat(), topic_hint=content['title'], content=content)
             db.add(p)
-        elif p.status == 'ready' and (p.content or {}).get('source') == 'editorial' and not p.content.get('cover_prompt'):
+        elif p.status == 'ready' and (p.content or {}).get('source') == 'editorial' and p.content.get('full_prompt') != package((day.weekday() + 2) % 7, day)['full_prompt']:
             p.content = package((day.weekday() + 2) % 7, day)
         if p.status != 'deleted':
             result.append(p)

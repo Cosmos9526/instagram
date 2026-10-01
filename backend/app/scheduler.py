@@ -60,6 +60,11 @@ def create_daily_posts(now: datetime | None = None) -> int:
             # Refresh research independently of content creation. A prepared
             # weekly post must not prevent today's news/trend radar from updating.
             _refresh_research(db, brand)
+            from .weekly_prompts import is_rahboom, prepare_week
+            if is_rahboom(brand):
+                # Keep the rolling seven-day plan filled independently of news jobs.
+                prepare_week(db, brand, now.date())
+                continue
             exists = db.scalar(select(Post.id).where(Post.brand_id == brand.id, Post.for_date == day))
             if exists:
                 continue

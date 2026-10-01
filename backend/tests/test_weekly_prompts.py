@@ -43,3 +43,13 @@ def test_deleted_starter_prompt_is_not_recreated():
         remaining = c.post(url, headers=h).json()
         assert len(remaining) == 6
         assert removed not in {p['id'] for p in remaining}
+
+
+def test_next_week_does_not_recycle_scripts():
+    from datetime import timedelta
+    start = date(2026, 9, 26)
+    prompts = [package((d.weekday() + 2) % 7, d) for d in (start + timedelta(days=i) for i in range(14))]
+    assert len({p['title'] for p in prompts}) == 14
+    assert len({p['full_prompt'] for p in prompts}) == 14
+    assert len({p['blocks'][1]['text'] for p in prompts}) == 14
+    assert all(len(p['blocks'][1]['text'].split()) <= 26 for p in prompts)
