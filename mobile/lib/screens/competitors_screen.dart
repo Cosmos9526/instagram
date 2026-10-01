@@ -29,6 +29,30 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
   List<CompetitorScan>? _scans;
   Timer? _poll;
   bool _starting = false;
+  bool _allProducts = false;
+  static const _products = [
+    'ChatGPT Plus',
+    'Claude Max',
+    'ChatGPT Pro',
+    'Cursor',
+    'Higgsfield',
+    'Gemini',
+    'Claude Pro',
+    'Canva',
+    'Perplexity',
+    'Midjourney',
+    'Runway',
+    'Kling',
+    'Google Flow',
+    'Leonardo',
+    'Suno',
+    'ElevenLabs',
+    'CapCut',
+    'GitHub Copilot',
+    'Notion',
+    'Grammarly',
+    'Spotify',
+  ];
   String? _queryError;
   final _query = TextEditingController();
 
@@ -363,15 +387,21 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
             ),
           ),
           const SizedBox(height: 10),
+          Row(
+            children: [
+              const Expanded(child: Text('Popular products')),
+              TextButton(
+                onPressed: () => setState(() => _allProducts = !_allProducts),
+                child: Text(_allProducts ? 'Show less' : 'All 21'),
+              ),
+            ],
+          ),
           Wrap(
             spacing: 8,
+            runSpacing: 4,
             children: [
-              for (final product in [
-                'Claude Max',
-                'ChatGPT Pro',
-                'ChatGPT Plus',
-                'Cursor',
-              ])
+              for (final product
+                  in _allProducts ? _products : _products.take(8))
                 ActionChip(
                   label: Text(product),
                   onPressed: _starting

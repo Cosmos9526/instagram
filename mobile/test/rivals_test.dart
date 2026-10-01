@@ -94,5 +94,17 @@ void main() {
     await tester.tap(find.widgetWithText(ActionChip, 'Claude Max'));
     await tester.pumpAndSettle();
     expect(find.text('Results: Claude Max'), findsOneWidget);
+    expect(find.text('Popular products'), findsOneWidget);
+    await tester.ensureVisible(find.text('All 21'));
+    await tester.tap(find.text('All 21'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ActionChip), findsNWidgets(21));
+    final notion = find.widgetWithText(ActionChip, 'Notion');
+    await tester.ensureVisible(notion);
+    await tester.tap(notion);
+    await tester.pumpAndSettle();
+    expect(query, 'Notion');
+    expect(find.text('Results: Notion'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
