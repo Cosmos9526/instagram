@@ -160,3 +160,24 @@ def test_ambiguous_query_does_not_queue_a_scan():
         response = c.post(f'/brands/{brand}/competitors/prices', headers=h, json={'query': 'چت جی پی تی مکس'})
         assert response.status_code == 422
         assert 'ChatGPT Pro' in response.json()['detail']
+
+
+def test_higgsfield_persian_english_and_spaced_spellings():
+    for query in ('هیگزفیلد', 'فیگزفیلد', 'هیگس فیلد', 'هیگز‌فیلد', 'Higgsfield', 'Higgs Field'):
+        assert ps.terms(query) == ['higgsfield']
+        assert ps.matches(query, 'خرید اکانت Higgsfield یکماهه Starter')
+        assert ps.matches(query, 'اکانت هیگسفیلد Plus')
+        assert not ps.matches(query, 'Google Flow Plus')
+
+
+def test_higgsfield_discovers_english_url_from_persian_query(monkeypatch):
+    product = '<script type="application/ld+json">{"@type":"Product","name":"Higgsfield Starter","offers":{"price":"5900000","priceCurrency":"IRT"}}</script>'
+    urls=[]
+    def fetch(url,**kw):
+        urls.append(url)
+        return url, product if url.endswith('/product/higgsfield-ai') else '<html></html>'
+    monkeypatch.setattr(ps.safe_fetch,'text',fetch)
+    result=ps.lookup({'id':'d','website':'https://dicardo.com'},'هیگزفیلد')
+    assert result['status']=='found'
+    assert result['matches'][0]['price']==5900000
+    assert urls[0]=='https://dicardo.com/product/higgsfield-ai'

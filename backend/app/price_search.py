@@ -10,8 +10,9 @@ from .competitors import extract_products, detect_duration, _woo_currency
 from .price_adapters import CLAUDE_PAGES, extract as audited_products, public_catalog
 
 ALIASES={'کلاد':'claude','کلاود':'claude','کلود':'claude','مکس':'max','مکث':'max','پلاس':'plus','پرو':'pro','کرسر':'cursor','چتجیپیتی':'chatgpt','جمینای':'gemini','اسپاتیفای':'spotify','کانوا':'canva','پرپلکسیتی':'perplexity'}
+ALIASES.update({name: 'higgsfield' for name in ('هیگزفیلد', 'هیگسفیلد', 'هگزفیلد', 'هگسفیلد', 'فیگزفیلد')})
 STOP={'قیمت','خرید','اکانت','اشتراک','هزینه','price','buy','account','subscription','چنده','چقدر','است','توی','در','بهم','بگو','لطفا'}
-EXTRACTOR_VERSION = 2
+EXTRACTOR_VERSION = 3
 
 def preserve_verified(rows, previous_reports, query):
     """Keep a recent, explicitly labelled snapshot when a website stops replying.
@@ -38,6 +39,7 @@ def terms(text):
     text=unquote(text).lower().translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹يك','0123456789یک'))
     text=re.sub(r'چت[\s\u200c_-]*جی[\s\u200c_-]*پی[\s\u200c_-]*تی|chat[\s_-]*gpt', 'chatgpt', text)
     text=text.replace('\u200c', ' ')
+    text=re.sub(r'(?:هیگ[زس]|هگ[زس]|فیگ[زس])[\s_-]*فیلد|higgs[\s_-]*field', 'higgsfield', text)
     text=re.sub(r'(max)(\d)',r'\1 \2',text)
     text=re.sub(r'(\d+)\s*[×xایکس]+',r'\1x',text)
     return [ALIASES.get(w,w) for w in re.findall(r'[\w]+',text) if w not in STOP]
@@ -102,6 +104,11 @@ def lookup(c,query):
         out['status']='found' if out['matches'] else 'not_found'
         return out
     queue=[base.rstrip('/')+p for p in CLAUDE_PAGES.get(host,[]) ] if family=='claude' else []
+    if family == 'higgsfield':
+        paths = {'parspremium.ir': '/product/Higgsfield', 'license-market.ir': '/product/Higgsfield',
+                 'dicardo.com': '/product/higgsfield-ai', 'g1verify.ir': '/product/higgsfield/',
+                 'kharidaccount.ir': '/account/higgsfield/', 'premium24.ir': '/product/higgsfield-ai-pricing'}
+        if host in paths:queue.append(base.rstrip('/')+paths[host])
     queue.append(base.rstrip('/')+'/?'+urlencode({'s':family or normalized,'post_type':'product'}))
     queue.extend(direct)
     queue.append(base)
