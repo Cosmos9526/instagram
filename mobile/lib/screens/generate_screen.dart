@@ -5,6 +5,8 @@ import '../models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'templates_screen.dart';
+import 'style_library_screen.dart';
+import 'posts_screen.dart';
 
 /// Guided create: objective → format → style → topic → one button. Objective and format are chosen
 /// separately; for a video the objective is passed to the model with the topic.
@@ -121,6 +123,25 @@ class GenerateScreenState extends State<GenerateScreen> {
     if (id != null) setState(() => _videoStyle = id);
   }
 
+  Future<void> _openLibrary() async {
+    final selection = await Navigator.of(context).push<StyleSelection>(
+      MaterialPageRoute(
+        builder: (_) => StyleLibraryScreen(
+          api: widget.api,
+          brand: widget.brand,
+          initialBrief: _topic.text,
+          initialKind: _isVideo ? 'video' : 'image',
+        ),
+      ),
+    );
+    if (selection == null || !mounted) return;
+    setState(() {
+      _topic.text = selection.prompt;
+      _format = selection.style.kind == 'video' ? 'video' : 'single';
+      _videoStyle = selection.style.videoStyle;
+    });
+  }
+
   Future<void> _submit() async {
     setState(() => _busy = true);
     try {
@@ -178,6 +199,35 @@ class GenerateScreenState extends State<GenerateScreen> {
         Text(
           'Choose your objective and format, then add a topic.',
           style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 16),
+        Card(
+          margin: EdgeInsets.zero,
+          child: ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: const Text('Style library'),
+            subtitle: const Text(
+              '26 ready styles · Paste your prompt, choose a look, copy',
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _openLibrary,
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PostsScreen(
+                  api: widget.api,
+                  brand: widget.brand,
+                  standalone: true,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.folder_outlined),
+            label: const Text('Saved content'),
+          ),
         ),
         const _Step(n: 1, title: 'Choose an objective'),
         ResponsiveGrid(

@@ -6,10 +6,8 @@ import '../api.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import '../widgets/delete_post.dart';
 import 'alerts_screen.dart';
 import 'post_screen.dart';
-import 'posts_screen.dart';
 
 typedef CreateCallback =
     void Function({
@@ -168,28 +166,6 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _remove(Post p) async {
-    if (!await deletePost(context, widget.api, p)) return;
-    await refresh();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Content deleted'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () async {
-            try {
-              await widget.api.review(p.id, 'restore');
-              await refresh();
-            } on ApiException catch (e) {
-              if (mounted) showSnack(context, e.message);
-            }
-          },
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) => RefreshIndicator(
     onRefresh: refresh,
@@ -225,97 +201,12 @@ class HomeScreenState extends State<HomeScreen> {
           label: const Text('Create video prompt'),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            const Expanded(child: Text('Saved content')),
-            TextButton(
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PostsScreen(
-                      api: widget.api,
-                      brand: widget.brand,
-                      standalone: true,
-                    ),
-                  ),
-                );
-                refresh();
-              },
-              child: const Text('View all'),
-            ),
-          ],
-        ),
         if (_error != null)
           Row(
             children: [
               Expanded(child: Text(_error!)),
               TextButton(onPressed: refresh, child: const Text('Retry')),
             ],
-          ),
-        if (_posts == null && _error == null)
-          const Center(child: CircularProgressIndicator()),
-        if (_posts?.isEmpty == true)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('Your video prompts will appear here.'),
-          ),
-        for (final p
-            in (_posts ?? <Post>[])
-                .where(
-                  (p) =>
-                      p.content['weekly_series'] == null &&
-                      !(p.content['alert_id'] != null && p.status == 'failed'),
-                )
-                .take(20))
-          Card(
-            child: ListTile(
-              onTap: () => _open(p),
-              leading: Icon(
-                p.isVideo ? Icons.movie_outlined : Icons.description_outlined,
-              ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.title,
-                    textDirection: contentDirection(p.title),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      TypeBadge(switch (p.contentLabel) {
-                        'Sales' => 'sales',
-                        'Promotional' => 'promo',
-                        'News' => 'news',
-                        'Educational' => 'educational',
-                        'Trending' => 'trending',
-                        _ => 'video_prompt',
-                      }, label: p.contentLabel),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          p.isBusy
-                              ? 'Creating…'
-                              : p.status == 'failed'
-                              ? 'Needs retry'
-                              : p.status == 'approved'
-                              ? 'Approved'
-                              : 'Ready to review',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              trailing: IconButton(
-                tooltip: 'Delete',
-                onPressed: p.isBusy ? null : () => _remove(p),
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ),
           ),
       ],
     ),

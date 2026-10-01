@@ -20,6 +20,7 @@ from .static import FastStatic, thumbnail
 from .scheduler import create_daily_posts
 from .template_registry import TEMPLATES
 from .video_styles import VIDEO_STYLES
+from .prompt_styles import prompt_styles
 from .worker import enqueue, enqueue_competitor_scan, enqueue_research
 
 PREVIEW_DIR = Path(__file__).parent / "previews"
@@ -225,6 +226,7 @@ def catalog():
             }
             for code, spec in TEMPLATES.items()
         ],
+        "prompt_styles": prompt_styles(),
         "video_styles": [
             {k: s[k] for k in ("id", "name_fa", "description_fa", "name_en", "description_en", "best_for", "pacing")} | {"beats": s["beats"]}
             for s in VIDEO_STYLES

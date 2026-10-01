@@ -66,14 +66,45 @@ class VideoStyle {
   final List<String> bestFor, beats;
 }
 
+class PromptStyle {
+  PromptStyle.fromJson(Map<String, dynamic> j)
+    : id = '${j['id']}',
+      kind = '${j['kind']}',
+      name = '${j['name_en']}',
+      nameFa = '${j['name_fa']}',
+      description = '${j['description']}',
+      videoStyle = '${j['video_style'] ?? ''}',
+      prompt = '${j['prompt']}',
+      coverPrompt = '${j['cover_prompt']}',
+      provenance = '${j['provenance']}';
+  final String id,
+      kind,
+      name,
+      nameFa,
+      description,
+      videoStyle,
+      prompt,
+      coverPrompt,
+      provenance;
+  String compose(String brief, String brand, {bool cover = false}) =>
+      (cover ? coverPrompt : prompt)
+          .replaceAll('{{brand}}', brand)
+          .replaceAll('{{brief}}', brief);
+}
+
 class Catalog {
   Catalog.fromJson(Map<String, dynamic> j)
-    : templates = [
+    : promptStyles = [
+        for (final s in j['prompt_styles'] as List? ?? const [])
+          PromptStyle.fromJson(s),
+      ],
+      templates = [
         for (final t in j['templates'] as List) TemplateInfo.fromJson(t),
       ],
       videoStyles = [
         for (final s in j['video_styles'] as List) VideoStyle.fromJson(s),
       ];
+  final List<PromptStyle> promptStyles;
   final List<TemplateInfo> templates;
   final List<VideoStyle> videoStyles;
 
