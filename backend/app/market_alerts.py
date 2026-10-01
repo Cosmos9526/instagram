@@ -146,7 +146,7 @@ def _link(node: ET.Element) -> str:
 
 
 def _date(value: str) -> datetime | None:
-    if not value:
+    if not value or re.fullmatch(r"\d{4}-\d{2}-\d{2}", value.strip()):
         return None
     try:
         parsed = parsedate_to_datetime(value)
@@ -221,7 +221,7 @@ def _feed(source: str, url: str) -> list[dict]:
         if importance:
             out.append({"title": title, "summary": " ".join(summary.split())[:500],
                         "source": source, "url": _link(item), "importance": importance,
-                        "published_at": _date(_text(item, ("pubdate", "published", "updated")))})
+                        "published_at": _date(_text(item, ("pubdate",)) or _text(item, ("published",)))})
     return out
 
 

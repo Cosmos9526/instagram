@@ -94,6 +94,7 @@ def test_refresh_deduplicates(monkeypatch):
 
 def test_news_policy_checks_actual_host_and_rolling_window():
     now = datetime(2026, 10, 2, 12, tzinfo=timezone.utc)
+    assert market_alerts._date("2026-10-02") is None
     recent = now - timedelta(hours=1)
     assert market_alerts.eligible_news("https://www.reuters.com/technology/ai", recent, now)
     assert market_alerts.eligible_news("https://blog.google/ai", now - timedelta(hours=24), now)
