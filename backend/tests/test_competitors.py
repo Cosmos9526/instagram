@@ -95,7 +95,7 @@ def test_extract_products_woocommerce():
     assert products[0]["name"] == "اکانت ChatGPT Plus یک ماهه"
     assert products[0]["price"] == 1_500_000
     assert products[0]["regular_price"] == 1_900_000
-    assert products[0]["in_stock"] is True
+    assert products[0]["in_stock"] is None  # This card does not declare availability.
 
 
 def test_extract_products_jsonld():

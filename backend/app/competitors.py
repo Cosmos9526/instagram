@@ -275,7 +275,7 @@ def _woo_products(html: str) -> list[dict]:
             "name": name, "price": sale if sale is not None else regular,
             "price_max": maximum,
             "regular_price": regular if sale is not None else None,
-            "currency": currency, "in_stock": "outofstock" not in block.lower(),
+            "currency": currency, "in_stock": False if re.search(r"outofstock|out-of-stock", block, re.I) else True if re.search(r"\binstock\b|\bin-stock\b", block, re.I) else None,
         })
     return out
 
@@ -306,7 +306,7 @@ def _woo_variations(html: str) -> list[dict]:
                 "price": int(price) if isinstance(price, (int, float)) else None,
                 "price_max": int(price) if isinstance(price, (int, float)) else None,
                 "regular_price": int(regular) if isinstance(regular, (int, float)) and regular != price else None,
-                "currency": "", "in_stock": bool(v.get("is_in_stock", True)), "duration": duration,
+                "currency": "", "in_stock": v.get("is_in_stock"), "duration": duration,
             })
     return out
 
@@ -324,7 +324,7 @@ def extract_products(html: str) -> list[dict]:
             currency = _meta(html, "product:price:currency")
             products = [{
                 "name": title[:100], "price": parse_price(og_price, currency),
-                "price_max": parse_price(og_price, currency), "currency": currency, "in_stock": True,
+                "price_max": parse_price(og_price, currency), "currency": currency, "in_stock": None,
             }]
     return [p for p in products if p.get("name")]
 
