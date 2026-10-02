@@ -184,9 +184,16 @@ DURATION_LABELS = {"1m": "یک ماهه", "3m": "سه ماهه", "6m": "شش م�
 
 def detect_duration(name: str) -> str:
     n = _norm_text(name)
+    months = re.search(r"(?<!\d)(\d{1,3})[\s-]*(?:ماهه|ماه|months?)(?![a-z])", n)
+    if months and 0 < int(months.group(1)) <= 120:
+        return f"{int(months.group(1))}m"
     for pat, dur in DURATION_PATTERNS:
         if re.search(pat, n, re.I):
             return dur
+    if re.search(r"\bmonthly\b|ماهانه", n):
+        return "1m"
+    if re.search(r"\b(?:annual|annually|yearly)\b", n):
+        return "12m"
     return ""
 
 
@@ -222,7 +229,8 @@ def _jsonld_products(html: str) -> list[dict]:
                 avail = str(offers.get("availability", ""))
                 out.append({
                     "name": unescape(str(d["name"]))[:100], "price": price, "price_max": price_max,
-                    "currency": currency, "in_stock": "outofstock" not in avail.lower() if avail else True,
+                    "currency": currency, "in_stock": False if "outofstock" in avail.lower() or "soldout" in avail.lower() else True if "instock" in avail.lower() else None,
+                    "url": offers.get("url") or d.get("url"),
                 })
     return out
 
@@ -248,17 +256,24 @@ def _woo_products(html: str) -> list[dict]:
             continue
         name = _text(name_m.group(1))
         currency = _woo_currency(block)
-        dels = re.findall(r"(?is)<del[^>]*>.*?woocommerce-Price-amount[^>]*>\s*([^<]+)", block)
-        inss = re.findall(r"(?is)<ins[^>]*>.*?woocommerce-Price-amount[^>]*>\s*([^<]+)", block)
-        regular = parse_price(dels[0], currency) if dels else None
-        sale = parse_price(inss[0], currency) if inss else None
-        if regular is None and sale is None:
-            amounts = re.findall(r"woocommerce-Price-amount[^>]*>\s*([^<]+)", block)
-            if amounts:
-                regular = parse_price(amounts[0], currency)
+        # Modern Woo markup nests the numeric text in <bdi>; scope amounts to
+        # this product's price element so related products cannot supply a price.
+        from lxml import html as lh
+        tree = lh.fromstring(block)
+        containers = tree.xpath('//*[contains(concat(" ",normalize-space(@class)," ")," price ")]')
+        scope = containers[0] if containers else tree
+        amounts = scope.xpath('.//*[contains(concat(" ",normalize-space(@class)," ")," woocommerce-Price-amount ")]')
+        old = [a for a in amounts if a.xpath('ancestor::del')]
+        current = [a for a in amounts if not a.xpath('ancestor::del')]
+        regular = parse_price(old[0].text_content(), currency) if old else None
+        values = [parse_price(a.text_content(), currency) for a in current]
+        values = [v for v in values if v is not None]
+        sale = min(values) if values else None
+        maximum = max(values) if values else regular
+
         out.append({
             "name": name, "price": sale if sale is not None else regular,
-            "price_max": sale if sale is not None else regular,
+            "price_max": maximum,
             "regular_price": regular if sale is not None else None,
             "currency": currency, "in_stock": "outofstock" not in block.lower(),
         })

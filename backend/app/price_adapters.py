@@ -6,7 +6,7 @@ amounts are Toman; selectors carry the exact plan and direct source URL.
 import json
 from urllib.parse import urljoin, urlparse, unquote, quote
 from lxml import html as lh
-from .competitors import detect_duration, parse_price
+from .competitors import detect_duration, parse_price, _woo_currency
 from . import safe_fetch
 
 
@@ -137,12 +137,29 @@ def extract(tree, url):
             attrs=' '.join(unquote(str(a)).replace('-',' ') for a in (v.get('attributes') or {}).values())
             fragment=v.get('price_html','')
             price=None
+            regular=None
             if fragment:
                 prices=lh.fragment_fromstring(fragment,create_parent='div')
                 amounts=prices.xpath('//*[contains(@class,"woocommerce-Price-amount") and not(ancestor::del)]')
                 if len(amounts)==1:
                     text=amounts[0].text_content()
                     if 'تومان' in text or 'ریال' in text:price=parse_price(text)
-            result.append(row(title+' '+attrs,price,url,v.get('is_in_stock'), 'Selected product option price'))
+                old=prices.xpath('//*[contains(@class,"woocommerce-Price-amount") and ancestor::del]')
+                if len(old)==1 and _woo_currency(old[0].text_content()):regular=parse_price(old[0].text_content())
+            if price is None:
+                # display_price is usable only with an explicit currency in
+                # the purchase form/summary; never borrow a related card's unit.
+                summaries=tree.xpath('//*[contains(concat(" ",normalize-space(@class)," ")," summary ")]')
+                scope=summaries[0] if summaries else form
+                unit=_woo_currency(lh.tostring(scope,encoding='unicode'))
+                raw=v.get('display_price')
+                if unit and isinstance(raw,(int,float)):
+                    price=parse_price(str(raw),unit)
+                    raw_regular=v.get('display_regular_price')
+                    if isinstance(raw_regular,(int,float)):regular=parse_price(str(raw_regular),unit)
+            item=row(title+' '+attrs,price,url,v.get('is_in_stock'), 'Selected product option price')
+            item['duration']=detect_duration(attrs) or detect_duration(title)
+            if regular is not None and price is not None and regular>price:item['regular_price']=regular
+            result.append(item)
         if result:return result
     return None

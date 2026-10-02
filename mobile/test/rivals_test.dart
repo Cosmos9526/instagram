@@ -31,8 +31,21 @@ void main() {
         'results': [
           {
             'competitor_id': 'one',
-            'status': 'not_found',
-            'matches': [],
+            'status': 'found',
+            'matches': [
+              {
+                'name': 'Claude Max 5x اختصاصی',
+                'price': 2000000,
+                'price_max': 2000000,
+                'regular_price': 2500000,
+                'plan': 'max 5x',
+                'duration': '3m',
+                'account_type': 'personal',
+                'in_stock': true,
+                'price_kind': 'exact',
+                'url': 'https://example.com/product/claude',
+              },
+            ],
             'checked_at': '2026-09-30T03:20:00+00:00',
           },
         ],
@@ -78,6 +91,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Compare prices'), findsOneWidget);
+    expect(find.text('3 ماهه'), findsOneWidget);
+    expect(find.text('شخصی / اختصاصی'), findsOneWidget);
+    expect(find.text('max 5x'), findsOneWidget);
     await tester.tap(find.text('Check prices'));
     await tester.pumpAndSettle();
     expect(

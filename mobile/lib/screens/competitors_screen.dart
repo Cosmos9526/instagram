@@ -492,6 +492,21 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
     );
   }
 
+  String _durationLabel(String duration) {
+    final months = RegExp(r'^(\d+)m$').firstMatch(duration);
+    if (months != null) return '${months.group(1)} ماهه';
+    return 'مدت اعلام نشده';
+  }
+
+  Widget _offerDetail(String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+  );
+
   Widget _resultCard(Competitor c, dynamic row, bool busy) {
     const labels = {
       'found': 'Price found',
@@ -539,7 +554,31 @@ class _CompetitorsScreenState extends State<CompetitorsScreen> {
                           : '${_price(p['price'])}${p['price_max'] != null && p['price_max'] != p['price'] ? ' – ${_price(p['price_max'])}' : ''} Toman',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    if (p['in_stock'] == false) const Text('Out of stock'),
+                    if (p['regular_price'] != null)
+                      Text(
+                        '${_price(p['regular_price'])} تومان',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        if ('${p['plan'] ?? ''}'.isNotEmpty)
+                          _offerDetail('${p['plan']}'),
+                        _offerDetail(_durationLabel('${p['duration'] ?? ''}')),
+                        if (p['account_type'] == 'shared')
+                          _offerDetail('اشتراکی'),
+                        if (p['account_type'] == 'personal')
+                          _offerDetail('شخصی / اختصاصی'),
+                        if (p['in_stock'] == true) _offerDetail('موجود'),
+                        if (p['in_stock'] == false) _offerDetail('ناموجود'),
+                        if (p['price_kind'] == 'range')
+                          _offerDetail('بازهٔ قیمت گزینه‌ها'),
+                      ],
+                    ),
                     if (p['price'] == null && p['evidence'] != null)
                       Text(
                         '${p['evidence']}',
